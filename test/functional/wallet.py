@@ -5,7 +5,7 @@
 """Test the wallet."""
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
-from test_framework.qtumconfig import INITIAL_BLOCK_REWARD, COINBASE_MATURITY
+from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD, COINBASE_MATURITY
 
 class WalletTest(BitcoinTestFramework):
     def set_test_params(self):

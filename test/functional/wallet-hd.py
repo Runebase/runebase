@@ -9,7 +9,7 @@ from test_framework.util import (
     assert_equal,
     connect_nodes_bi,
 )
-from test_framework.qtumconfig import COINBASE_MATURITY
+from test_framework.runebaseconfig import COINBASE_MATURITY
 import shutil
 
 class WalletHDTest(BitcoinTestFramework):

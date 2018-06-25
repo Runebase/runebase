@@ -19,7 +19,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework import blocktools
 from test_framework.mininode import CTransaction
 from test_framework.util import *
-from test_framework.qtumconfig import COINBASE_MATURITY
+from test_framework.runebaseconfig import COINBASE_MATURITY
 import io
 
 # Sequence number that is BIP 125 opt-in and BIP 68-compliant

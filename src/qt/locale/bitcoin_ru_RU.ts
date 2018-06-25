@@ -152,7 +152,7 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>QtumGUI</name>
+    <name>RunebaseGUI</name>
     <message>
         <source>Sign &amp;message...</source>
         <translation>Подписать &amp;сообщение...</translation>
@@ -230,8 +230,8 @@
         <translation>&amp;Проверить сообщение...</translation>
     </message>
     <message>
-        <source>Qtum</source>
-        <translation>Qtum Core</translation>
+        <source>Runebase</source>
+        <translation>Runebase Core</translation>
     </message>
     <message>
         <source>Wallet</source>
@@ -442,8 +442,8 @@
         <translation>Пробросить порт через &amp;UPnP</translation>
     </message>
     <message>
-        <source>Connect to the Qtum network through a SOCKS5 proxy.</source>
-        <translation>Подключится к сети Qtum через SOCKS5 прокси.</translation>
+        <source>Connect to the Runebase network through a SOCKS5 proxy.</source>
+        <translation>Подключится к сети Runebase через SOCKS5 прокси.</translation>
     </message>
     <message>
         <source>Proxy &amp;IP:</source>
@@ -522,7 +522,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <source>Enter a Qtum address (e.g. %1)</source>
+        <source>Enter a Runebase address (e.g. %1)</source>
         <translation>Введите биткоин-адрес (напр. %1)</translation>
     </message>
     <message numerus="yes">
@@ -830,14 +830,14 @@
     </message>
     </context>
 <context>
-    <name>qtum-core</name>
+    <name>runebase-core</name>
     <message>
-        <source>Qtum Core</source>
-        <translation>Qtum Core</translation>
+        <source>Runebase Core</source>
+        <translation>Runebase Core</translation>
     </message>
     <message>
         <source>Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway</source>
-        <translation>qtum-core</translation>
+        <translation>runebase-core</translation>
     </message>
     <message>
         <source>Information</source>

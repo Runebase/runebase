@@ -44,7 +44,7 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>QtumGUI</name>
+    <name>RunebaseGUI</name>
     <message>
         <source>Warning</source>
         <translation>අවවාදය</translation>
@@ -306,7 +306,7 @@
     <name>WalletView</name>
     </context>
 <context>
-    <name>qtum-core</name>
+    <name>runebase-core</name>
     <message>
         <source>Information</source>
         <translation>තොරතුර</translation>

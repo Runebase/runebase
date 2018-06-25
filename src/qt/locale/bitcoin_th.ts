@@ -92,7 +92,7 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>QtumGUI</name>
+    <name>RunebaseGUI</name>
     </context>
 <context>
     <name>CoinControlDialog</name>
@@ -214,6 +214,6 @@
     </message>
     </context>
 <context>
-    <name>qtum-core</name>
+    <name>runebase-core</name>
     </context>
 </TS>

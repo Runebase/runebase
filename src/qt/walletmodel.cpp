@@ -729,7 +729,7 @@ bool WalletModel::isSpent(const COutPoint& outpoint) const
     return wallet->IsSpent(outpoint.hash, outpoint.n);
 }
 
-bool WalletModel::isUnspentAddress(const std::string &qtumAddress) const
+bool WalletModel::isUnspentAddress(const std::string &runebaseAddress) const
 {
     LOCK2(cs_main, wallet->cs_wallet);
 
@@ -741,7 +741,7 @@ bool WalletModel::isUnspentAddress(const std::string &qtumAddress) const
         const CScript& scriptPubKey = out.tx->tx->vout[out.i].scriptPubKey;
         bool fValidAddress = ExtractDestination(scriptPubKey, address);
 
-        if(fValidAddress && CBitcoinAddress(address).ToString() == qtumAddress && out.tx->tx->vout[out.i].nValue)
+        if(fValidAddress && CBitcoinAddress(address).ToString() == runebaseAddress && out.tx->tx->vout[out.i].nValue)
         {
             return true;
         }

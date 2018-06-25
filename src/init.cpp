@@ -180,7 +180,7 @@ void Shutdown()
     /// for example if the data directory was found to be locked.
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
-    RenameThread("qtum-shutoff");
+    RenameThread("runebase-shutoff");
     mempool.AddTransactionsUpdated(1);
 
     StopHTTPRPC();
@@ -189,7 +189,7 @@ void Shutdown()
     StopHTTPServer();
 #ifdef ENABLE_WALLET
     for (CWalletRef pwallet : vpwallets) {
-        StakeQtums(false, pwallet);
+        StakeRunebases(false, pwallet);
         pwallet->Flush(false);
     }
 #endif
@@ -542,8 +542,8 @@ std::string HelpMessage(HelpMessageMode mode)
 
 std::string LicenseInfo()
 {
-    const std::string URL_SOURCE_CODE = "<https://github.com/qtumproject/qtum>";
-    const std::string URL_WEBSITE = "<https://qtum.org>";
+    const std::string URL_SOURCE_CODE = "<https://github.com/runebase/runebase>";
+    const std::string URL_WEBSITE = "<https://runebase.org>";
 
     return CopyrightHolders(strprintf(_("Copyright (C) %i"), COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +
@@ -841,7 +841,7 @@ void InitLogging()
     fLogIPs = gArgs.GetBoolArg("-logips", DEFAULT_LOGIPS);
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    LogPrintf("Qtum version %s\n", FormatFullVersion());
+    LogPrintf("Runebase version %s\n", FormatFullVersion());
 }
 
 namespace { // Variables internal to initialization process only
@@ -1251,7 +1251,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (fPrintToDebugLog)
         OpenDebugLog();
 
-////////////////////////////////////////////////////////////////////// // qtum
+////////////////////////////////////////////////////////////////////// // runebase
     dev::g_logPost = [&](std::string const& s, char const* c){ LogPrintStr(s + '\n', true); };
     dev::g_logPost(std::string("\n\n\n\n\n\n\n\n\n\n"), NULL);
 //////////////////////////////////////////////////////////////////////
@@ -1542,7 +1542,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                     assert(chainActive.Tip() != nullptr);
                 }
 
-                /////////////////////////////////////////////////////////// qtum
+                /////////////////////////////////////////////////////////// runebase
                 if((gArgs.IsArgSet("-dgpstorage") && gArgs.IsArgSet("-dgpevm")) || (!gArgs.IsArgSet("-dgpstorage") && gArgs.IsArgSet("-dgpevm")) ||
                   (!gArgs.IsArgSet("-dgpstorage") && !gArgs.IsArgSet("-dgpevm"))){
                     fGettingValuesDGP = true;
@@ -1551,16 +1551,16 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 }
 
                 dev::eth::Ethash::init();
-                fs::path qtumStateDir = GetDataDir() / "stateQtum";
-                bool fStatus = fs::exists(qtumStateDir);
-                const std::string dirQtum(qtumStateDir.string());
+                fs::path runebaseStateDir = GetDataDir() / "stateRunebase";
+                bool fStatus = fs::exists(runebaseStateDir);
+                const std::string dirRunebase(runebaseStateDir.string());
                 const dev::h256 hashDB(dev::sha3(dev::rlp("")));
-                dev::eth::BaseState existsQtumstate = fStatus ? dev::eth::BaseState::PreExisting : dev::eth::BaseState::Empty;
-                globalState = std::unique_ptr<QtumState>(new QtumState(dev::u256(0), QtumState::openDB(dirQtum, hashDB, dev::WithExisting::Trust), dirQtum, existsQtumstate));
-                dev::eth::ChainParams cp((dev::eth::genesisInfo(dev::eth::Network::qtumMainNetwork)));
+                dev::eth::BaseState existsRunebasestate = fStatus ? dev::eth::BaseState::PreExisting : dev::eth::BaseState::Empty;
+                globalState = std::unique_ptr<RunebaseState>(new RunebaseState(dev::u256(0), RunebaseState::openDB(dirRunebase, hashDB, dev::WithExisting::Trust), dirRunebase, existsRunebasestate));
+                dev::eth::ChainParams cp((dev::eth::genesisInfo(dev::eth::Network::runebaseMainNetwork)));
                 globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
 
-                pstorageresult = new StorageResults(qtumStateDir.string());
+                pstorageresult = new StorageResults(runebaseStateDir.string());
                 if (fReset) {
                     pstorageresult->wipeResults();
                 }
@@ -1814,7 +1814,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     else {
         for (CWalletRef pwallet : vpwallets) {
             if (pwallet)
-                StakeQtums(true, pwallet);
+                StakeRunebases(true, pwallet);
         }
     }
 #endif

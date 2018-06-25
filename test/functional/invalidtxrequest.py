@@ -11,7 +11,7 @@ from test_framework.test_framework import ComparisonTestFramework
 from test_framework.comptool import TestManager, TestInstance, RejectResult
 from test_framework.blocktools import *
 import time
-from test_framework.qtumconfig import INITIAL_BLOCK_REWARD
+from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD
 
 
 # Use the ComparisonTestFramework with 1 node: only use --testbinary.

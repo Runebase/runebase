@@ -49,7 +49,7 @@ from test_framework.mininode import ToHex, CTransaction, NetworkThread
 from test_framework.blocktools import create_coinbase, create_block
 from test_framework.comptool import TestInstance, TestManager
 from test_framework.script import *
-from test_framework.qtumconfig import INITIAL_BLOCK_REWARD
+from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD
 from io import BytesIO
 import time
 

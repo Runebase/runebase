@@ -8,7 +8,7 @@ import os
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (assert_equal, assert_raises_rpc_error)
-from test_framework.qtumconfig import COINBASE_MATURITY
+from test_framework.runebaseconfig import COINBASE_MATURITY
 
 def read_dump(file_name, addrs, hd_master_addr_old):
     """

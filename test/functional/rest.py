@@ -12,7 +12,7 @@ from codecs import encode
 
 import http.client
 import urllib.parse
-from test_framework.qtumconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
+from test_framework.runebaseconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
 
 def deser_uint256(f):
     r = 0

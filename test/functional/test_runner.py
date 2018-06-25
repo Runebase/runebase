@@ -121,43 +121,43 @@ BASE_SCRIPTS= [
     'resendwallettransactions.py',
     'minchainwork.py',
 
-    # qtum
-    'qtum-dgp.py',
-    'qtum-pos.py',
-    'qtum-opcall.py',
-    'qtum-opcreate.py',
-    'qtum-8mb-block.py',
-    'qtum-gas-limit.py',
-    'qtum-searchlog.py',
-    'qtum-pos-segwit.py',
-    'qtum-state-root.py',
-    'qtum-evm-globals.py',
-    'qtum-null-sender.py',
-    'qtum-waitforlogs.py',
-    'qtum-block-header.py',
-    'qtum-callcontract.py',
-    'qtum-spend-op-call.py',
-    'qtum-condensing-txs.py',
-    'qtum-createcontract.py',
-    'qtum-sendtocontract.py',
-    'qtum-identical-refunds.py',
-    'qtum-create-eth-op-code.py',
-    'qtum-gas-limit-overflow.py',
-    'qtum-call-empty-contract.py',
-    'qtum-dgp-block-size-sync.py',
-    'qtum-pos-conflicting-txs.py',
-    'qtum-globals-state-changer.py',
-    'qtum-no-exec-call-disabled.py',
-    'qtum-soft-block-gas-limits.py',
-    'qtum-dgp-block-size-restart.py',
-    'qtum-searchlog-restart-node.py',
-    'qtum-immature-coinstake-spend.py',
-    'qtum-transaction-prioritization.py',
-    'qtum-assign-mpos-fees-to-gas-refund.py',
-    'qtum-ignore-mpos-participant-reward.py',
-    'qtum-many-value-refunds-from-same-tx.py',
-    'qtum-combined-outputs-exceed-gas-limit.py',
-    'qtum-dgp-gas-price-lingering-mempool-tx.py',
+    # runebase
+    'runebase-dgp.py',
+    'runebase-pos.py',
+    'runebase-opcall.py',
+    'runebase-opcreate.py',
+    'runebase-8mb-block.py',
+    'runebase-gas-limit.py',
+    'runebase-searchlog.py',
+    'runebase-pos-segwit.py',
+    'runebase-state-root.py',
+    'runebase-evm-globals.py',
+    'runebase-null-sender.py',
+    'runebase-waitforlogs.py',
+    'runebase-block-header.py',
+    'runebase-callcontract.py',
+    'runebase-spend-op-call.py',
+    'runebase-condensing-txs.py',
+    'runebase-createcontract.py',
+    'runebase-sendtocontract.py',
+    'runebase-identical-refunds.py',
+    'runebase-create-eth-op-code.py',
+    'runebase-gas-limit-overflow.py',
+    'runebase-call-empty-contract.py',
+    'runebase-dgp-block-size-sync.py',
+    'runebase-pos-conflicting-txs.py',
+    'runebase-globals-state-changer.py',
+    'runebase-no-exec-call-disabled.py',
+    'runebase-soft-block-gas-limits.py',
+    'runebase-dgp-block-size-restart.py',
+    'runebase-searchlog-restart-node.py',
+    'runebase-immature-coinstake-spend.py',
+    'runebase-transaction-prioritization.py',
+    'runebase-assign-mpos-fees-to-gas-refund.py',
+    'runebase-ignore-mpos-participant-reward.py',
+    'runebase-many-value-refunds-from-same-tx.py',
+    'runebase-combined-outputs-exceed-gas-limit.py',
+    'runebase-dgp-gas-price-lingering-mempool-tx.py',
 ]
 
 EXTENDED_SCRIPTS = [
@@ -174,7 +174,7 @@ EXTENDED_SCRIPTS = [
     'bip68-sequence.py',
     'getblocktemplate_longpoll.py',
     'p2p-timeouts.py',
-    # Version <4 blocks are never allowed in regtest on qtum
+    # Version <4 blocks are never allowed in regtest on runebase
     'bipdersig-p2p.py',
     'bip65-cltv-p2p.py',
     'p2p-acceptblock.py',
@@ -307,8 +307,8 @@ def main():
 def run_tests(test_list, src_dir, build_dir, exeext, tmpdir, jobs=1, enable_coverage=False, args=[]):
     # Warn if bitcoind is already running (unix only)
     try:
-        if subprocess.check_output(["pidof", "qtumd"]) is not None:
-            print("%sWARNING!%s There is already a qtumd process running on this system. Tests may fail unexpectedly due to resource contention!" % (BOLD[1], BOLD[0]))
+        if subprocess.check_output(["pidof", "runebased"]) is not None:
+            print("%sWARNING!%s There is already a runebased process running on this system. Tests may fail unexpectedly due to resource contention!" % (BOLD[1], BOLD[0]))
     except (OSError, subprocess.SubprocessError):
         pass
 

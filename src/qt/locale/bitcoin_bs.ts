@@ -12,10 +12,10 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>QtumGUI</name>
+    <name>RunebaseGUI</name>
     <message>
-        <source>Qtum</source>
-        <translation>Qtum</translation>
+        <source>Runebase</source>
+        <translation>Runebase</translation>
     </message>
     </context>
 <context>
@@ -154,10 +154,10 @@
     <name>WalletView</name>
     </context>
 <context>
-    <name>qtum-core</name>
+    <name>runebase-core</name>
     <message>
-        <source>Qtum Core</source>
-        <translation>Qtum Jezrga</translation>
+        <source>Runebase Core</source>
+        <translation>Runebase Jezrga</translation>
     </message>
     </context>
 </TS>

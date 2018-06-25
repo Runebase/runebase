@@ -76,7 +76,7 @@
     </message>
 </context>
 <context>
-    <name>QtumGUI</name>
+    <name>RunebaseGUI</name>
     <message>
         <source>Sign &amp;message...</source>
         <translation>Semnează &amp;mesajul...</translation>
@@ -142,8 +142,8 @@
         <translation>Deschide &amp;URI...</translation>
     </message>
     <message>
-        <source>Send coins to a Qtum address</source>
-        <translation>Trimite monedele către o adresă Qtum</translation>
+        <source>Send coins to a Runebase address</source>
+        <translation>Trimite monedele către o adresă Runebase</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -166,8 +166,8 @@
         <translation>&amp;Verifică mesajul...</translation>
     </message>
     <message>
-        <source>Qtum</source>
-        <translation>Qtum</translation>
+        <source>Runebase</source>
+        <translation>Runebase</translation>
     </message>
     <message>
         <source>Wallet</source>
@@ -194,12 +194,12 @@
         <translation>Criptează cheile private care aparțin portofelului tău.</translation>
     </message>
     <message>
-        <source>Sign messages with your Qtum addresses to prove you own them</source>
-        <translation>Semnează mesajele cu adresa ta de Qtum pentru a face dovada că îți aparțin.</translation>
+        <source>Sign messages with your Runebase addresses to prove you own them</source>
+        <translation>Semnează mesajele cu adresa ta de Runebase pentru a face dovada că îți aparțin.</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Qtum addresses</source>
-        <translation>Verifică mesajele cu scopul de a asigura faptul că au fost semnate cu adresa de Qtum specificată.</translation>
+        <source>Verify messages to ensure they were signed with specified Runebase addresses</source>
+        <translation>Verifică mesajele cu scopul de a asigura faptul că au fost semnate cu adresa de Runebase specificată.</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -214,12 +214,12 @@
         <translation>&amp;Ajutor</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and qtum: URIs)</source>
-        <translation>Cerere plată (generează coduri QR și qtum: URIs)</translation>
+        <source>Request payments (generates QR codes and runebase: URIs)</source>
+        <translation>Cerere plată (generează coduri QR și runebase: URIs)</translation>
     </message>
     <message>
-        <source>Open a qtum: URI or payment request</source>
-        <translation>Deschide un qtum: URI sau cerere de plată</translation>
+        <source>Open a runebase: URI or payment request</source>
+        <translation>Deschide un runebase: URI sau cerere de plată</translation>
     </message>
     <message>
         <source>%1 behind</source>
@@ -746,10 +746,10 @@
     <name>WalletView</name>
     </context>
 <context>
-    <name>qtum-core</name>
+    <name>runebase-core</name>
     <message>
-        <source>Qtum Core</source>
-        <translation>Qtum Core</translation>
+        <source>Runebase Core</source>
+        <translation>Runebase Core</translation>
     </message>
     <message>
         <source>Information</source>

@@ -18,7 +18,7 @@ from test_framework.util import (
     connect_nodes_bi,
     sync_blocks,
 )
-from test_framework.qtumconfig import COINBASE_MATURITY
+from test_framework.runebaseconfig import COINBASE_MATURITY
 
 class KeypoolRestoreTest(BitcoinTestFramework):
     def set_test_params(self):

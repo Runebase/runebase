@@ -124,7 +124,7 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>QtumGUI</name>
+    <name>RunebaseGUI</name>
     <message>
         <source>E&amp;xit</source>
         <translation>Çıkış</translation>
@@ -314,7 +314,7 @@
     <name>WalletView</name>
     </context>
 <context>
-    <name>qtum-core</name>
+    <name>runebase-core</name>
     <message>
         <source>Print this help message and exit</source>
         <translation>Bu yardım mesajını yazdır ve çıkış yap</translation>

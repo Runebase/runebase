@@ -10,7 +10,7 @@ that spend (directly or indirectly) coinbase transactions.
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
-from test_framework.qtumconfig import INITIAL_BLOCK_REWARD, COINBASE_MATURITY
+from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD, COINBASE_MATURITY
 
 # Create one-input, one-output, no-fee transaction:
 class MempoolCoinbaseTest(BitcoinTestFramework):

@@ -331,7 +331,7 @@ public:
         return serialize(m_value);
     }
 
-    ///////////////////////////////// qtum
+    ///////////////////////////////// runebase
     static uint64_t vch_to_uint64(const std::vector<unsigned char>& vch)
     {
         if (vch.size() > 8) {
@@ -666,7 +666,7 @@ public:
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
     bool IsPayToScriptHash() const;
-    ///////////////////////////////////////////////// // qtum
+    ///////////////////////////////////////////////// // runebase
     bool IsPayToPubkey() const;
     bool IsPayToPubkeyHash() const;
     /////////////////////////////////////////////////
@@ -690,7 +690,7 @@ public:
         return (size() > 0 && *begin() == OP_RETURN) || (size() > MAX_SCRIPT_SIZE);
     }
 
-    ///////////////////////////////////////// qtum
+    ///////////////////////////////////////// runebase
     bool HasOpCreate() const
     {
         return Find(OP_CREATE) == 1;

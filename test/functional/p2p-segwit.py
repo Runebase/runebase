@@ -10,7 +10,7 @@ from test_framework.util import *
 from test_framework.script import *
 from test_framework.blocktools import create_block, create_coinbase, add_witness_commitment, get_witness_script, WITNESS_COMMITMENT_HEADER
 from test_framework.key import CECKey, CPubKey
-from test_framework.qtumconfig import *
+from test_framework.runebaseconfig import *
 from test_framework.address import *
 import time
 import random

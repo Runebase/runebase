@@ -10,8 +10,8 @@
 #include "util.h"
 #include "utilstrencodings.h"
 
-#include <qtum/qtumstate.h>
-#include <qtum/qtumtransaction.h>
+#include <runebase/runebasestate.h>
+#include <runebase/runebasetransaction.h>
 #include <validation.h>
 
 typedef std::vector<unsigned char> valtype;
@@ -182,7 +182,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<std::v
                 else
                     break;
             }
-            /////////////////////////////////////////////////////////// qtum
+            /////////////////////////////////////////////////////////// runebase
             else if (opcode2 == OP_VERSION)
             {
                 if(0 <= opcode1 && opcode1 <= OP_PUSHDATA4)

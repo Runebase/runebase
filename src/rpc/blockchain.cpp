@@ -149,8 +149,8 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("bits", strprintf("%08x", blockindex->nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
-    result.push_back(Pair("hashStateRoot", blockindex->hashStateRoot.GetHex())); // qtum
-    result.push_back(Pair("hashUTXORoot", blockindex->hashUTXORoot.GetHex())); // qtum
+    result.push_back(Pair("hashStateRoot", blockindex->hashStateRoot.GetHex())); // runebase
+    result.push_back(Pair("hashUTXORoot", blockindex->hashUTXORoot.GetHex())); // runebase
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
@@ -181,8 +181,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("versionHex", strprintf("%08x", block.nVersion)));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
-    result.push_back(Pair("hashStateRoot", block.hashStateRoot.GetHex())); // qtum
-    result.push_back(Pair("hashUTXORoot", block.hashUTXORoot.GetHex())); // qtum
+    result.push_back(Pair("hashStateRoot", block.hashStateRoot.GetHex())); // runebase
+    result.push_back(Pair("hashUTXORoot", block.hashUTXORoot.GetHex())); // runebase
     UniValue txs(UniValue::VARR);
     for(const auto& tx : block.vtx)
     {
@@ -218,7 +218,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     return result;
 }
 
-//////////////////////////////////////////////////////////////////////////// // qtum
+//////////////////////////////////////////////////////////////////////////// // runebase
 UniValue executionResultToJSON(const dev::eth::ExecutionResult& exRes)
 {
     UniValue result(UniValue::VOBJ);
@@ -1009,7 +1009,7 @@ UniValue getblock(const JSONRPCRequest& request)
     return blockToJSON(block, pblockindex, verbosity >= 2);
 }
 
-////////////////////////////////////////////////////////////////////// // qtum
+////////////////////////////////////////////////////////////////////// // runebase
 UniValue callcontract(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 2)
@@ -1039,10 +1039,10 @@ UniValue callcontract(const JSONRPCRequest& request)
     
     dev::Address senderAddress;
     if(request.params.size() == 3){
-        CBitcoinAddress qtumSenderAddress(request.params[2].get_str());
-        if(qtumSenderAddress.IsValid()){
+        CBitcoinAddress runebaseSenderAddress(request.params[2].get_str());
+        if(runebaseSenderAddress.IsValid()){
             CKeyID keyid;
-            qtumSenderAddress.GetKeyID(keyid);
+            runebaseSenderAddress.GetKeyID(keyid);
             senderAddress = dev::Address(HexStr(valtype(keyid.begin(),keyid.end())));
         }else{
             senderAddress = dev::Address(request.params[2].get_str());
@@ -1799,8 +1799,8 @@ UniValue gettxout(const JSONRPCRequest& request)
             "     \"hex\" : \"hex\",        (string) \n"
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
-            "     \"addresses\" : [          (array of string) array of qtum addresses\n"
-            "        \"address\"     (string) qtum address\n"
+            "     \"addresses\" : [          (array of string) array of runebase addresses\n"
+            "        \"address\"     (string) runebase address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"

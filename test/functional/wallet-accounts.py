@@ -15,7 +15,7 @@ RPCs tested are:
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
-from test_framework.qtumconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
+from test_framework.runebaseconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
 
 class WalletAccountsTest(BitcoinTestFramework):
     def set_test_params(self):

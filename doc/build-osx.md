@@ -24,18 +24,18 @@ If you want to build the disk image with `make deploy` (.dmg / optional), you ne
 
 NOTE: Building with Qt4 is still supported, however, could result in a broken UI. Building with Qt5 is recommended.
 
-Build Build Qtum Core
+Build Build Runebase Core
 ------------------------
 
-1. Clone the qtum source code and cd into `qtum`
+1. Clone the runebase source code and cd into `runebase`
 
-        git clone --recursive https://github.com/qtumproject/qtum.git
-        cd qtum
+        git clone --recursive https://github.com/runebase/runebase.git
+        cd runebase
         git submodule update --init --recursive
 
-2.  Build qtum-core:
+2.  Build runebase-core:
 
-    Configure and build the headless qtum binaries as well as the GUI (if Qt is found).
+    Configure and build the headless runebase binaries as well as the GUI (if Qt is found).
 
     You can disable the GUI build by passing `--without-gui` to configure.
 

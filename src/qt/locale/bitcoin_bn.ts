@@ -24,7 +24,7 @@
     <name>BanTableModel</name>
     </context>
 <context>
-    <name>QtumGUI</name>
+    <name>RunebaseGUI</name>
     <message>
         <source>Warning</source>
         <translation>সতর্কতা</translation>
@@ -146,7 +146,7 @@
     <name>WalletView</name>
     </context>
 <context>
-    <name>qtum-core</name>
+    <name>runebase-core</name>
     <message>
         <source>Block creation options:</source>
         <translation>ব্লক তৈরির অপশনগুলো:</translation>

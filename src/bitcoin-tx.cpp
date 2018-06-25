@@ -54,10 +54,10 @@ static int AppInitRawTx(int argc, char* argv[])
     if (argc<2 || gArgs.IsArgSet("-?") || gArgs.IsArgSet("-h") || gArgs.IsArgSet("-help"))
     {
         // First part of help message is specific to this utility
-        std::string strUsage = strprintf(_("%s qtum-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
+        std::string strUsage = strprintf(_("%s runebase-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
             _("Usage:") + "\n" +
-              "  qtum-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded qtum transaction") + "\n" +
-              "  qtum-tx [options] -create [commands]   " + _("Create hex-encoded qtum transaction") + "\n" +
+              "  runebase-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded runebase transaction") + "\n" +
+              "  runebase-tx [options] -create [commands]   " + _("Create hex-encoded runebase transaction") + "\n" +
               "\n";
 
         fprintf(stdout, "%s", strUsage.c_str());

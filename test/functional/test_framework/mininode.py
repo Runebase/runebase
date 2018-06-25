@@ -36,7 +36,7 @@ from threading import RLock, Thread
 
 from test_framework.siphash import siphash256
 from test_framework.util import hex_str_to_bytes, bytes_to_hex_str, wait_until
-from test_framework.qtumconfig import INITIAL_HASH_UTXO_ROOT, INITIAL_HASH_STATE_ROOT
+from test_framework.runebaseconfig import INITIAL_HASH_UTXO_ROOT, INITIAL_HASH_STATE_ROOT
 
 BIP0031_VERSION = 60000
 MY_VERSION = 70016  # past bip-31 for ping/pong

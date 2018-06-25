@@ -5,7 +5,7 @@
 """Test the importprunedfunds and removeprunedfunds RPCs."""
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
-from test_framework.qtumconfig import COINBASE_MATURITY
+from test_framework.runebaseconfig import COINBASE_MATURITY
 
 class ImportPrunedFundsTest(BitcoinTestFramework):
     def set_test_params(self):
