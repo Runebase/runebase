@@ -123,7 +123,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
-        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase produces 100 coins/block for 1000 years, no halving
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac");
         consensus.BIP65Height = 0; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
@@ -224,7 +224,7 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase produces 100 coins/block for 1000 years, no halving
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b");
         consensus.BIP65Height = 0; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
@@ -361,7 +361,7 @@ public:
         nPruneAfterHeight = 1000;
         startNewChain = false;
 
-        genesis = CreateGenesisBlock(1529489027, 0, 0x207fffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1529489027, 0, 0x207fffff, 1, 100 * COIN);
 
         if (startNewChain)
             MineGenesis(genesis, consensus.powLimit, true);
