@@ -57,8 +57,8 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
  */
 static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
-    const char* pszTimestamp = "Sep 02, 2017 Bitcoin breaks $5,000 in latest price frenzy";
-    const CScript genesisOutputScript = CScript() << ParseHex("040d61d8653448c98731ee5fffd303c15e71ec2057b77f11ab3601979728cdaff2d68afbba14e4fa0bc44f2072b0b23ef63717f8cdfbe58dcd33f32b6afe98741a") << OP_CHECKSIG;
+    const char* pszTimestamp = "Blockchain could be game changer in sustainable development goals";
+    const CScript genesisOutputScript = CScript() << ParseHex("04b6ce0b255740891c56ac3b298695bad5449dcc216259f79a5fab81c18f7f3fcd5e9c1471b4c7eb7df6a94ed71aee6255be9a18d75c0dc59c9392c6a1cba2e515") << OP_CHECKSIG;
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
 
@@ -123,15 +123,15 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
-        consensus.nSubsidyHalvingInterval = 985500; // runebase halving every 4 years
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
         consensus.BIP34Height = 0;
-        consensus.BIP34Hash = uint256S("0x0000c2a7473c208ffc7fa57e3b847632fd146dfc40b0ab59e67e7af57497e482");
+        consensus.BIP34Hash = uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac");
         consensus.BIP65Height = 0; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
         consensus.BIP66Height = 0; // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 16 * 60; // 16 minutes
-        consensus.nPowTargetSpacing = 2 * 64;
+        consensus.nPowTargetTimespan = 8 * 60; // 16 minutes
+        consensus.nPowTargetSpacing = 1 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = true;
         consensus.fPoSNoRetargeting = false;
@@ -152,41 +152,41 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000036a70ae675b98824c5"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x0000c2a7473c208ffc7fa57e3b847632fd146dfc40b0ab59e67e7af57497e482"); //453354
+        consensus.defaultAssumeValid = uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac"); //453354
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xf1;
-        pchMessageStart[1] = 0xcf;
-        pchMessageStart[2] = 0xa6;
-        pchMessageStart[3] = 0xd3;
-        nDefaultPort = 3888;
+        pchMessageStart[0] = 0xcf;
+        pchMessageStart[1] = 0xf1;
+        pchMessageStart[2] = 0xd3;
+        pchMessageStart[3] = 0xa6;
+        nDefaultPort = 9947;
         nPruneAfterHeight = 100000;
         startNewChain = false;
 
-        genesis = CreateGenesisBlock(1527793924, 134786, 0x1f00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1529759686, 129176, 0x1f00ffff, 1, 100 * COIN);
 
         if (startNewChain)
             MineGenesis(genesis, consensus.powLimit, true);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x0000c2a7473c208ffc7fa57e3b847632fd146dfc40b0ab59e67e7af57497e482"));
-        assert(genesis.hashMerkleRoot == uint256S("0xed34050eb5909ee535fcb07af292ea55f3d2f291187617b44d3282231405b96d"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac"));
+        assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
 
         // Note that of those with the service bits flag, most only support a subset of possible options
-        vSeeds.emplace_back("runebase3.dynu.net", false); // Runebase mainnet
+        vSeeds.emplace_back("dnsseed.runebase.io", false); // Runebase mainnet
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,58);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,50);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,128);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,123);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,216);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x86, 0xc2, 0x2e};
+        base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x86, 0xdc, 0xf1};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -196,18 +196,18 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                { 0, uint256S("0x0000c2a7473c208ffc7fa57e3b847632fd146dfc40b0ab59e67e7af57497e482")},
+                { 0, uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block a1bab8db27f26952ce94fff6563931943554e36fc3a23f99cc8513270d685b2c (height 92662)
-            1517516912, // * UNIX timestamp of last known number of transactions
-            904678, // * total number of transactions between genesis and that timestamp
+            0, // * UNIX timestamp of last known number of transactions
+            0, // * total number of transactions between genesis and that timestamp
                             //   (the tx=... number in the SetBestChain debug.log lines)
             0.125 // * estimated number of transactions per second after that timestamp
         };
-        consensus.nLastPOWBlock = 5000;
+        consensus.nLastPOWBlock = 2000;
         consensus.nMPoSRewardRecipients = 10;
         consensus.nFirstMPoSBlock = consensus.nLastPOWBlock + 
                                     consensus.nMPoSRewardRecipients + 
@@ -224,15 +224,15 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nSubsidyHalvingInterval = 985500; // runebase halving every 4 years
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
         consensus.BIP34Height = 0;
-        consensus.BIP34Hash = uint256S("0x0000d33e8f112f4474f9c03e7fecd13a4c6f0e0216a8c5d0c783370038bf2a91");
+        consensus.BIP34Hash = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b");
         consensus.BIP65Height = 0; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 0; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 16 * 60; // 16 minutes
-        consensus.nPowTargetSpacing = 2 * 64;
+        consensus.nPowTargetTimespan = 8 * 60; // 16 minutes
+        consensus.nPowTargetSpacing = 1 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = true;
         consensus.fPoSNoRetargeting = false;
@@ -253,38 +253,38 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000d6e528bcf5a3a556f"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x0000d33e8f112f4474f9c03e7fecd13a4c6f0e0216a8c5d0c783370038bf2a91"); //1079274
+        consensus.defaultAssumeValid = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"); //1079274
 
-        pchMessageStart[0] = 0x0d;
-        pchMessageStart[1] = 0x22;
-        pchMessageStart[2] = 0x15;
-        pchMessageStart[3] = 0x06;
-        nDefaultPort = 13888;
+        pchMessageStart[0] = 0xac;
+        pchMessageStart[1] = 0xb2;
+        pchMessageStart[2] = 0xd5;
+        pchMessageStart[3] = 0x2d;
+        nDefaultPort = 19947;
         nPruneAfterHeight = 1000;
         startNewChain = false;
 
-        genesis = CreateGenesisBlock(1527794455, 36776, 0x1f00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1529488943, 13021, 0x1f00ffff, 1, 100 * COIN);
 
         if (startNewChain)
             MineGenesis(genesis, consensus.powLimit, true);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x0000d33e8f112f4474f9c03e7fecd13a4c6f0e0216a8c5d0c783370038bf2a91"));
-        assert(genesis.hashMerkleRoot == uint256S("0xed34050eb5909ee535fcb07af292ea55f3d2f291187617b44d3282231405b96d"));
+        assert(consensus.hashGenesisBlock == uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"));
+        assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
-        vSeeds.emplace_back("runebase4.dynu.net", false); // Runebase testnet
+        vSeeds.emplace_back("dnsseed-testnet.runebase.io", false); // Runebase testnet
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,120);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,110);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,11);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,106);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,229);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x37, 0x82, 0xbf};
+        base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x37, 0x84, 0xa4};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
@@ -295,7 +295,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                {0, uint256S("0000d33e8f112f4474f9c03e7fecd13a4c6f0e0216a8c5d0c783370038bf2a91")},
+                {0, uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b")},
             }
         };
 
@@ -306,7 +306,7 @@ public:
             0.0132
         };
 
-        consensus.nLastPOWBlock = 5000;
+        consensus.nLastPOWBlock = 2000;
         consensus.nMPoSRewardRecipients = 10;
         consensus.nFirstMPoSBlock = consensus.nLastPOWBlock + 
                                     consensus.nMPoSRewardRecipients + 
@@ -323,15 +323,15 @@ class CRegTestParams : public CChainParams {
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
-        consensus.nSubsidyHalvingInterval = 150;
+        consensus.nSubsidyHalvingInterval = 525960000;
         consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests) // activate for runebase
-        consensus.BIP34Hash = uint256S("0x694acfe226445305d3eb178332fe0f8b03ef21c7e761efe8dfd471ea541dec77");
+        consensus.BIP34Hash = uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c");
         consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in rpc activation tests)
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 16 * 60; // 16 minutes
-        consensus.nPowTargetSpacing = 2 * 64;
+        consensus.nPowTargetTimespan = 8 * 60; // 16 minutes
+        consensus.nPowTargetSpacing = 1 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
         consensus.fPoSNoRetargeting = true;
@@ -353,22 +353,22 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00");
 
-        pchMessageStart[0] = 0xfd;
-        pchMessageStart[1] = 0xdd;
-        pchMessageStart[2] = 0xc6;
-        pchMessageStart[3] = 0xe1;
-        nDefaultPort = 23888;
+        pchMessageStart[0] = 0xaa;
+        pchMessageStart[1] = 0xbd;
+        pchMessageStart[2] = 0xaf;
+        pchMessageStart[3] = 0xd1;
+        nDefaultPort = 29947;
         nPruneAfterHeight = 1000;
         startNewChain = false;
 
-        genesis = CreateGenesisBlock(1527794906, 0, 0x207fffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1529489027, 0, 0x207fffff, 1, 50 * COIN);
 
         if (startNewChain)
             MineGenesis(genesis, consensus.powLimit, true);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x694acfe226445305d3eb178332fe0f8b03ef21c7e761efe8dfd471ea541dec77"));
-        assert(genesis.hashMerkleRoot == uint256S("0xed34050eb5909ee535fcb07af292ea55f3d2f291187617b44d3282231405b96d"));
+        assert(consensus.hashGenesisBlock == uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c"));
+        assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
 
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
@@ -379,7 +379,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                {0, uint256S("0x694acfe226445305d3eb178332fe0f8b03ef21c7e761efe8dfd471ea541dec77")},
+                {0, uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c")},
             }
         };
 
@@ -394,11 +394,11 @@ public:
 
         consensus.nFixUTXOCacheHFHeight=0;
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,120);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,110);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,113);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,123);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,202);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x39, 0x81, 0xab};
+        base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x39, 0x85, 0x2c};
     }
 };
 
