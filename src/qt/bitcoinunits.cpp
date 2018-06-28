@@ -40,9 +40,9 @@ QString BitcoinUnits::name(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("RUNEBASE");
-    case mBTC: return QString("mRUNEBASE");
-    case uBTC: return QString::fromUtf8("μRUNEBASE");
+    case BTC: return QString("Runes");
+    case mBTC: return QString("Chunks");
+    case uBTC: return QString::fromUtf8("Chips");
     default: return QString("???");
     }
 }
@@ -51,7 +51,7 @@ QString BitcoinUnits::description(int unit)
 {
     switch(unit)
     {
-    case BTC: return QString("Runebases");
+    case BTC: return QString("Runes");
     case mBTC: return QString("Milli-Runebases (1 / 1" THIN_SP_UTF8 "000)");
     case uBTC: return QString("Micro-Runebases (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
     default: return QString("???");
