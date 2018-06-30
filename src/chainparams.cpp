@@ -325,7 +325,7 @@ public:
         strNetworkID = "regtest";
         consensus.nSubsidyHalvingInterval = 525960000;
         consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests) // activate for runebase
-        consensus.BIP34Hash = uint256S("0x665ed5b402ac0b44efc37d8926332994363e8a7278b7ee9a58fb972efadae943");
+        consensus.BIP34Hash = uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c");
         consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in rpc activation tests)
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -367,7 +367,7 @@ public:
             MineGenesis(genesis, consensus.powLimit, true);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x665ed5b402ac0b44efc37d8926332994363e8a7278b7ee9a58fb972efadae943"));
+        assert(consensus.hashGenesisBlock == uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c"));
         assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
 
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
@@ -379,7 +379,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                {0, uint256S("0x665ed5b402ac0b44efc37d8926332994363e8a7278b7ee9a58fb972efadae943")},
+                {0, uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c")},
             }
         };
 
