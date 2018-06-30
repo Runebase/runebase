@@ -125,7 +125,7 @@ public:
         strNetworkID = "main";
         consensus.nSubsidyHalvingInterval = 525960000; // runebase produces 100 coins/block for 1000 years, no halving
         consensus.BIP34Height = 0;
-        consensus.BIP34Hash = uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac");
+        consensus.BIP34Hash = uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd");
         consensus.BIP65Height = 0; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
         consensus.BIP66Height = 0; // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -155,7 +155,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac"); //453354
+        consensus.defaultAssumeValid = uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd"); //453354
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -170,13 +170,13 @@ public:
         nPruneAfterHeight = 100000;
         startNewChain = false;
 
-        genesis = CreateGenesisBlock(1529759686, 129176, 0x1f00ffff, 1, 100 * COIN);
+        genesis = CreateGenesisBlock(1530246365, 192857, 0x1f00ffff, 1, 100 * COIN);
 
         if (startNewChain)
             MineGenesis(genesis, consensus.powLimit, true);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac"));
+        assert(consensus.hashGenesisBlock == uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd"));
         assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
 
         // Note that of those with the service bits flag, most only support a subset of possible options
@@ -196,7 +196,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                { 0, uint256S("0x000037838add5d4057818642f42da29e743a6768ef6cb22b73327bbbe9e837ac")},
+                { 0, uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd")},
             }
         };
 
@@ -325,7 +325,7 @@ public:
         strNetworkID = "regtest";
         consensus.nSubsidyHalvingInterval = 525960000;
         consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests) // activate for runebase
-        consensus.BIP34Hash = uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c");
+        consensus.BIP34Hash = uint256S("0x665ed5b402ac0b44efc37d8926332994363e8a7278b7ee9a58fb972efadae943");
         consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in rpc activation tests)
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -367,7 +367,7 @@ public:
             MineGenesis(genesis, consensus.powLimit, true);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c"));
+        assert(consensus.hashGenesisBlock == uint256S("0x665ed5b402ac0b44efc37d8926332994363e8a7278b7ee9a58fb972efadae943"));
         assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
 
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
@@ -379,7 +379,7 @@ public:
 
         checkpointData = (CCheckpointData) {
             {
-                {0, uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c")},
+                {0, uint256S("0x665ed5b402ac0b44efc37d8926332994363e8a7278b7ee9a58fb972efadae943")},
             }
         };
 
