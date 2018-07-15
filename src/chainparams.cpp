@@ -155,7 +155,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd"); //453354
+        consensus.defaultAssumeValid = uint256S("0x0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33"); //10000
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -197,13 +197,15 @@ public:
         checkpointData = (CCheckpointData) {
             {
                 { 0, uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd")},
+                { 2000, uint256S("0x000055c6564a20bd1072d78d97cbe0bcd11af83d0f6ce9287f1bafaec77ef09b")}, //END POW
+                { 10000, uint256S("0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block a1bab8db27f26952ce94fff6563931943554e36fc3a23f99cc8513270d685b2c (height 92662)
-            0, // * UNIX timestamp of last known number of transactions
-            0, // * total number of transactions between genesis and that timestamp
+            1531648160, // * UNIX timestamp of last known number of transactions
+            19236, // * total number of transactions between genesis and that timestamp
                             //   (the tx=... number in the SetBestChain debug.log lines)
             0.125 // * estimated number of transactions per second after that timestamp
         };
@@ -253,10 +255,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000fbd763a853b4722"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"); //1079274
+        consensus.defaultAssumeValid = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"); //10000
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
