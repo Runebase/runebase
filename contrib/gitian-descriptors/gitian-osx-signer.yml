@@ -7,7 +7,7 @@ architectures:
 packages:
 - "faketime"
 remotes:
-- "url": "https://github.com/runebaseproject/runebase-detached-sigs.git"
+- "url": "https://github.com/runebase/runebase-detached-sigs.git"
   "dir": "signature"
 files:
 - "runebase-osx-unsigned.tar.gz"

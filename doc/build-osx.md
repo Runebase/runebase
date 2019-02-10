@@ -43,7 +43,7 @@ Build Runebase Core
 
 1. Clone the Runebase Core source code and cd into `runebase`
 
-        git clone --recursive https://github.com/runebaseproject/runebase.git
+        git clone --recursive https://github.com/runebase/runebase.git
         cd runebase
         git submodule update --init --recursive
 

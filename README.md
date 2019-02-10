@@ -21,7 +21,7 @@ These are some resources that might be helpful in understanding Runebase. Note t
 
 Basic usage resources:
 
-* [Official Runebase Usage Guide](https://github.com/runebaseproject/runebase/wiki/Runebase-Wallet-Tutorial)
+* [Official Runebase Usage Guide](https://github.com/runebase/runebase/wiki/Runebase-Wallet-Tutorial)
 * [Unofficial Runebase staking tutorial](https://steemit.com/runebase/@cryptominder/runebase-staking-tutorial-using-runebase-qt)
 * [Unofficial Runebase staking tutorial on Raspberry Pi](https://steemit.com/runebase/@cryptominder/runebase-staking-tutorial-using-runebased-on-a-raspberry-pi-3)
 * [Unofficial Runebase staking tutorial on AWS EC2](https://github.com/aaronmboyd/runebase-staking-on-aws-ec2)
@@ -34,7 +34,7 @@ Development resources:
 * [Deploying a custom token to Runebase](https://blog.runebase.org/runebase-custom-token-walkthrough-467d725fa27d)
 * [Early example faucet contract](http://earlz.net/view/2017/06/30/2144/the-runebase-sparknet-faucet)
 * [Unofficial Runebase Hello World tutorial](https://steemit.com/runebase/@cryptominder/quantum-runebase-blockchain-developer-tutorial-hello-world)
-* [Runebase Book - A Developer's Guide To RUNEBASE](https://github.com/runebaseproject/runebasebook)
+* [Runebase Book - A Developer's Guide To RUNEBASE](https://github.com/runebase/runebasebook)
 
 General Info about Runebase:
 
@@ -47,17 +47,17 @@ Developer's Tools
 -----------------
 
 * Smart contract deployment tool
-  * https://github.com/runebaseproject/solar
+  * https://github.com/runebase/solar
 * DApp JavaScript Library
-  * https://github.com/runebaseproject/runebasejs
+  * https://github.com/runebase/runebasejs
 * A toolkit for building runebase light wallets
-  * https://github.com/runebaseproject/runebasejs-wallet
+  * https://github.com/runebase/runebasejs-wallet
 * CORS runebased RPC proxy for DApp
-  * https://github.com/runebaseproject/runebaseportal
+  * https://github.com/runebase/runebaseportal
 * Docker images for running runebase services
-  * https://github.com/runebaseproject/runebase-docker
+  * https://github.com/runebase/runebase-docker
 * HTTP API that powers the block explorer and the RUNEBASE web wallet
-  * https://github.com/runebaseproject/insight-api
+  * https://github.com/runebase/insight-api
 
 
 What is Runebase Core?
@@ -85,7 +85,7 @@ Runebase Core uses a full node model, and thus requires downloading the entire b
 
 A light wallet that supports the Ledger hardware wallet and is based on the well known Electrum wallet software. 
 
-Download: https://github.com/runebaseproject/runebase-electrum/releases
+Download: https://github.com/runebase/runebase-electrum/releases
 
 ### iOS and Android Wallets
 
@@ -93,7 +93,7 @@ These wallets run on mobile devices and synchronize quickly.
 
 Android Download: https://play.google.com/store/apps/details?id=org.runebase.wallet
 
-iOS Download: https://github.com/runebaseproject/runebase-ios (open source, we are still working with Apple to get approval for their app store)
+iOS Download: https://github.com/runebase/runebase-ios (open source, we are still working with Apple to get approval for their app store)
 
 ### Ledger Chrome Wallet
 
@@ -119,7 +119,7 @@ Building Runebase Core
     # If you want to build the Qt GUI:
     sudo apt-get install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler qrencode
 
-    git clone https://github.com/runebaseproject/runebase --recursive
+    git clone https://github.com/runebase/runebase --recursive
     cd runebase
 
     # Note autogen will prompt to install some more dependencies if needed
@@ -129,7 +129,7 @@ Building Runebase Core
     
 ### Build on CentOS
 
-Here is a brief description for compiling Runebase on CentOS, for more details please refer to [the specific document](https://github.com/runebaseproject/runebase/blob/master/doc/build-unix.md)
+Here is a brief description for compiling Runebase on CentOS, for more details please refer to [the specific document](https://github.com/runebase/runebase/blob/master/doc/build-unix.md)
 
     # Compiling boost manually
     sudo yum install python-devel bzip2-devel
@@ -149,7 +149,7 @@ Here is a brief description for compiling Runebase on CentOS, for more details p
     sudo yum install qt5-qttools-devel protobuf-devel qrencode-devel
     
     # Building Runebase
-    git clone --recursive https://github.com/runebaseproject/runebase.git
+    git clone --recursive https://github.com/runebase/runebase.git
     cd runebase
     ./autogen.sh
     ./configure
@@ -180,7 +180,7 @@ NOTE: Building with Qt4 is still supported, however, could result in a broken UI
 
 1. Clone the runebase source code and cd into `runebase`
 
-        git clone --recursive https://github.com/runebaseproject/runebase.git
+        git clone --recursive https://github.com/runebase/runebase.git
         cd runebase
 
 2.  Build runebase-core:
@@ -213,7 +213,7 @@ Development Process
 -------------------
 
 The `master` branch is regularly built and tested, but is not guaranteed to be
-completely stable. [Tags](https://github.com/runebaseproject/runebase/tags) are created
+completely stable. [Tags](https://github.com/runebase/runebase/tags) are created
 regularly to indicate new official, stable release versions of Runebase.
 
 The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).

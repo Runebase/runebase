@@ -28,9 +28,9 @@ packages:
 - "python-setuptools"
 - "fonts-tuffy"
 remotes:
-- "url": "https://github.com/runebaseproject/runebase.git"
+- "url": "https://github.com/runebase/runebase.git"
   "dir": "runebase"
-- "url": "https://github.com/runebaseproject/cpp-eth-runebase.git"
+- "url": "https://github.com/runebase/cpp-eth-runebase.git"
   "dir": "cpp-eth-runebase"
 files:
 - "MacOSX10.11.sdk.tar.gz"

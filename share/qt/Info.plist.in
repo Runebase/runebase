@@ -38,7 +38,7 @@
   <true/>
 
   <key>CFBundleIdentifier</key>
-  <string>org.runebaseproject.Runebase-Qt</string>
+  <string>org.runebase.Runebase-Qt</string>
 
   <key>CFBundleURLTypes</key>
   <array>

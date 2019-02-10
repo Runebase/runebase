@@ -24,7 +24,7 @@ See [dependencies.md](dependencies.md) for a complete overview.
 
 Download the source code:
 ```
-git clone https://github.com/runebaseproject/runebase --recursive
+git clone https://github.com/runebase/runebase --recursive
 ```
 
 ## Building Runebase Core
