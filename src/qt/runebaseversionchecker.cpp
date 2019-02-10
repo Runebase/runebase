@@ -1,5 +1,5 @@
-#include "runebaseversionchecker.h"
-#include "../clientversion.h"
+#include <qt/runebaseversionchecker.h>
+#include <clientversion.h>
 
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>

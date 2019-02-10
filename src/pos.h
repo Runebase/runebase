@@ -1,20 +1,20 @@
 // Copyright (c) 2012-2013 The PPCoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef RUNEBASE_POS_H
-#define RUNEBASE_POS_H
+#ifndef QUANTUM_POS_H
+#define QUANTUM_POS_H
 
-#include "chain.h"
-#include "primitives/transaction.h"
-#include "consensus/validation.h"
-#include "txdb.h"
-#include "validation.h"
-#include "arith_uint256.h"
-#include "hash.h"
-#include "timedata.h"
-#include "chainparams.h"
-#include "script/sign.h"
-#include "consensus/consensus.h"
+#include <chain.h>
+#include <primitives/transaction.h>
+#include <consensus/validation.h>
+#include <txdb.h>
+#include <validation.h>
+#include <arith_uint256.h>
+#include <hash.h>
+#include <timedata.h>
+#include <chainparams.h>
+#include <script/sign.h>
+#include <consensus/consensus.h>
 
 // To decrease granularity of timestamp
 // Supposed to be 2^n-1
@@ -49,4 +49,4 @@ bool CheckCoinStakeTimestamp(uint32_t nTimeBlock);
 bool CheckKernel(CBlockIndex* pindexPrev, unsigned int nBits, uint32_t nTimeBlock, const COutPoint& prevout, CCoinsViewCache& view);
 bool CheckKernel(CBlockIndex* pindexPrev, unsigned int nBits, uint32_t nTimeBlock, const COutPoint& prevout, CCoinsViewCache& view, const std::map<COutPoint, CStakeCache>& cache);
 
-#endif // RUNEBASE_POS_H
+#endif // QUANTUM_POS_H

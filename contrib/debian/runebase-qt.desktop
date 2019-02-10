@@ -1,5 +1,5 @@
 [Desktop Entry]
-Encoding=UTF-8
+Version=1.0
 Name=Bitcoin Core
 Comment=Connect to the Runebase P2P Network
 Exec=runebase-qt %u
@@ -8,3 +8,5 @@ Type=Application
 Icon=runebase128
 MimeType=x-scheme-handler/runebase;
 Categories=Office;Finance;
+StartupWMClass=Runebase-qt
+Name[en_US]=runebase-qt

@@ -1,8 +1,8 @@
 #include <sstream>
 #include <util.h>
 #include <validation.h>
-#include "chainparams.h"
-#include "runebasestate.h"
+#include <chainparams.h>
+#include <runebase/runebasestate.h>
 
 using namespace std;
 using namespace dev;

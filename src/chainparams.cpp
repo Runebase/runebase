@@ -1,19 +1,19 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2009-2018 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chainparams.h"
-#include "consensus/merkle.h"
-#include "consensus/consensus.h"
+#include <chainparams.h>
+#include <consensus/merkle.h>
+#include <consensus/consensus.h>
 
-#include "tinyformat.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include <tinyformat.h>
+#include <util.h>
+#include <utilstrencodings.h>
 
 #include <assert.h>
 
-#include "chainparamsseeds.h"
+#include <chainparamsseeds.h>
 
 ///////////////////////////////////////////// // runebase
 #include <libdevcore/SHA3.h>
@@ -62,46 +62,6 @@ static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
 
-static void MineGenesis(CBlockHeader& genesisBlock, const uint256& powLimit, bool noProduction)
-{
-    if(noProduction)
-        genesisBlock.nTime = std::time(0);
-    genesisBlock.nNonce = 0;
-
-    printf("NOTE: Genesis nTime = %u \n", genesisBlock.nTime);
-    printf("WARN: Genesis nNonce (BLANK!) = %u \n", genesisBlock.nNonce);
-
-    arith_uint256 besthash;
-    memset(&besthash,0xFF,32);
-    arith_uint256 hashTarget = UintToArith256(powLimit);
-    printf("Target: %s\n", hashTarget.GetHex().c_str());
-    arith_uint256 newhash = UintToArith256(genesisBlock.GetHash());
-    while (newhash > hashTarget) {
-        genesisBlock.nNonce++;
-        if (genesisBlock.nNonce == 0) {
-            printf("NONCE WRAPPED, incrementing time\n");
-            ++genesisBlock.nTime;
-        }
-        // If nothing found after trying for a while, print status
-        if ((genesisBlock.nNonce & 0xfff) == 0)
-            printf("nonce %08X: hash = %s (target = %s)\n",
-                   genesisBlock.nNonce, newhash.ToString().c_str(),
-                   hashTarget.ToString().c_str());
-
-        if(newhash < besthash) {
-            besthash = newhash;
-            printf("New best: %s\n", newhash.GetHex().c_str());
-        }
-        newhash = UintToArith256(genesisBlock.GetHash());
-    }
-    printf("Genesis nTime = %u \n", genesisBlock.nTime);
-    printf("Genesis nNonce = %u \n", genesisBlock.nNonce);
-    printf("Genesis nBits: %08x\n", genesisBlock.nBits);
-    printf("Genesis Hash = %s\n", newhash.ToString().c_str());
-    printf("Genesis hashStateRoot = %s\n", genesisBlock.hashStateRoot.ToString().c_str());
-    printf("Genesis Hash Merkle Root = %s\n", genesisBlock.hashMerkleRoot.ToString().c_str());
-}
-
 void CChainParams::UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
 {
     consensus.vDeployments[d].nStartTime = nStartTime;
@@ -123,7 +83,8 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
-        consensus.nSubsidyHalvingInterval = 525960000; // runebase produces 100 coins/block for 1000 years, no halving
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
+        consensus.BIP16Exception = uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd");
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd");
         consensus.BIP65Height = 0; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
@@ -155,7 +116,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000005725c66dbc277bc6"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33"); //10000
+        consensus.defaultAssumeValid = uint256S("0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33"); //253809
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -168,22 +129,21 @@ public:
         pchMessageStart[3] = 0xa6;
         nDefaultPort = 9947;
         nPruneAfterHeight = 100000;
-        startNewChain = false;
 
         genesis = CreateGenesisBlock(1530246365, 192857, 0x1f00ffff, 1, 100 * COIN);
-
-        if (startNewChain)
-            MineGenesis(genesis, consensus.powLimit, true);
-
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd"));
         assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
 
-        // Note that of those with the service bits flag, most only support a subset of possible options
-        vSeeds.emplace_back("dnsseed.runebase.io", false); // Runebase mainnet
-        vSeeds.emplace_back("dnsseed2.runebase.io", false); // Runebase mainnet
-        vSeeds.emplace_back("dnsseed3.runebase.io", false); // Runebase mainnet
-        vSeeds.emplace_back("dnsseed4.runebase.io", false); // Runebase mainnet
+        // Note that of those which support the service bits prefix, most only support a subset of
+        // possible options.
+        // This is fine at runtime as we'll fall back to using them as a oneshot if they don't support the
+        // service bits we want, but we should get them updated to support all service bits wanted by any
+        // release ASAP to avoid it where possible.
+        vSeeds.emplace_back("dnsseed.runebase.io"); // Runebase mainnet
+        vSeeds.emplace_back("dnsseed2.runebase.io"); // Runebase mainnet
+        vSeeds.emplace_back("dnsseed3.runebase.io"); // Runebase mainnet
+        vSeeds.emplace_back("dnsseed4.runebase.io"); // Runebase mainnet
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,123);
@@ -191,13 +151,15 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x86, 0xc2, 0x2e};
         base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x86, 0xdc, 0xf1};
 
+        bech32_hrp = "qc";
+
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
 
-        checkpointData = (CCheckpointData) {
+        checkpointData = {
             {
                 { 0, uint256S("0x0000c5edbe6f9c21b0c77e568b8339dc5e8ffdf78fe14fd3b1a2ea51c7f710fd")},
                 { 2000, uint256S("0x000078083638b47e82675d657be9a31f7d36119186fb14bfee72fe3e6d78d488")}, //END POW
@@ -207,16 +169,20 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data as of block a1bab8db27f26952ce94fff6563931943554e36fc3a23f99cc8513270d685b2c (height 92662)
-            1534230928, // * UNIX timestamp of last known number of transactions
-            41295, // * total number of transactions between genesis and that timestamp
+            // Data as of block 3e76a9f460f5df039f828e3c259da03e1b4e1ec883cbf687a228e346cc457360 (height 253817)
+        	1534230928, // * UNIX timestamp of last known number of transactions
+			41295, // * total number of transactions between genesis and that timestamp
                             //   (the tx=... number in the SetBestChain debug.log lines)
-            0.125 // * estimated number of transactions per second after that timestamp
+			0.125 // * estimated number of transactions per second after that timestamp
         };
+
+        /* disable fallback fee on mainnet */
+        m_fallback_fee_enabled = false;
+
         consensus.nLastPOWBlock = 2000;
         consensus.nMPoSRewardRecipients = 10;
-        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock + 
-                                    consensus.nMPoSRewardRecipients + 
+        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
+                                    consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
 
         consensus.nFixUTXOCacheHFHeight=100000;
@@ -230,7 +196,8 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nSubsidyHalvingInterval = 525960000; // runebase produces 100 coins/block for 1000 years, no halving
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
+        consensus.BIP16Exception = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b");
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b");
         consensus.BIP65Height = 0; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
@@ -262,7 +229,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x0000"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"); //10000
+        consensus.defaultAssumeValid = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"); //224905
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
@@ -270,13 +237,8 @@ public:
         pchMessageStart[3] = 0x2d;
         nDefaultPort = 19947;
         nPruneAfterHeight = 1000;
-        startNewChain = false;
 
         genesis = CreateGenesisBlock(1529488943, 13021, 0x1f00ffff, 1, 100 * COIN);
-
-        if (startNewChain)
-            MineGenesis(genesis, consensus.powLimit, true);
-
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"));
         assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
@@ -284,13 +246,15 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
-        vSeeds.emplace_back("dnsseed-testnet.runebase.io", false); // Runebase testnet
+        vSeeds.emplace_back("dnsseed-testnet.runebase.io"); // Runebase testnet
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,11);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,106);
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,229);
         base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x37, 0x82, 0xbf};
         base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x37, 0x84, 0xa4};
+
+        bech32_hrp = "tq";
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
@@ -299,23 +263,26 @@ public:
         fMineBlocksOnDemand = false;
 
 
-        checkpointData = (CCheckpointData) {
+        checkpointData = {
             {
                 {0, uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b")},
             }
         };
 
         chainTxData = ChainTxData{
-            // Data as of block 493cccf2ba87ffdabd7afc0f3242c1357fdebdc0b8c7e7adc3c6dc2b1c8ca797 (height 79167)
-            0,
-            0,
-            0.0132
+            // Data as of block 2820e75dd90210a1dcf59efe839a1e5f212e272c6bcb7fd94e749f5e01822813 (height 239905)
+        	0,
+			0,
+			0.0132
         };
+
+        /* enable fallback fee on testnet */
+        m_fallback_fee_enabled = true;
 
         consensus.nLastPOWBlock = 2000;
         consensus.nMPoSRewardRecipients = 10;
-        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock + 
-                                    consensus.nMPoSRewardRecipients + 
+        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
+                                    consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
 
         consensus.nFixUTXOCacheHFHeight=84500;
@@ -330,6 +297,7 @@ public:
     CRegTestParams() {
         strNetworkID = "regtest";
         consensus.nSubsidyHalvingInterval = 525960000;
+        consensus.BIP16Exception = uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c");
         consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests) // activate for runebase
         consensus.BIP34Hash = uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c");
         consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in rpc activation tests)
@@ -365,13 +333,8 @@ public:
         pchMessageStart[3] = 0xd1;
         nDefaultPort = 29947;
         nPruneAfterHeight = 1000;
-        startNewChain = false;
 
         genesis = CreateGenesisBlock(1529489027, 0, 0x207fffff, 1, 100 * COIN);
-
-        if (startNewChain)
-            MineGenesis(genesis, consensus.powLimit, true);
-
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c"));
         assert(genesis.hashMerkleRoot == uint256S("0x888d6221b2a94c236c3b368dc9e212832ae59b55190cf2d0ed35feddb7afe5c3"));
@@ -383,7 +346,7 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = true;
 
-        checkpointData = (CCheckpointData) {
+        checkpointData = {
             {
                 {0, uint256S("0x2cbfc08d58d4f2f9d4e400604b4186e30a5fb5fbd15a03d66b2b290c9afa764c")},
             }
@@ -405,6 +368,11 @@ public:
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,202);
         base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x39, 0x81, 0xab};
         base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x39, 0x85, 0x2c};
+
+        bech32_hrp = "qcrt";
+
+        /* enable fallback fee on regtest */
+        m_fallback_fee_enabled = true;
     }
 };
 
@@ -417,7 +385,9 @@ public:
     CUnitTestParams()
     {
         // Activate the the BIPs for regtest as in Bitcoin
+        consensus.BIP16Exception = uint256();
         consensus.BIP34Height = 100000000; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests)
+        consensus.BIP34Hash = uint256();
         consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 1251; // BIP66 activated on regtest (Used in rpc activation tests)
 

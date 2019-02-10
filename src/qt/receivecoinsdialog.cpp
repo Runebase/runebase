@@ -1,24 +1,24 @@
-// Copyright (c) 2011-2016 The Bitcoin Core developers
+// Copyright (c) 2011-2018 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "receivecoinsdialog.h"
-#include "ui_receivecoinsdialog.h"
+#include <wallet/wallet.h>
 
-#include "addressbookpage.h"
-#include "addresstablemodel.h"
-#include "bitcoinunits.h"
-#include "guiutil.h"
-#include "optionsmodel.h"
-#include "platformstyle.h"
-#include "receiverequestdialog.h"
-#include "recentrequeststablemodel.h"
-#include "walletmodel.h"
-#include "styleSheet.h"
+#include <qt/receivecoinsdialog.h>
+#include <qt/forms/ui_receivecoinsdialog.h>
+
+#include <qt/addressbookpage.h>
+#include <qt/addresstablemodel.h>
+#include <qt/bitcoinunits.h>
+#include <qt/optionsmodel.h>
+#include <qt/platformstyle.h>
+#include <qt/receiverequestdialog.h>
+#include <qt/recentrequeststablemodel.h>
+#include <qt/walletmodel.h>
+#include <qt/styleSheet.h>
 
 #include <QAction>
 #include <QCursor>
-#include <QItemSelection>
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QTextDocument>
@@ -107,6 +107,17 @@ void ReceiveCoinsDialog::setModel(WalletModel *_model)
             SLOT(recentRequestsView_selectionChanged(QItemSelection, QItemSelection)));
         // Last 2 columns are set by the columnResizingFixer, when the table geometry is ready.
         columnResizingFixer = new GUIUtil::TableViewLastColumnResizingFixer(tableView, AMOUNT_MINIMUM_COLUMN_WIDTH, DATE_COLUMN_WIDTH, this);
+
+        if (model->wallet().getDefaultAddressType() == OutputType::BECH32) {
+            ui->useBech32->setCheckState(Qt::Checked);
+        } else {
+            ui->useBech32->setCheckState(Qt::Unchecked);
+        }
+
+        ui->useBech32->setVisible(model->wallet().getDefaultAddressType() != OutputType::LEGACY);
+
+        // eventually disable the main receive button if private key operations are disabled
+        ui->receiveButton->setEnabled(!model->privateKeysDisabled());
     }
 }
 
@@ -120,7 +131,6 @@ void ReceiveCoinsDialog::clear()
     ui->reqAmount->clear();
     ui->reqLabel->setText("");
     ui->reqMessage->setText("");
-    ui->reuseAddress->setChecked(false);
     ui->leAddress->setText("");
     ui->copyAddressButton->setEnabled(false);
     QPixmap emptyPixmap;
@@ -154,36 +164,22 @@ void ReceiveCoinsDialog::on_receiveButton_clicked()
 
     QString address;
     QString label = ui->reqLabel->text();
-    if(ui->reuseAddress->isChecked())
-    {
-        /* Use selected address*/
-        if(ui->leAddress->text() != "")
-        {
-            address = ui->leAddress->text();
-        } else {
-            /* Choose existing receiving address */
-            AddressBookPage dlg(platformStyle, AddressBookPage::ForSelection, AddressBookPage::ReceivingTab, this);
-            dlg.setModel(model->getAddressTableModel());
-            if(dlg.exec())
-            {
-                address = dlg.getReturnValue();
-                if(label.isEmpty()) /* If no label provided, use the previously used label */
-                {
-                    label = model->getAddressTableModel()->labelForAddress(address);
-                }
-            } else {
-                return;
-            }
-        }
+    /* Generate new receiving address */
+    OutputType address_type;
+    if (ui->useBech32->isChecked()) {
+        address_type = OutputType::BECH32;
     } else {
-        /* Generate new receiving address */
-        address = model->getAddressTableModel()->addRow(AddressTableModel::Receive, label, "");
+        address_type = model->wallet().getDefaultAddressType();
+        if (address_type == OutputType::BECH32) {
+            address_type = OutputType::P2SH_SEGWIT;
+        }
     }
+    address = model->getAddressTableModel()->addRow(AddressTableModel::Receive, label, "", address_type);
     SendCoinsRecipient info(address, label,
         ui->reqAmount->value(), ui->reqMessage->text());
     ReceiveRequestDialog *dialog = new ReceiveRequestDialog(this);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
-    dialog->setModel(model->getOptionsModel());
+    dialog->setModel(model);
     dialog->setInfo(info);
     dialog->show();
     clear();
@@ -196,7 +192,7 @@ void ReceiveCoinsDialog::on_recentRequestsView_doubleClicked(const QModelIndex &
 {
     const RecentRequestsTableModel *submodel = model->getRecentRequestsTableModel();
     ReceiveRequestDialog *dialog = new ReceiveRequestDialog(this);
-    dialog->setModel(model->getOptionsModel());
+    dialog->setModel(model);
     dialog->setInfo(submodel->entry(index.row()).recipient);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();

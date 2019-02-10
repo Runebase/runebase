@@ -1,22 +1,23 @@
-#include "createcontract.h"
-#include "ui_createcontract.h"
-#include "platformstyle.h"
-#include "walletmodel.h"
-#include "clientmodel.h"
-#include "guiconstants.h"
-#include "rpcconsole.h"
-#include "execrpccommand.h"
-#include "bitcoinunits.h"
-#include "optionsmodel.h"
-#include "validation.h"
-#include "utilmoneystr.h"
-#include "addressfield.h"
-#include "abifunctionfield.h"
-#include "contractabi.h"
-#include "tabbarinfo.h"
-#include "contractresult.h"
-#include "sendcoinsdialog.h"
-#include "styleSheet.h"
+#include <qt/createcontract.h>
+#include <qt/forms/ui_createcontract.h>
+#include <qt/platformstyle.h>
+#include <qt/walletmodel.h>
+#include <qt/clientmodel.h>
+#include <qt/guiconstants.h>
+#include <qt/rpcconsole.h>
+#include <qt/execrpccommand.h>
+#include <qt/bitcoinunits.h>
+#include <qt/optionsmodel.h>
+#include <validation.h>
+#include <utilmoneystr.h>
+#include <qt/addressfield.h>
+#include <qt/abifunctionfield.h>
+#include <qt/contractabi.h>
+#include <qt/tabbarinfo.h>
+#include <qt/contractresult.h>
+#include <qt/sendcoinsdialog.h>
+#include <qt/styleSheet.h>
+#include <interfaces/node.h>
 
 #include <QRegularExpressionValidator>
 
@@ -56,7 +57,7 @@ CreateContract::CreateContract(const PlatformStyle *platformStyle, QWidget *pare
     m_ABIFunctionField = new ABIFunctionField(platformStyle, ABIFunctionField::Create, ui->scrollAreaConstructor);
     ui->scrollAreaConstructor->setWidget(m_ABIFunctionField);
     ui->labelBytecode->setToolTip(tr("The bytecode of the contract"));
-    ui->labelSenderAddress->setToolTip(tr("The runebase address that will be used to create the contract."));
+    ui->labelSenderAddress->setToolTip(tr("The quantum address that will be used to create the contract."));
 
     m_tabInfo = new TabBarInfo(ui->stackedWidget);
     m_tabInfo->addTab(0, tr("Create Contract"));
@@ -68,6 +69,7 @@ CreateContract::CreateContract(const PlatformStyle *platformStyle, QWidget *pare
     ui->lineEditGasLimit->setMaximum(DEFAULT_GAS_LIMIT_OP_CREATE);
     ui->lineEditGasLimit->setValue(DEFAULT_GAS_LIMIT_OP_CREATE);
     ui->pushButtonCreateContract->setEnabled(false);
+    ui->lineEditSenderAddress->setSenderAddress(true);
 
     // Create new PRC command line interface
     QStringList lstMandatory;
@@ -108,7 +110,7 @@ CreateContract::~CreateContract()
 void CreateContract::setLinkLabels()
 {
     ui->labelSolidity->setOpenExternalLinks(true);
-    ui->labelSolidity->setText("<a href=\"https://ethereum.github.io/browser-solidity/\">Solidity compiler</a>");
+    ui->labelSolidity->setText("<a href=\"https://qmix.runebase.org/\">Solidity compiler</a>");
 
     ui->labelToken->setOpenExternalLinks(true);
     ui->labelToken->setText("<a href=\"https://ethereum.org/token#the-code\">Token template</a>");
@@ -117,6 +119,7 @@ void CreateContract::setLinkLabels()
 void CreateContract::setModel(WalletModel *_model)
 {
     m_model = _model;
+    ui->lineEditSenderAddress->setWalletModel(m_model);
 }
 
 bool CreateContract::isValidBytecode()
@@ -153,8 +156,7 @@ void CreateContract::setClientModel(ClientModel *_clientModel)
 
     if (m_clientModel)
     {
-        connect(m_clientModel, SIGNAL(tipChanged()), this, SLOT(on_numBlocksChanged()));
-        on_numBlocksChanged();
+        connect(m_clientModel, SIGNAL(gasInfoChanged(quint64, quint64, quint64)), this, SLOT(on_gasInfoChanged(quint64, quint64, quint64)));
     }
 }
 
@@ -211,7 +213,7 @@ void CreateContract::on_createContractClicked()
         if(retval == QMessageBox::Yes)
         {
             // Execute RPC command line
-            if(errorMessage.isEmpty() && m_execRPCCommand->exec(lstParams, result, resultJson, errorMessage))
+            if(errorMessage.isEmpty() && m_execRPCCommand->exec(m_model->node(), m_model->wallet(), lstParams, result, resultJson, errorMessage))
             {
                 ContractResult *widgetResult = new ContractResult(ui->stackedWidget);
                 widgetResult->setResultData(result, FunctionABI(), QList<QStringList>(), ContractResult::CreateResult);
@@ -230,22 +232,13 @@ void CreateContract::on_createContractClicked()
     }
 }
 
-void CreateContract::on_numBlocksChanged()
+void CreateContract::on_gasInfoChanged(quint64 blockGasLimit, quint64 minGasPrice, quint64 nGasPrice)
 {
-    if(m_clientModel)
-    {
-        uint64_t blockGasLimit = 0;
-        uint64_t minGasPrice = 0;
-        uint64_t nGasPrice = 0;
-        m_clientModel->getGasInfo(blockGasLimit, minGasPrice, nGasPrice);
-
-        ui->labelGasLimit->setToolTip(tr("Gas limit. Default = %1, Max = %2").arg(DEFAULT_GAS_LIMIT_OP_CREATE).arg(blockGasLimit));
-        ui->labelGasPrice->setToolTip(tr("Gas price: RUNEBASE price per gas unit. Default = %1, Min = %2").arg(QString::fromStdString(FormatMoney(DEFAULT_GAS_PRICE))).arg(QString::fromStdString(FormatMoney(minGasPrice))));
-        ui->lineEditGasPrice->setMinimum(minGasPrice);
-        ui->lineEditGasLimit->setMaximum(blockGasLimit);
-
-        ui->lineEditSenderAddress->on_refresh();
-    }
+    Q_UNUSED(nGasPrice);
+    ui->labelGasLimit->setToolTip(tr("Gas limit. Default = %1, Max = %2").arg(DEFAULT_GAS_LIMIT_OP_CREATE).arg(blockGasLimit));
+    ui->labelGasPrice->setToolTip(tr("Gas price: RUNEBASE price per gas unit. Default = %1, Min = %2").arg(QString::fromStdString(FormatMoney(DEFAULT_GAS_PRICE))).arg(QString::fromStdString(FormatMoney(minGasPrice))));
+    ui->lineEditGasPrice->setMinimum(minGasPrice);
+    ui->lineEditGasLimit->setMaximum(blockGasLimit);
 }
 
 void CreateContract::on_updateCreateButton()
