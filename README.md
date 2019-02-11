@@ -1,7 +1,7 @@
 What is Runebase?
 -------------
 
-Runebase is a decentralized blockchain project built on Bitcoin's UTXO model, with support for Ethereum Virtual Machine based smart contracts, and secured by a proof of stake consensus model. It achieves this through the revolutionary Account Abstraction Layer which allows the EVM to communicate with Runebase's Bitcoin-like UTXO blockchain. For more general information about Runebase as well as links to join our community, go to https://runebase.org
+Runebase is a decentralized blockchain project built on Bitcoin's UTXO model, with support for Ethereum Virtual Machine based smart contracts, and secured by a proof of stake consensus model. It achieves this through the revolutionary Account Abstraction Layer which allows the EVM to communicate with Runebase's Bitcoin-like UTXO blockchain. For more general information about Runebase as well as links to join our community, go to https://www.runebase.io
 
 Welcome to the Runebase Ignition Main Network. This is the main network where the tokens hold value and should be guarded very carefully. If you are testing the network, or developing unstable software on Runebase, we highly recommend using either testnet or regtest mode. 
 
@@ -31,15 +31,15 @@ Basic usage resources:
 
 Development resources:
 
-* [Deploying a custom token to Runebase](https://blog.runebase.org/runebase-custom-token-walkthrough-467d725fa27d)
-* [Early example faucet contract](http://earlz.net/view/2017/06/30/2144/the-runebase-sparknet-faucet)
+* [Deploying a custom token to Runebase](https://blog.qtum.org/qtum-custom-token-walkthrough-467d725fa27d)
+* [Early example faucet contract](http://earlz.net/view/2017/06/30/2144/the-qtum-sparknet-faucet)
 * [Unofficial Runebase Hello World tutorial](https://steemit.com/runebase/@cryptominder/quantum-runebase-blockchain-developer-tutorial-hello-world)
 * [Runebase Book - A Developer's Guide To RUNEBASE](https://github.com/runebase/runebasebook)
 
 General Info about Runebase:
 
 * [Mainnet event AMA](https://www.reddit.com/r/Runebase/comments/6zs8t0/official_runebase_ama_thread_starts_at_10pm_beijing/)
-* [Runebase's PoS vs CASPER](https://www.reddit.com/r/Runebase/comments/788oa5/runebases_pos_vs_casper_and_the_nothingatstake_problem/)
+* [Qtum's PoS vs CASPER](https://www.reddit.com/r/Qtum/comments/788oa5/qtums_pos_vs_casper_and_the_nothingatstake_problem/)
 * [Technical article explaining Runebase's PoS model in depth](http://earlz.net/view/2017/07/27/1904/the-missing-explanation-of-proof-of-stake-version)
 * [Unofficial What is Runebase article](https://storeofvalue.github.io/posts/what-is-runebase-without-the-bullshit/)
 
