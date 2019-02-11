@@ -113,7 +113,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000005725c66dbc277bc6"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000001f8efbeeb00d8069f9"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33"); //253809
@@ -165,16 +165,17 @@ public:
                 { 2000, uint256S("0x000078083638b47e82675d657be9a31f7d36119186fb14bfee72fe3e6d78d488")}, //END POW
                 { 2583, uint256S("0x371e278ce135b6a63a0b10ba73c0a54b4745e5b95118362a75d77313095f1ce6")},
                 { 21000, uint256S("0xea8336433fbd537144c2f7a7079829d624c3515f91220de186c02ff9dddd2366")},
-		{ 128000, uint256S("0x42caa35b5d3a88c5b5acc568f273846c8f2835e2e302e1a9135a399b191e82ed")},
+                { 128000, uint256S("0x42caa35b5d3a88c5b5acc568f273846c8f2835e2e302e1a9135a399b191e82ed")},
+                { 129000, uint256S("0x4b31a4f10f4b56b39515f878da88ed1e4d53982693779ffddd007f3e45b81d83")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block 3e76a9f460f5df039f828e3c259da03e1b4e1ec883cbf687a228e346cc457360 (height 253817)
-        	1549729792, // * UNIX timestamp of last known number of transactions
-		258382, // * total number of transactions between genesis and that timestamp
+            1549862096, // * UNIX timestamp of last known number of transactions
+		    260534, // * total number of transactions between genesis and that timestamp
                             //   (the tx=... number in the SetBestChain debug.log lines)
-		0.045 // * estimated number of transactions per second after that timestamp
+		    0.045 // * estimated number of transactions per second after that timestamp
         };
 
         /* disable fallback fee on mainnet */
