@@ -15,8 +15,8 @@ BOOST_FIXTURE_TEST_SUITE(main_tests, TestingSetup)
 
 static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
 {
-    int maxHalvings = 7;
-    CAmount nInitialSubsidy = 4 * COIN;
+    int maxHalvings = 0;
+    CAmount nInitialSubsidy = 100 * COIN;
 
     CAmount nPreviousSubsidy = nInitialSubsidy * 2 ; // for height == LastPoWBlock + 1
     BOOST_CHECK_EQUAL(nPreviousSubsidy, nInitialSubsidy * 2);
@@ -54,28 +54,28 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
 
         if(nHeight <= consensusParams.nLastPOWBlock){
-            BOOST_CHECK_EQUAL(nSubsidy, (20000 * COIN));
+            BOOST_CHECK_EQUAL(nSubsidy, (200000 * COIN));
         }
         else if(nHeight-consensusParams.nLastPOWBlock <= consensusParams.nSubsidyHalvingInterval){
-            BOOST_CHECK_EQUAL(nSubsidy, 4 * COIN);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN);
         }
         else if(nHeight-consensusParams.nLastPOWBlock <= consensusParams.nSubsidyHalvingInterval*2){
-            BOOST_CHECK_EQUAL(nSubsidy, 2 * COIN);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN);
         }
         else if(nHeight-consensusParams.nLastPOWBlock <= consensusParams.nSubsidyHalvingInterval*3){
-            BOOST_CHECK_EQUAL(nSubsidy, 1 * COIN);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN);
         }
         else if(nHeight-consensusParams.nLastPOWBlock <= consensusParams.nSubsidyHalvingInterval*4){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.5 * COIN);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN);
         }
         else if(nHeight-consensusParams.nLastPOWBlock <= consensusParams.nSubsidyHalvingInterval*5){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.25 * COIN);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN);
         }
         else if(nHeight-consensusParams.nLastPOWBlock <= consensusParams.nSubsidyHalvingInterval*6){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.125 * COIN);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN);
         }
         else if(nHeight-consensusParams.nLastPOWBlock <= consensusParams.nSubsidyHalvingInterval*7){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.0625 * COIN);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN);
         }
         else{
             BOOST_CHECK_EQUAL(nSubsidy, 0);
