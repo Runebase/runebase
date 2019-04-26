@@ -113,7 +113,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000001f8efbeeb00d8069f9"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000ccdd6352dd6462"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33"); //253809
@@ -141,15 +141,15 @@ public:
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
         vSeeds.emplace_back("dnsseed.runebase.io"); // Runebase mainnet
-        vSeeds.emplace_back("dnsseed2.runebase.io"); // Runebase mainnet
+        vSeeds.emplace_back("dnsseed3.runebase.io"); // Runebase mainnet
         vSeeds.emplace_back("dnsseed3.runebase.io"); // Runebase mainnet
         vSeeds.emplace_back("dnsseed4.runebase.io"); // Runebase mainnet
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,123);
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,216);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x86, 0xc2, 0x2e};
-        base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x86, 0xdc, 0xf1};
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x86, 0xC2, 0x2E};
+        base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x86, 0xDC, 0xF1};
 
         bech32_hrp = "qc";
 
@@ -172,10 +172,10 @@ public:
 
         chainTxData = ChainTxData{
             // Data as of block 3e76a9f460f5df039f828e3c259da03e1b4e1ec883cbf687a228e346cc457360 (height 253817)
-            1549862096, // * UNIX timestamp of last known number of transactions
-		    260534, // * total number of transactions between genesis and that timestamp
+        	1549862096, // * UNIX timestamp of last known number of transactions
+			260534, // * total number of transactions between genesis and that timestamp
                             //   (the tx=... number in the SetBestChain debug.log lines)
-		    0.045 // * estimated number of transactions per second after that timestamp
+			0.045 // * estimated number of transactions per second after that timestamp
         };
 
         /* disable fallback fee on mainnet */
@@ -183,8 +183,8 @@ public:
 
         consensus.nLastPOWBlock = 2000;
         consensus.nMPoSRewardRecipients = 10;
-        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
-                                    consensus.nMPoSRewardRecipients +
+        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock + 
+                                    consensus.nMPoSRewardRecipients + 
                                     COINBASE_MATURITY;
 
         consensus.nFixUTXOCacheHFHeight=100000;
@@ -283,8 +283,8 @@ public:
 
         consensus.nLastPOWBlock = 2000;
         consensus.nMPoSRewardRecipients = 10;
-        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
-                                    consensus.nMPoSRewardRecipients +
+        consensus.nFirstMPoSBlock = consensus.nLastPOWBlock + 
+                                    consensus.nMPoSRewardRecipients + 
                                     COINBASE_MATURITY;
 
         consensus.nFixUTXOCacheHFHeight=84500;

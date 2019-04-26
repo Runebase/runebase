@@ -196,6 +196,8 @@ BASE_SCRIPTS = [
     'runebase_divergence_dos.py',
     'runebase_prioritize_create_over_call.py',
     'runebase_callcontract_timestamp.py',
+    'runebase_transaction_receipt_origin_contract_address.py',
+    'runebase_block_number_corruption.py',
 ]
 
 EXTENDED_SCRIPTS = [

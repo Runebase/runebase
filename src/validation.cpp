@@ -522,7 +522,7 @@ static void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool,
     while (it != disconnectpool.queuedTx.get<insertion_order>().rend()) {
         // ignore validation errors in resurrected transactions
         CValidationState stateDummy;
-        if (!fAddToMempool || (*it)->IsCoinBase() || (*it)->IsCoinStake() ||
+        if (!fAddToMempool || (*it)->IsCoinBase() || (*it)->IsCoinStake() || 
             !AcceptToMemoryPool(mempool, stateDummy, *it, nullptr /* pfMissingInputs */,
                                 nullptr /* plTxnReplaced */, true /* bypass_limits */, 0 /* nAbsurdFee */)) {
             // If the transaction doesn't make it in to the mempool, remove any
@@ -2030,13 +2030,13 @@ std::vector<ResultExecute> CallContract(const dev::Address& addrContract, std::v
     dev::Address senderAddress = sender == dev::Address() ? dev::Address("ffffffffffffffffffffffffffffffffffffffff") : sender;
     tx.vout.push_back(CTxOut(0, CScript() << OP_DUP << OP_HASH160 << senderAddress.asBytes() << OP_EQUALVERIFY << OP_CHECKSIG));
     block.vtx.push_back(MakeTransactionRef(CTransaction(tx)));
-
+ 
     RunebaseTransaction callTransaction(0, 1, dev::u256(gasLimit), addrContract, opcode, dev::u256(0));
     callTransaction.forceSender(senderAddress);
     callTransaction.setVersion(VersionVM::GetEVMDefault());
 
-
-    ByteCodeExec exec(block, std::vector<RunebaseTransaction>(1, callTransaction), blockGasLimit);
+    
+    ByteCodeExec exec(block, std::vector<RunebaseTransaction>(1, callTransaction), blockGasLimit, pblockindex);
     exec.performByteCode(dev::eth::Permanence::Reverted);
     return exec.getResult();
 }
@@ -2109,7 +2109,7 @@ bool CheckReward(const CBlock& block, CValidationState& state, int nHeight, cons
         std::vector<CScript> mposScriptList;
         if(!GetMPoSOutputScripts(mposScriptList, nPrevHeight, consensusParams))
             return error("CheckReward(): cannot create the list of MPoS output scripts");
-
+      
         for(size_t i = 0; i < mposScriptList.size(); i++){
             it=std::find(vTempVouts.begin(), vTempVouts.end(), CTxOut(splitReward,mposScriptList[i]));
             if(it==vTempVouts.end()){
@@ -2224,7 +2224,7 @@ void writeVMlog(const std::vector<ResultExecute>& res, const CTransaction& tx, c
             ss << "]}";
         }
     }
-
+    
     std::ofstream file(runebaseDir.string(), std::ios::in | std::ios::out);
     file.seekp(-2, std::ios::end);
     file << ss.str();
@@ -2294,7 +2294,7 @@ bool ByteCodeExec::processingResults(ByteCodeExecResult& resultBCE){
 
 dev::eth::EnvInfo ByteCodeExec::BuildEVMEnvironment(){
     dev::eth::EnvInfo env;
-    CBlockIndex* tip = chainActive.Tip();
+    CBlockIndex* tip = pindex;
     env.setNumber(dev::u256(tip->nHeight + 1));
     env.setTimestamp(dev::u256(block.nTime));
     env.setDifficulty(dev::u256(block.nBits));
@@ -2714,7 +2714,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
         {
             if (tx.IsCoinStake())
                 nActualStakeReward = tx.GetValueOut()-view.GetValueIn(tx);
-
+                    
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
             //note that coinbase and coinstake can not contain any contract opcodes, this is checked in CheckBlock
@@ -2764,7 +2764,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 
 
             dev::u256 gasAllTxs = dev::u256(0);
-            ByteCodeExec exec(block, resultConvertRunebaseTX.first, blockGasLimit);
+            ByteCodeExec exec(block, resultConvertRunebaseTX.first, blockGasLimit, pindex->pprev);
             //validate VM version and other ETH params before execution
             //Reject anything unknown (could be changed later by DGP)
             //TODO evaluate if this should be relaxed for soft-fork purposes
@@ -2838,11 +2838,12 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
             if (fLogEvents && !fJustCheck)
             {
                 for(size_t k = 0; k < resultConvertRunebaseTX.first.size(); k ++){
-                    dev::Address key = resultExec[k].execRes.newAddress;
-                    if(!heightIndexes.count(key)){
-                        heightIndexes[key].first = CHeightTxIndexKey(pindex->nHeight, resultExec[k].execRes.newAddress);
+                    for(auto& log : resultExec[k].txRec.log()) {
+                        if(!heightIndexes.count(log.address)){
+                            heightIndexes[log.address].first = CHeightTxIndexKey(pindex->nHeight, log.address);
+                        }
+                        heightIndexes[log.address].second.push_back(tx.GetHash());
                     }
-                    heightIndexes[key].second.push_back(tx.GetHash());
                     tri.push_back(TransactionReceiptInfo{block.GetHash(), uint32_t(pindex->nHeight), tx.GetHash(), uint32_t(i), resultConvertRunebaseTX.first[k].from(), resultConvertRunebaseTX.first[k].to(),
                                 countCumulativeGasUsed, uint64_t(resultExec[k].execRes.gasUsed), resultExec[k].execRes.newAddress, resultExec[k].txRec.log(), resultExec[k].execRes.excepted});
                 }
@@ -2967,7 +2968,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
 //////////////////////////////////////////////////////////////////
 
     pindex->nMoneySupply = (pindex->pprev? pindex->pprev->nMoneySupply : 0) + nValueOut - nValueIn;
-    //only start checking this error after block 2000 and only on testnet and mainnet, not regtest
+    //only start checking this error after block 5000 and only on testnet and mainnet, not regtest
     if(pindex->nHeight > 2000 && !Params().GetConsensus().fPoSNoRetargeting) {
         //sanity check in case an exploit happens that allows new coins to be minted
         if(pindex->nMoneySupply > (uint64_t)(((pindex->nHeight) * 100)) * COIN){
@@ -2991,7 +2992,7 @@ bool CChainState::ConnectBlock(const CBlock& block, CValidationState& state, CBl
             if (!pblocktree->WriteHeightIndex(e.second.first, e.second.second))
                 return AbortNode(state, "Failed to write height index");
         }
-    }
+    }    
     if(block.IsProofOfStake()){
         // Read the public key from the second output
         std::vector<unsigned char> vchPubKey;
@@ -4064,7 +4065,7 @@ bool SignBlock(std::shared_ptr<CBlock> pblock, CWallet& wallet, const CAmount& n
     //IsProtocolV2 mean POS 2 or higher, so the modified line is:
     if (wallet.CreateCoinStake(wallet, pblock->nBits, nTotalFees, nTimeBlock, txCoinStake, key))
     {
-        if (nTimeBlock >= pindexBestHeader->GetMedianTimePast()+1)
+        if (nTimeBlock >= chainActive.Tip()->GetMedianTimePast()+1)
         {
             // make sure coinstake would meet timestamp protocol
             //    as it would be the same as the block timestamp
@@ -4074,7 +4075,7 @@ bool SignBlock(std::shared_ptr<CBlock> pblock, CWallet& wallet, const CAmount& n
             pblock->prevoutStake = pblock->vtx[1]->vin[0].prevout;
 
             // Check timestamp against prev
-            if(pblock->GetBlockTime() <= pindexBestHeader->GetBlockTime() || FutureDrift(pblock->GetBlockTime()) < pindexBestHeader->GetBlockTime())
+            if(pblock->GetBlockTime() <= chainActive.Tip()->GetBlockTime() || FutureDrift(pblock->GetBlockTime()) < chainActive.Tip()->GetBlockTime())
             {
                 return false;
             }
@@ -4476,7 +4477,7 @@ bool CChainState::UpdateHashProof(const CBlock& block, CValidationState& state, 
     //reject proof of work at height consensusParams.nLastPOWBlock
     if (block.IsProofOfWork() && nHeight > consensusParams.nLastPOWBlock)
         return state.DoS(100, error("UpdateHashProof() : reject proof-of-work at height %d", nHeight));
-
+    
     // Check coinstake timestamp
     if (block.IsProofOfStake() && !CheckCoinStakeTimestamp(block.GetBlockTime()))
         return state.DoS(50, error("UpdateHashProof() : coinstake timestamp violation nTimeBlock=%d", block.GetBlockTime()));
@@ -4495,13 +4496,13 @@ bool CChainState::UpdateHashProof(const CBlock& block, CValidationState& state, 
             return error("UpdateHashProof() : check proof-of-stake failed for block %s", hash.ToString());
         }
     }
-
+    
     // PoW is checked in CheckBlock()
     if (block.IsProofOfWork())
     {
         hashProof = block.GetHash();
     }
-
+    
     // Record proof hash value
     pindex->hashProof = hashProof;
     return true;
@@ -4876,9 +4877,9 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
 
     dev::h256 oldHashStateRoot(globalState->rootHash()); // runebase
     dev::h256 oldHashUTXORoot(globalState->rootHashUTXO()); // runebase
-
+    
     if (!g_chainstate.ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true)){
-
+        
         globalState->setRoot(oldHashStateRoot); // runebase
         globalState->setRootUTXO(oldHashUTXORoot); // runebase
         pstorageresult->clearCacheResult();
