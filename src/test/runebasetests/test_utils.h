@@ -63,7 +63,7 @@ inline std::pair<std::vector<ResultExecute>, ByteCodeExecResult> executeBC(std::
     CBlock block(generateBlock());
     RunebaseDGP runebaseDGP(globalState.get(), fGettingValuesDGP);
     uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(chainActive.Tip()->nHeight + 1);
-    ByteCodeExec exec(block, txs, blockGasLimit);
+    ByteCodeExec exec(block, txs, blockGasLimit, chainActive.Tip());
     exec.performByteCode();
     std::vector<ResultExecute> res = exec.getResult();
     ByteCodeExecResult bceExecRes;
