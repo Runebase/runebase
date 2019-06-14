@@ -116,7 +116,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000033412d54cb997fdfc7"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33"); //253809
+        consensus.defaultAssumeValid = uint256S("0x651109c0bd2e93ea44d3167ccb7bfeac71fc9d7c6a71c848c7b9ed9f22153a33"); // 363604
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -232,7 +232,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x0000"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"); //224905
+        consensus.defaultAssumeValid = uint256S("0x00001c1c4c03ce2958600754ab7b20b5d0aef52c9472a7942a49175c0aa6268b"); // 320000
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;

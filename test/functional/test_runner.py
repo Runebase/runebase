@@ -198,6 +198,7 @@ BASE_SCRIPTS = [
     'runebase_callcontract_timestamp.py',
     'runebase_transaction_receipt_origin_contract_address.py',
     'runebase_block_number_corruption.py',
+    'runebase_duplicate_stake.py',
 ]
 
 EXTENDED_SCRIPTS = [

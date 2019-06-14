@@ -26,7 +26,7 @@ static const std::string addr1C("RSwBr3sahXd4j3VkMA5h4rFkqNigXDTf39");
 static const std::string addr2C("RRQpJFJBaV3oFDAn3Z4v91vX2updxDSpNb");
 
 
-static const std::string strAddressBad("REnWVM3CzkdgRqxxZPfdHsb58CCNzkCcLi");
+static const std::string strAddressBad("QHV9Lc3sNHZxwj4Zk6fB38tEmBryq2cBiF");
 
 BOOST_FIXTURE_TEST_SUITE(key_tests, BasicTestingSetup)
 
