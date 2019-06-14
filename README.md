@@ -1,7 +1,7 @@
 What is Runebase?
 -------------
 
-Runebase is a decentralized blockchain project built on Bitcoin's UTXO model, with support for Ethereum Virtual Machine based smart contracts, and secured by a proof of stake consensus model. It achieves this through the revolutionary Account Abstraction Layer which allows the EVM to communicate with Runebase's Bitcoin-like UTXO blockchain. For more general information about Runebase as well as links to join our community, go to https://runebase.org
+Runebase is a decentralized blockchain project built on Bitcoin's UTXO model, with support for Ethereum Virtual Machine based smart contracts, and secured by a proof of stake consensus model. It achieves this through the revolutionary Account Abstraction Layer which allows the EVM to communicate with Runebase's Bitcoin-like UTXO blockchain. For more general information about Runebase as well as links to join our community, go to https://runebase.io
 
 Welcome to the Runebase Ignition Main Network. This is the main network where the tokens hold value and should be guarded very carefully. If you are testing the network, or developing unstable software on Runebase, we highly recommend using either testnet or regtest mode. 
 
@@ -26,14 +26,14 @@ Basic usage resources:
 * [Unofficial Runebase staking tutorial on Raspberry Pi](https://steemit.com/runebase/@cryptominder/runebase-staking-tutorial-using-runebased-on-a-raspberry-pi-3)
 * [Unofficial Runebase staking tutorial on AWS EC2](https://github.com/aaronmboyd/runebase-staking-on-aws-ec2)
 * [Unofficial guide for keeping your wallet safe](https://steemit.com/runebase/@cryptominder/encrypting-backing-up-and-restoring-your-runebase-wallet)
-* [Block explorer](https://explorer.runebase.org)
+* [Block explorer](https://explorer.runebase.io)
 * [Unofficial block explorer](https://runebaseexplorer.io/)
 
 Development resources:
 
-* [Deploying a custom token to Runebase](https://blog.runebase.org/runebase-custom-token-walkthrough-467d725fa27d)
+* [Deploying a custom token to Runebase](https://github.com/Runebase/runebase/wiki/rrc223)
 * [Early example faucet contract](http://earlz.net/view/2017/06/30/2144/the-runebase-sparknet-faucet)
-* [Unofficial Runebase Hello World tutorial](https://steemit.com/runebase/@cryptominder/quantum-runebase-blockchain-developer-tutorial-hello-world)
+* [Unofficial Runebase Hello World tutorial](https://steemit.com/runebase/@cryptominder/quantum-qtum-blockchain-developer-tutorial-hello-world)
 * [Runebase Book - A Developer's Guide To RUNEBASE](https://github.com/runebase/runebasebook)
 
 General Info about Runebase:
