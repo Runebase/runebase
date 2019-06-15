@@ -47,7 +47,7 @@ static const int MAX_URI_LENGTH = 255;
 #define SPINNER_FRAMES 36
 
 #define QAPP_ORG_NAME "Runebase"
-#define QAPP_ORG_DOMAIN "runebase.org"
+#define QAPP_ORG_DOMAIN "runebase.io"
 #define QAPP_APP_NAME_DEFAULT "Runebase-Qt"
 #define QAPP_APP_NAME_TESTNET "Runebase-Qt-testnet"
 #define QAPP_APP_NAME_REGTEST "Runebase-Qt-regtest"
