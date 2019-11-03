@@ -1,0 +1,6 @@
+usr/local/bin/runebase-qt usr/bin
+share/pixmaps/runebase32.xpm usr/share/pixmaps
+share/pixmaps/runebase16.xpm usr/share/pixmaps
+share/pixmaps/runebase128.png usr/share/pixmaps
+debian/runebase-qt.desktop usr/share/applications
+debian/runebase-qt.protocol usr/share/kde4/services/

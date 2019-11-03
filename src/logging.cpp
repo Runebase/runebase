@@ -42,9 +42,9 @@ bool BCLog::Logger::OpenDebugLog()
     std::lock_guard<std::mutex> scoped_lock(m_file_mutex);
 
     assert(m_fileout == nullptr);
-    assert(m_fileoutVM == nullptr); // qtum
+    assert(m_fileoutVM == nullptr); // runebase
     assert(!m_file_path.empty());
-    assert(!m_file_pathVM.empty()); // qtum
+    assert(!m_file_pathVM.empty()); // runebase
 
     m_fileout = fsbridge::fopen(m_file_path, "a");
     m_fileoutVM = fsbridge::fopen(m_file_pathVM, "a");
@@ -61,7 +61,7 @@ bool BCLog::Logger::OpenDebugLog()
             m_msgs_before_open.pop_front();
         }
     }
-    ///////////////////////////////////////////// // qtum
+    ///////////////////////////////////////////// // runebase
     if (m_fileoutVM) {
         setbuf(m_fileoutVM, nullptr); // unbuffered
         // dump buffered messages from before we opened the log
@@ -225,7 +225,7 @@ std::string BCLog::Logger::LogTimestampStr(const std::string &str)
 
 void BCLog::Logger::LogPrintStr(const std::string &str, bool useVMLog)
 {
-    //////////////////////////////// // qtum
+    //////////////////////////////// // runebase
     FILE* file = m_fileout;
     if(useVMLog){
         file = m_fileoutVM;

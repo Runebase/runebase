@@ -52,7 +52,7 @@ struct LockPoints
 class CTxMemPool;
 
 #ifdef ENABLE_BITCORE_RPC
-//////////////////////////////////////////////////////// // qtum
+//////////////////////////////////////////////////////// // runebase
 struct CSpentIndexKeyCompare
 {
     bool operator()(const CSpentIndexKey& a, const CSpentIndexKey& b) const {
@@ -695,7 +695,7 @@ private:
     txlinksMap mapLinks;
 
 #ifdef ENABLE_BITCORE_RPC
-    //////////////////////////////////////////////////////////////// // qtum
+    //////////////////////////////////////////////////////////////// // runebase
     typedef std::map<CMempoolAddressDeltaKey, CMempoolAddressDelta, CMempoolAddressDeltaKeyCompare> addressDeltaMap;
     addressDeltaMap mapAddress;
 
@@ -743,7 +743,7 @@ public:
     void addUnchecked(const CTxMemPoolEntry& entry, setEntries& setAncestors, bool validFeeEstimate = true) EXCLUSIVE_LOCKS_REQUIRED(cs, cs_main);
 
 #ifdef ENABLE_BITCORE_RPC
-    ///////////////////////////////////////////////////////// // qtum
+    ///////////////////////////////////////////////////////// // runebase
     void addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewCache &view);
     bool getAddressIndex(std::vector<std::pair<uint256, int> > &addresses,
                          std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta> > &results);

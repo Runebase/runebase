@@ -84,16 +84,16 @@ static void AssembleBlock(benchmark::State& state)
         ::globalSealEngine.reset();
 
         ::fRequireStandard=false;
-        fs::path qtumStateDir = GetDataDir() / "stateQtum";
-        bool fStatus = fs::exists(qtumStateDir);
-        const std::string dirQtum(qtumStateDir.string());
+        fs::path runebaseStateDir = GetDataDir() / "stateRunebase";
+        bool fStatus = fs::exists(runebaseStateDir);
+        const std::string dirRunebase(runebaseStateDir.string());
         const dev::h256 hashDB(dev::sha3(dev::rlp("")));
-        dev::eth::BaseState existsQtumstate = fStatus ? dev::eth::BaseState::PreExisting : dev::eth::BaseState::Empty;
-        ::globalState = std::unique_ptr<QtumState>(new QtumState(dev::u256(0), QtumState::openDB(dirQtum, hashDB, dev::WithExisting::Trust), dirQtum, existsQtumstate));
-        dev::eth::ChainParams cp((chainparams.EVMGenesisInfo(dev::eth::Network::qtumMainNetwork)));
+        dev::eth::BaseState existsRunebasestate = fStatus ? dev::eth::BaseState::PreExisting : dev::eth::BaseState::Empty;
+        ::globalState = std::unique_ptr<RunebaseState>(new RunebaseState(dev::u256(0), RunebaseState::openDB(dirRunebase, hashDB, dev::WithExisting::Trust), dirRunebase, existsRunebasestate));
+        dev::eth::ChainParams cp((chainparams.EVMGenesisInfo(dev::eth::Network::runebaseMainNetwork)));
         ::globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
 
-        ::pstorageresult.reset(new StorageResults(qtumStateDir.string()));
+        ::pstorageresult.reset(new StorageResults(runebaseStateDir.string()));
 
         if(chainActive.Tip() != nullptr){
             ::globalState->setRoot(uintToh256(chainActive.Tip()->hashStateRoot));
