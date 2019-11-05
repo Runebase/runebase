@@ -184,7 +184,7 @@ public:
         // release ASAP to avoid it where possible.
         vSeeds.emplace_back("dnsseed.runebase.io"); // Runebase mainnet
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,61);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,123);
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,216);
         base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x86, 0xc2, 0x2e};
