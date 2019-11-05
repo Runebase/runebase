@@ -59,23 +59,23 @@ def build():
 
     if args.linux:
         print('\nCompiling ' + args.version + ' Linux')
-        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',cpp-eth-runebase=develop', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
-        subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-linux', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
-        subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
- 
+        #subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',cpp-eth-runebase=develop', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
+        #subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-linux', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
+        #subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
+
     if args.windows:
         print('\nCompiling ' + args.version + ' Windows')
         subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',cpp-eth-runebase=develop', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
         subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-win-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
-        subprocess.check_call('mv build/out/runebase-*-win-unsigned.tar.gz inputs/', shell=True)
-        subprocess.check_call('mv build/out/runebase-*.zip build/out/runebase-*.exe ../runebase-binaries/'+args.version, shell=True)
+        #subprocess.check_call('mv build/out/runebase-*-win-unsigned.tar.gz inputs/', shell=True)
+        #subprocess.check_call('mv build/out/runebase-*.zip build/out/runebase-*.exe ../runebase-binaries/'+args.version, shell=True)
 
     if args.macos:
         print('\nCompiling ' + args.version + ' MacOS')
-        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',cpp-eth-runebase=develop', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
-        subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-osx-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
-        subprocess.check_call('mv build/out/runebase-*-osx-unsigned.tar.gz inputs/', shell=True)
-        subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/runebase-*.dmg ../runebase-binaries/'+args.version, shell=True)
+        #subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',cpp-eth-runebase=develop', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
+        #subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-osx-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
+        #subprocess.check_call('mv build/out/runebase-*-osx-unsigned.tar.gz inputs/', shell=True)
+        #subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/runebase-*.dmg ../runebase-binaries/'+args.version, shell=True)
 
     os.chdir(workdir)
 
@@ -97,15 +97,15 @@ def sign():
         subprocess.check_call('cp inputs/runebase-' + args.version + '-win-unsigned.tar.gz inputs/runebase-win-unsigned.tar.gz', shell=True)
         subprocess.check_call(['bin/gbuild', '-i', '--commit', 'signature='+args.commit, '../runebase/contrib/gitian-descriptors/gitian-win-signer.yml'])
         subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-win-signed', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-win-signer.yml'])
-        subprocess.check_call('mv build/out/runebase-*win64-setup.exe ../runebase-binaries/'+args.version, shell=True)
-        subprocess.check_call('mv build/out/runebase-*win32-setup.exe ../runebase-binaries/'+args.version, shell=True)
+        #subprocess.check_call('mv build/out/runebase-*win64-setup.exe ../runebase-binaries/'+args.version, shell=True)
+        #subprocess.check_call('mv build/out/runebase-*win32-setup.exe ../runebase-binaries/'+args.version, shell=True)
 
     if args.macos:
         print('\nSigning ' + args.version + ' MacOS')
-        subprocess.check_call('cp inputs/runebase-' + args.version + '-osx-unsigned.tar.gz inputs/runebase-osx-unsigned.tar.gz', shell=True)
-        subprocess.check_call(['bin/gbuild', '-i', '--commit', 'signature='+args.commit, '../runebase/contrib/gitian-descriptors/gitian-osx-signer.yml'])
-        subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-osx-signed', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-osx-signer.yml'])
-        subprocess.check_call('mv build/out/runebase-osx-signed.dmg ../runebase-binaries/'+args.version+'/runebase-'+args.version+'-osx.dmg', shell=True)
+        #subprocess.check_call('cp inputs/runebase-' + args.version + '-osx-unsigned.tar.gz inputs/runebase-osx-unsigned.tar.gz', shell=True)
+        #subprocess.check_call(['bin/gbuild', '-i', '--commit', 'signature='+args.commit, '../runebase/contrib/gitian-descriptors/gitian-osx-signer.yml'])
+        #subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-osx-signed', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-osx-signer.yml'])
+        #subprocess.check_call('mv build/out/runebase-osx-signed.dmg ../runebase-binaries/'+args.version+'/runebase-'+args.version+'-osx.dmg', shell=True)
 
     os.chdir(workdir)
 
@@ -203,7 +203,7 @@ def main():
     # Add leading 'v' for tags
     if args.commit and args.pull:
         raise Exception('Cannot have both commit and pull')
-    args.commit = ('' if args.commit else 'v') + args.version
+    args.commit = ('' if args.commit else '') + args.version
 
     if args.setup:
         setup()

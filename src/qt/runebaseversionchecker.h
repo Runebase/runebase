@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#define RUNEBASE_RELEASES "https://github.com/runebaseproject/runebase/releases"
+#define RUNEBASE_RELEASES "https://github.com/runebase/runebase/releases"
 
 class Version {
 

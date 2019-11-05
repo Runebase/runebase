@@ -3,13 +3,13 @@ What is Runebase?
 
 Runebase is a decentralized blockchain project built on Bitcoin's UTXO model, with support for Ethereum Virtual Machine based smart contracts, and secured by a proof of stake consensus model. It achieves this through the revolutionary Account Abstraction Layer which allows the EVM to communicate with Runebase's Bitcoin-like UTXO blockchain. For more general information about Runebase as well as links to join our community, go to https://runebase.org
 
-Welcome to the Runebase Ignition Main Network. This is the main network where the tokens hold value and should be guarded very carefully. If you are testing the network, or developing unstable software on Runebase, we highly recommend using either testnet or regtest mode. 
+Welcome to the Runebase Ignition Main Network. This is the main network where the tokens hold value and should be guarded very carefully. If you are testing the network, or developing unstable software on Runebase, we highly recommend using either testnet or regtest mode.
 
 The major features of the Runebase network include:
 
-1. Compatibility with the Ethereum Virtual Machine, which allows for compatibility with most existing Solidity based smart contracts. No special solidity compiler is required to deploy your smart contract to Runebase. 
+1. Compatibility with the Ethereum Virtual Machine, which allows for compatibility with most existing Solidity based smart contracts. No special solidity compiler is required to deploy your smart contract to Runebase.
 2. A Proof of Stake consensus system which is optimized for Runebase's contract model. Any user can stake and help to secure the network. There is no voting, master nodes, or minimum amount required. There have been transactions as small as 2 Runebase that have created blocks in the past. Staking from smart contracts is under development.
-3. The Decentralized Governance Protocol is completely implemented and functional, which allows certain network parameters to be modified without a fork or other network disruption. This currently controls parameters like block size, gas prices, etc. 
+3. The Decentralized Governance Protocol is completely implemented and functional, which allows certain network parameters to be modified without a fork or other network disruption. This currently controls parameters like block size, gas prices, etc.
 4. Uses the UTXO transaction model and is compatible with Bitcoin, allowing for existing tooling and workflows to be used with Runebase. This allows for the infamous SPV protocol to be used which is ideal for light wallets on mobile phones and IoT devices.
 
 Note: Runebase Core is considered beta software. We make no warranties or guarantees of its security or stability.
@@ -22,12 +22,12 @@ These are some resources that might be helpful in understanding Runebase.
 Basic usage resources:
 
 * [User guide](https://docs.runebase.site/en/)
-* [Runebase-Qt Wallet Tutorial](https://github.com/runebaseproject/documents/tree/master/en/Runebase-Wallet-Tutorial#runebase-qt-wallet-tutorial)
-* [Runebase staking tutorial](https://github.com/runebaseproject/documents/tree/master/en/How-to-Stake-with-Runebase)
-* [Runebase tutorial on Raspberry Pi](https://github.com/runebaseproject/documents/tree/master/en/Runebase-on-Raspberry-Pi)
-* [Running Runebase on Amazon AWS using Runebase AMI](https://github.com/runebaseproject/documents/tree/master/en/Runebase-AWS)
-* [Encrypting and unlocking wallet](https://github.com/runebaseproject/documents/tree/master/en/Encrypt-and-Unlock-Runebase-Wallet)
-* [Testnet guide](https://github.com/runebaseproject/documents/blob/master/en/Testnet-User-Guide.md)
+* [Runebase-Qt Wallet Tutorial](https://github.com/runebase/documents/tree/master/en/Runebase-Wallet-Tutorial#runebase-qt-wallet-tutorial)
+* [Runebase staking tutorial](https://github.com/runebase/documents/tree/master/en/How-to-Stake-with-Runebase)
+* [Runebase tutorial on Raspberry Pi](https://github.com/runebase/documents/tree/master/en/Runebase-on-Raspberry-Pi)
+* [Running Runebase on Amazon AWS using Runebase AMI](https://github.com/runebase/documents/tree/master/en/Runebase-AWS)
+* [Encrypting and unlocking wallet](https://github.com/runebase/documents/tree/master/en/Encrypt-and-Unlock-Runebase-Wallet)
+* [Testnet guide](https://github.com/runebase/documents/blob/master/en/Testnet-User-Guide.md)
 * [Block explorer](https://runebase.info), [Older explorer](https://explorer.runebase.org)
 
 
@@ -36,7 +36,7 @@ Development resources:
 * [Runebase Book - A Developer's Guide To RUNEBASE](http://book.runebase.site/en/)
 * [Runebase contract usage](https://docs.runebase.site/en/QRC20-Token-Introduce.html)
 * [Deploying a custom token to Runebase](https://blog.runebase.org/runebase-custom-token-walkthrough-467d725fa27d)
-* [RunebaseJS document](https://runebaseproject.github.io/runebasejs-doc/)
+* [RunebaseJS document](https://runebase.github.io/runebasejs-doc/)
 * [Smart contract ICO example](http://book.runebase.site/en/part3/ico.htm)
 * [Early example faucet contract](http://earlz.net/view/2017/06/30/2144/the-runebase-sparknet-faucet)
 
@@ -51,23 +51,23 @@ Developer's Tools
 -----------------
 
 * Smart contract deployment tool
-  * https://github.com/runebaseproject/solar
+  * https://github.com/runebase/solar
 * DApp JavaScript Library
-  * https://github.com/runebaseproject/runebasejs
+  * https://github.com/runebase/runebasejs
 * A toolkit for building runebase light wallets
-  * https://github.com/runebaseproject/runebasejs-wallet
+  * https://github.com/runebase/runebasejs-wallet
 * CORS runebased RPC proxy for DApp
-  * https://github.com/runebaseproject/runebaseportal
+  * https://github.com/runebase/runebaseportal
 * Docker images for running runebase services
-  * https://github.com/runebaseproject/runebase-docker
+  * https://github.com/runebase/runebase-docker
 * runebase.info API that powers the block explorer and the RUNEBASE Web wallet
-  * https://github.com/runebaseproject/runebaseinfo-api#runebaseinfo-api-documentation
+  * https://github.com/runebase/runebaseinfo-api#runebaseinfo-api-documentation
 
 
 What is Runebase Core?
 ------------------
 
-Runebase Core is our primary mainnet wallet. It implements a full node and is capable of storing, validating, and distributing all history of the Runebase network. Runebase Core is considered the reference implementation for the Runebase network. 
+Runebase Core is our primary mainnet wallet. It implements a full node and is capable of storing, validating, and distributing all history of the Runebase network. Runebase Core is considered the reference implementation for the Runebase network.
 
 Runebase Core currently implements the following:
 
@@ -85,7 +85,7 @@ Runebase Core currently implements the following:
 Alternative Wallets
 -------------------
 
-Runebase Core uses a full node model, and thus requires downloading the entire blockchain. If you do not need the entire blockchain, and do not intend on developing smart contracts, it may be more ideal to use an alternative wallet such as one of our light wallets that can be synchronized in a matter of seconds. 
+Runebase Core uses a full node model, and thus requires downloading the entire blockchain. If you do not need the entire blockchain, and do not intend on developing smart contracts, it may be more ideal to use an alternative wallet such as one of our light wallets that can be synchronized in a matter of seconds.
 
 ### Runebase Web Wallet
 
@@ -93,21 +93,21 @@ A browser wallet that supports the Ledger hardware wallet, offline cold wallet, 
 
 Web site https://runebasewallet.org
 
-User documentation https://github.com/runebaseproject/documents/tree/master/en/RUNEBASE-WebWallet-usage
+User documentation https://github.com/runebase/documents/tree/master/en/RUNEBASE-WebWallet-usage
 
 ### Runebase Electrum
 
-A light wallet that supports the Ledger and Trezor hardware wallets and is based on the well-known Electrum wallet software. 
+A light wallet that supports the Ledger and Trezor hardware wallets and is based on the well-known Electrum wallet software.
 
-Download: https://github.com/runebaseproject/runebase-electrum/releases
+Download: https://github.com/runebase/runebase-electrum/releases
 
 ### iOS and Android Wallets
 
-These wallets run on mobile devices and synchronize quickly. 
+These wallets run on mobile devices and synchronize quickly.
 
 Android Download: https://play.google.com/store/apps/details?id=org.runebase.wallet
 
-iOS Download: https://github.com/runebaseproject/runebase-ios (open source, we are still working with Apple to get approval for their app store)
+iOS Download: https://github.com/runebase/runebase-ios (open source, we are still working with Apple to get approval for their app store)
 
 ### Ledger Chrome Wallet
 
@@ -143,7 +143,7 @@ Make sure to check out these resources as well for more information and to keep 
 
 ### Validate and Reproduce Binaries
 
-Runebase uses a tool called Gitian to make reproducible builds that can be verified by anyone. Instructions on setting up a Gitian VM and building Runebase are provided in [Gitan Building](https://github.com/runebaseproject/runebase/blob/master/doc/gitian-building.md)
+Runebase uses a tool called Gitian to make reproducible builds that can be verified by anyone. Instructions on setting up a Gitian VM and building Runebase are provided in [Gitan Building](https://github.com/runebase/runebase/blob/master/doc/gitian-building.md)
 
 ### Build on Ubuntu
 
@@ -159,17 +159,17 @@ This is a quick start script for compiling Runebase on Ubuntu
     # If you want to build the Qt GUI:
     sudo apt-get install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler qrencode
 
-    git clone https://github.com/runebaseproject/runebase --recursive
+    git clone https://github.com/runebase/runebase --recursive
     cd runebase
 
     # Note autogen will prompt to install some more dependencies if needed
     ./autogen.sh
-    ./configure 
+    ./configure
     make -j2
-    
+
 ### Build on CentOS
 
-Here is a brief description for compiling Runebase on CentOS, for more details please refer to [the specific document](https://github.com/runebaseproject/runebase/blob/master/doc/build-unix.md)
+Here is a brief description for compiling Runebase on CentOS, for more details please refer to [the specific document](https://github.com/runebase/runebase/blob/master/doc/build-unix.md)
 
     # Compiling boost manually
     sudo yum install python-devel bzip2-devel
@@ -180,16 +180,16 @@ Here is a brief description for compiling Runebase on CentOS, for more details p
     ./bootstrap.sh --prefix=/usr --libdir=/usr/lib64
     ./b2 headers
     sudo ./b2 -j4 install
-    
+
     # Installing Dependencies for Runebase
     sudo yum install epel-release
     sudo yum install libtool libdb4-cxx-devel openssl-devel libevent-devel gmp-devel
-    
+
     # If you want to build the Qt GUI:
     sudo yum install qt5-qttools-devel protobuf-devel qrencode-devel
-    
+
     # Building Runebase
-    git clone --recursive https://github.com/runebaseproject/runebase.git
+    git clone --recursive https://github.com/runebase/runebase.git
     cd runebase
     ./autogen.sh
     ./configure
@@ -220,7 +220,7 @@ NOTE: Building with Qt4 is still supported, however, could result in a broken UI
 
 1. Clone the runebase source code and cd into `runebase`
 
-        git clone --recursive https://github.com/runebaseproject/runebase.git
+        git clone --recursive https://github.com/runebase/runebase.git
         cd runebase
 
 2.  Build runebase-core:
@@ -251,10 +251,10 @@ Development Process
 -------------------
 
 The `master` branch is regularly built and tested, but is not guaranteed to be
-completely stable. [Tags](https://github.com/runebaseproject/runebase/tags) are created
+completely stable. [Tags](https://github.com/runebase/runebase/tags) are created
 regularly to indicate new official, stable release versions of Runebase.
 
-The contribution workflow is described in [CONTRIBUTING.md](https://github.com/runebaseproject/runebase/blob/master/CONTRIBUTING.md).
+The contribution workflow is described in [CONTRIBUTING.md](https://github.com/runebase/runebase/blob/master/CONTRIBUTING.md).
 
 
 Testing
