@@ -118,10 +118,10 @@ public:
         consensus.BIP34Hash = uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a");
         consensus.BIP65Height = 0; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
         consensus.BIP66Height = 0; // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
-        consensus.QIP5Height = 1000;
-        consensus.QIP6Height = 1000;
-        consensus.QIP7Height = 1000;
-        consensus.QIP9Height = 1000;
+        consensus.QIP5Height = 0;
+        consensus.QIP6Height = 0;
+        consensus.QIP7Height = 0;
+        consensus.QIP9Height = 0;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -148,10 +148,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000010000093891789"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000022edd4828df7480d"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a"); // 445709
+        consensus.defaultAssumeValid = uint256S("0x4d0e8e22d990002ef0317acfdd33bb591f584eb9bd26694c1b78df58c4d1433b"); // 445709
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -200,15 +200,15 @@ public:
 
         checkpointData = {
             {
-                { 0, uint256S("0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a")},
-                { 5000, uint256S("00000bee6398f4c873aca574947fba917b811d896f82699bb45366aedfef32c8")},
+                { 0, uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a")},
+                { 5000, uint256S("0x0000d4c58654426d78d09ecd89758112bebf06ad09113edecc79d35265b4d068")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block 3e76a9f460f5df039f828e3c259da03e1b4e1ec883cbf687a228e346cc457360 (height 253817)
-            1572979629, // * UNIX timestamp of last known number of transactions
-            5001, // * total number of transactions between genesis and that timestamp
+            1573147481, // * UNIX timestamp of last known number of transactions
+            5396, // * total number of transactions between genesis and that timestamp
             //   (the tx=... number in the SetBestChain debug.log lines)
             0.0349037843706379 // * estimated number of transactions per second after that timestamp
         };
@@ -222,8 +222,8 @@ public:
                                     consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
 
-        consensus.nFixUTXOCacheHFHeight=100000;
-        consensus.nEnableHeaderSignatureHeight = 399100;
+        consensus.nFixUTXOCacheHFHeight=0;
+        consensus.nEnableHeaderSignatureHeight = 0;
     }
 };
 
@@ -336,8 +336,8 @@ public:
                                     consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
 
-        consensus.nFixUTXOCacheHFHeight=84500;
-        consensus.nEnableHeaderSignatureHeight = 391993;
+        consensus.nFixUTXOCacheHFHeight=0;
+        consensus.nEnableHeaderSignatureHeight = 0;
     }
 };
 
@@ -585,7 +585,7 @@ void UpdateConstantinopleBlockHeight(int nHeight)
 
 void CChainParams::UpdateDifficultyChangeBlockHeight(int nHeight)
 {
-    consensus.nSubsidyHalvingInterval = 985500; // runebase halving every 4 years
+    consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
     consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     consensus.QIP9Height = nHeight;
     consensus.fPowAllowMinDifficultyBlocks = false;
