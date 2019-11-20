@@ -761,7 +761,7 @@ private:
      * Wallet staking coins.
      */
     boost::thread_group* stakeThread = nullptr;
-    void StakeQtums(bool fStake, CConnman* connman);
+    void StakeRunebases(bool fStake, CConnman* connman);
 
 public:
     /*
@@ -1318,10 +1318,10 @@ public:
     /* Remove token entry from the wallet */
     bool RemoveTokenEntry(const uint256& tokenHash, bool fFlushOnClose=true);
 
-    /* Start staking qtums */
+    /* Start staking runebases */
     void StartStake(CConnman* connman = CWallet::defaultConnman);
 
-    /* Stop staking qtums */
+    /* Stop staking runebases */
     void StopStake();
 
     /* Clean token transaction entries in the wallet */
