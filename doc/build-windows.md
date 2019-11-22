@@ -89,7 +89,7 @@ This means you cannot use a directory that is located directly on the host Windo
 
 Acquire the source in the usual way:
 
-    git clone https://github.com/runebaseproject/runebase --recursive
+    git clone https://github.com/runebase/runebase --recursive
 
 Once the source code is ready the build steps are below:
 
@@ -117,7 +117,7 @@ This means you cannot use a directory that located directly on the host Windows 
 
 Acquire the source in the usual way:
 
-    git clone https://github.com/runebaseproject/runebase --recursive
+    git clone https://github.com/runebase/runebase --recursive
 
 Then build using:
 

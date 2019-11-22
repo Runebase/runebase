@@ -23,7 +23,7 @@ pkg-config
 python37
 gmp
 
-git clone https://github.com/runebaseproject/runebase --recursive
+git clone https://github.com/runebase/runebase --recursive
 ```
 
 See [dependencies.md](dependencies.md) for a complete overview.
