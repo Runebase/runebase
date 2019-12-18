@@ -48,7 +48,7 @@ static const int MAX_URI_LENGTH = 255;
 #define SPINNER_FRAMES 36
 
 #define QAPP_ORG_NAME "Runebase"
-#define QAPP_ORG_DOMAIN "runebase.org"
+#define QAPP_ORG_DOMAIN "runebase.io"
 #define QAPP_APP_NAME_DEFAULT "Runebase-Qt"
 #define QAPP_APP_NAME_TESTNET "Runebase-Qt-testnet"
 #define QAPP_APP_NAME_REGTEST "Runebase-Qt-regtest"
@@ -57,9 +57,9 @@ static const int MAX_URI_LENGTH = 255;
 static constexpr uint64_t GB_BYTES{1000000000};
 
 /* Mainnet runebase explorer uri */
-static const QString RUNEBASE_INFO_MAINNET = "<a href='https://runebase.info/%1/%2'>%2</a>";
+static const QString RUNEBASE_INFO_MAINNET = "<a href='https://explorer3.runebase.io/%1/%2'>%2</a>";
 
 /* Testnet runebase explorer uri */
-static const QString RUNEBASE_INFO_TESTNET = "<a href='https://testnet.runebase.info/%1/%2'>%2</a>";
+static const QString RUNEBASE_INFO_TESTNET = "<a href='https://testexplorer3.runebase.io/%1/%2'>%2</a>";
 
 #endif // BITCOIN_QT_GUICONSTANTS_H
