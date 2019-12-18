@@ -19,7 +19,7 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-///////////////////////////////////////////// // qtum
+///////////////////////////////////////////// // runebase
 #include <libdevcore/SHA3.h>
 #include <libdevcore/RLP.h>
 #include "arith_uint256.h"
@@ -43,8 +43,8 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.vtx.push_back(MakeTransactionRef(std::move(txNew)));
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
-    genesis.hashStateRoot = uint256(h256Touint(dev::h256("e965ffd002cd6ad0e2dc402b8044de833e06b23127ea8c3d80aec91410771495"))); // qtum
-    genesis.hashUTXORoot = uint256(h256Touint(dev::sha3(dev::rlp("")))); // qtum
+    genesis.hashStateRoot = uint256(h256Touint(dev::h256("e965ffd002cd6ad0e2dc402b8044de833e06b23127ea8c3d80aec91410771495"))); // runebase
+    genesis.hashUTXORoot = uint256(h256Touint(dev::sha3(dev::rlp("")))); // runebase
     return genesis;
 }
 
@@ -73,7 +73,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
-        consensus.nSubsidyHalvingInterval = 525960000; // qtum halving every 4 years
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
         consensus.BIP16Exception = uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a");
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a");
@@ -109,7 +109,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000022edd4828df7480d"); // qtum
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000022edd4828df7480d"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x4d0e8e22d990002ef0317acfdd33bb591f584eb9bd26694c1b78df58c4d1433b"); // 498000
@@ -190,7 +190,7 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nSubsidyHalvingInterval = 525960000; // qtum halving every 4 years
+        consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
         consensus.BIP16Exception = uint256S("0x00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded");
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded");
@@ -226,7 +226,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0"); // qtum
+        consensus.nMinimumChainWork = uint256S("0x0"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded"); // 421632
@@ -248,7 +248,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
-        vSeeds.emplace_back("qtum4.dynu.net"); // Qtum testnet
+        vSeeds.emplace_back("runebase4.dynu.net"); // Runebase testnet
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,11);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,106);
@@ -301,7 +301,7 @@ public:
         strNetworkID = "regtest";
         consensus.nSubsidyHalvingInterval = 525960000;
         consensus.BIP16Exception = uint256S("0x7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69");
-        consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests) // activate for qtum
+        consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests) // activate for runebase
         consensus.BIP34Hash = uint256S("0x7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69");
         consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in rpc activation tests)
@@ -450,7 +450,7 @@ public:
         consensus.QIP6Height = 1000;
         consensus.QIP7Height = 0; // QIP7 activated on regtest
 
-        // QTUM have 500 blocks of maturity, increased values for regtest in unit tests in order to correspond with it
+        // RUNEBASE have 500 blocks of maturity, increased values for regtest in unit tests in order to correspond with it
         consensus.nSubsidyHalvingInterval = 750;
         consensus.nRuleChangeActivationThreshold = 558; // 75% for testchains
         consensus.nMinerConfirmationWindow = 744; // Faster than normal for regtest (744 instead of 2016)
@@ -531,7 +531,7 @@ void UpdateConstantinopleBlockHeight(int nHeight)
 
 void CChainParams::UpdateDifficultyChangeBlockHeight(int nHeight)
 {
-    consensus.nSubsidyHalvingInterval = 525960000; // qtum halving every 4 years
+    consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
     consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     consensus.QIP9Height = nHeight;
     consensus.fPowAllowMinDifficultyBlocks = false;

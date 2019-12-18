@@ -75,7 +75,7 @@
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-const char * const BITCOIN_CONF_FILENAME = "qtum.conf";
+const char * const BITCOIN_CONF_FILENAME = "runebase.conf";
 
 ArgsManager gArgs;
 
@@ -682,13 +682,13 @@ void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
 
 fs::path GetDefaultDataDir()
 {
-    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Qtum
-    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Qtum
-    // Mac: ~/Library/Application Support/Qtum
-    // Unix: ~/.qtum
+    // Windows < Vista: C:\Documents and Settings\Username\Application Data\Runebase
+    // Windows >= Vista: C:\Users\Username\AppData\Roaming\Runebase
+    // Mac: ~/Library/Application Support/Runebase
+    // Unix: ~/.runebase
 #ifdef WIN32
     // Windows
-    return GetSpecialFolderPath(CSIDL_APPDATA) / "Qtum";
+    return GetSpecialFolderPath(CSIDL_APPDATA) / "Runebase";
 #else
     fs::path pathRet;
     char* pszHome = getenv("HOME");
@@ -698,10 +698,10 @@ fs::path GetDefaultDataDir()
         pathRet = fs::path(pszHome);
 #ifdef MAC_OSX
     // Mac
-    return pathRet / "Library/Application Support/Qtum";
+    return pathRet / "Library/Application Support/Runebase";
 #else
     // Unix
-    return pathRet / ".qtum";
+    return pathRet / ".runebase";
 #endif
 #endif
 }
@@ -1210,8 +1210,8 @@ std::string CopyrightHolders(const std::string& strPrefix)
     std::string strCopyrightHolders = strPrefix + strprintf(_(COPYRIGHT_HOLDERS), _(COPYRIGHT_HOLDERS_SUBSTITUTION));
 
     // Check for untranslated substitution to make sure Bitcoin Core copyright is not removed by accident
-    if (strprintf(COPYRIGHT_HOLDERS, COPYRIGHT_HOLDERS_SUBSTITUTION).find("Qtum Core") == std::string::npos) {
-        strCopyrightHolders += "\n" + strPrefix + "The Qtum Core Developers";
+    if (strprintf(COPYRIGHT_HOLDERS, COPYRIGHT_HOLDERS_SUBSTITUTION).find("Runebase Core") == std::string::npos) {
+        strCopyrightHolders += "\n" + strPrefix + "The Runebase Core Developers";
     }
     return strCopyrightHolders;
 }

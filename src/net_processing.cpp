@@ -37,7 +37,7 @@
 #include <memory>
 
 #if defined(NDEBUG)
-# error "Qtum cannot be compiled without assertions."
+# error "Runebase cannot be compiled without assertions."
 #endif
 
 /** Expiration time for orphan transactions in seconds */

@@ -38,17 +38,17 @@ from the root of the repository.
 
 **Note**: You only need Berkeley DB if the wallet is enabled (see [*Disable-wallet mode*](/doc/build-osx.md#disable-wallet-mode)).
 
-Build Qtum Core
+Build Runebase Core
 ------------------------
 
-1. Clone the Qtum Core source code:
+1. Clone the Runebase Core source code:
 
-        git clone --recursive https://github.com/qtumproject/qtum.git
-        cd qtum
+        git clone --recursive https://github.com/runebase/runebase.git
+        cd runebase
 
-2.  Build Qtum Core:
+2.  Build Runebase Core:
 
-    Configure and build the headless Qtum Core binaries as well as the GUI (if Qt is found).
+    Configure and build the headless Runebase Core binaries as well as the GUI (if Qt is found).
 
     You can disable the GUI build by passing `--without-gui` to configure.
 
@@ -78,28 +78,28 @@ Mining is also possible in disable-wallet mode using the `getblocktemplate` RPC 
 Running
 -------
 
-Qtum Core is now available at `./src/qtumd`
+Runebase Core is now available at `./src/runebased`
 
 Before running, you may create an empty configuration file:
 
-    mkdir -p "/Users/${USER}/Library/Application Support/Qtum"
+    mkdir -p "/Users/${USER}/Library/Application Support/Runebase"
 
-    touch "/Users/${USER}/Library/Application Support/Qtum/qtum.conf"
+    touch "/Users/${USER}/Library/Application Support/Runebase/runebase.conf"
 
-    chmod 600 "/Users/${USER}/Library/Application Support/Qtum/qtum.conf"
+    chmod 600 "/Users/${USER}/Library/Application Support/Runebase/runebase.conf"
 
-The first time you run qtumd, it will start downloading the blockchain. This process could take many hours, or even days on slower than average systems.
+The first time you run runebased, it will start downloading the blockchain. This process could take many hours, or even days on slower than average systems.
 
 You can monitor the download process by looking at the debug.log file:
 
-    tail -f $HOME/Library/Application\ Support/Qtum/debug.log
+    tail -f $HOME/Library/Application\ Support/Runebase/debug.log
 
 Other commands:
 -------
 
-    ./src/qtumd -daemon # Starts the qtum daemon.
-    ./src/qtum-cli --help # Outputs a list of command-line options.
-    ./src/qtum-cli help # Outputs a list of RPC commands when the daemon is running.
+    ./src/runebased -daemon # Starts the runebase daemon.
+    ./src/runebase-cli --help # Outputs a list of command-line options.
+    ./src/runebase-cli help # Outputs a list of RPC commands when the daemon is running.
 
 Notes
 -----

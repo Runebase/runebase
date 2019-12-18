@@ -23,7 +23,7 @@ class CBlockIndex;
 class CCoinsViewDBCursor;
 class uint256;
 #ifdef ENABLE_BITCORE_RPC
-//////////////////////////////////// //qtum
+//////////////////////////////////// //runebase
 struct CAddressIndexKey;
 struct CAddressUnspentKey;
 struct CAddressUnspentValue;
@@ -137,7 +137,7 @@ public:
     bool ReadFlag(const std::string &name, bool &fValue);
     bool LoadBlockIndexGuts(const Consensus::Params& consensusParams, std::function<CBlockIndex*(const uint256&)> insertBlockIndex);
 
-    ////////////////////////////////////////////////////////////////////////////// // qtum
+    ////////////////////////////////////////////////////////////////////////////// // runebase
     bool WriteHeightIndex(const CHeightTxIndexKey &heightIndex, const std::vector<uint256>& hash);
 
     /**

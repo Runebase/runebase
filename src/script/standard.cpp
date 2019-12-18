@@ -11,8 +11,8 @@
 #include <util/system.h>
 #include <util/strencodings.h>
 
-#include <qtum/qtumstate.h>
-#include <qtum/qtumtransaction.h>
+#include <runebase/runebasestate.h>
+#include <runebase/runebasetransaction.h>
 #include <validation.h>
 #include <streams.h>
 
@@ -195,7 +195,7 @@ txnouttype Solver(const CScript& scriptPubKey, std::vector<std::vector<unsigned 
                 else
                     break;
             }
-            /////////////////////////////////////////////////////////// qtum
+            /////////////////////////////////////////////////////////// runebase
             else if (opcode2 == OP_VERSION)
             {
                 if(0 <= opcode1 && opcode1 <= OP_PUSHDATA4)
@@ -639,7 +639,7 @@ bool ExtractDestination(const COutPoint& prevout, const CScript& scriptPubKey, C
         return true;
     }
     else if (whichType == TX_CREATE) {
-        addressRet = CKeyID(uint160(QtumState::createQtumAddress(uintToh256(prevout.hash), prevout.n).asBytes()));
+        addressRet = CKeyID(uint160(RunebaseState::createRunebaseAddress(uintToh256(prevout.hash), prevout.n).asBytes()));
         return true;
     }
     return false;
