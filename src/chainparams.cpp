@@ -193,9 +193,9 @@ public:
     CTestNetParams() {
         strNetworkID = "test";
         consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
-        consensus.BIP16Exception = uint256S("0x00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded");
+        consensus.BIP16Exception = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46");
         consensus.BIP34Height = 0;
-        consensus.BIP34Hash = uint256S("0x00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded");
+        consensus.BIP34Hash = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46");
         consensus.BIP65Height = 0; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 0; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
         consensus.QIP5Height = 0;
@@ -228,10 +228,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000000000b000b"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded"); // 421632
+        consensus.defaultAssumeValid = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46"); // 421632
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
@@ -242,9 +242,9 @@ public:
         m_assumed_blockchain_size = 2;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1572855062, 205051, 0x1f00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1578091191, 111552, 0x1f00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded"));
+        assert(consensus.hashGenesisBlock == uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46"));
         assert(genesis.hashMerkleRoot == uint256S("0x4d050108faee132d46f0c26c346fee17e804d20f658e0b61afe3fd083c8281af"));
 
         vFixedSeeds.clear();
@@ -269,7 +269,7 @@ public:
 
         checkpointData = {
             {
-                {0, uint256S("00007a6554ede166eccde23e02bad50894d83fe1c59cbe24b4374b9d6b798ded")},
+                {0, uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46")},
             }
         };
 
@@ -289,8 +289,8 @@ public:
                                     consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
 
-        consensus.nFixUTXOCacheHFHeight=84500;
-        consensus.nEnableHeaderSignatureHeight = 391993;
+        consensus.nFixUTXOCacheHFHeight=5500;
+        consensus.nEnableHeaderSignatureHeight = 6000;
     }
 };
 
