@@ -66,6 +66,46 @@ static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
 
+static void MineGenesis(CBlockHeader& genesisBlock, const uint256& powLimit, bool noProduction)
+{
+    if(noProduction)
+        genesisBlock.nTime = std::time(0);
+    genesisBlock.nNonce = 0;
+
+    printf("NOTE: Genesis nTime = %u \n", genesisBlock.nTime);
+    printf("WARN: Genesis nNonce (BLANK!) = %u \n", genesisBlock.nNonce);
+
+    arith_uint256 besthash;
+    memset(&besthash,0xFF,32);
+    arith_uint256 hashTarget = UintToArith256(powLimit);
+    printf("Target: %s\n", hashTarget.GetHex().c_str());
+    arith_uint256 newhash = UintToArith256(genesisBlock.GetHash());
+    while (newhash > hashTarget) {
+        genesisBlock.nNonce++;
+        if (genesisBlock.nNonce == 0) {
+            printf("NONCE WRAPPED, incrementing time\n");
+            ++genesisBlock.nTime;
+        }
+        // If nothing found after trying for a while, print status
+        if ((genesisBlock.nNonce & 0xfff) == 0)
+            printf("nonce %08X: hash = %s (target = %s)\n",
+                   genesisBlock.nNonce, newhash.ToString().c_str(),
+                   hashTarget.ToString().c_str());
+
+        if(newhash < besthash) {
+            besthash = newhash;
+            printf("New best: %s\n", newhash.GetHex().c_str());
+        }
+        newhash = UintToArith256(genesisBlock.GetHash());
+    }
+    printf("Genesis nTime = %u \n", genesisBlock.nTime);
+    printf("Genesis nNonce = %u \n", genesisBlock.nNonce);
+    printf("Genesis nBits: %08x\n", genesisBlock.nBits);
+    printf("Genesis Hash = %s\n", newhash.ToString().c_str());
+    printf("Genesis hashStateRoot = %s\n", genesisBlock.hashStateRoot.ToString().c_str());
+    printf("Genesis Hash Merkle Root = %s\n", genesisBlock.hashMerkleRoot.ToString().c_str());
+}
+
 /**
  * Main network
  */
@@ -112,7 +152,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000014690af71ac0d9e6ed"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0xd8ca8a41167c7d8b1cd080718a6846e1729693ee5ce62de57d9eae64dd02d842"); // 32411
+        consensus.defaultAssumeValid = uint256S("0x1a97db79cfa7810a4447b52a841a37143962e83a8796c43975a16617d0694dd6"); // 46276
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -160,13 +200,14 @@ public:
                 { 0, uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a")},
                 { 5000, uint256S("0x0000d4c58654426d78d09ecd89758112bebf06ad09113edecc79d35265b4d068")},
                 { 32411, uint256S("0xd8ca8a41167c7d8b1cd080718a6846e1729693ee5ce62de57d9eae64dd02d842")},
+                { 46276, uint256S("0x1a97db79cfa7810a4447b52a841a37143962e83a8796c43975a16617d0694dd6")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block 5c0215809068d3e8520997febc84ca578b4ddf3f8917a86b6c7f5e1deecb5c32 (height 499049)
-            1576748016, // * UNIX timestamp of last known number of transactions
-            61264, // * total number of transactions between genesis and that timestamp
+            1578522304, // * UNIX timestamp of last known number of transactions
+            89144, // * total number of transactions between genesis and that timestamp
             //   (the tx=... number in the SetBestChain debug.log lines)
             0.03358921219453481 // * estimated number of transactions per second after that timestamp
         };
@@ -228,10 +269,17 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
+<<<<<<< HEAD
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000233c76da937ee1af9"); // runebase
+
+        // By default assume that the signatures in ancestors of this block are valid.
+        consensus.defaultAssumeValid = uint256S("0x0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa"); // 7542
+=======
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000000000b000b"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46"); // 421632
+>>>>>>> f6af3c073522f5144beeb48a9544cc718dbfe980
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
@@ -241,8 +289,17 @@ public:
         nPruneAfterHeight = 1000;
         m_assumed_blockchain_size = 2;
         m_assumed_chain_state_size = 1;
+        startNewChain = false;
 
         genesis = CreateGenesisBlock(1578091191, 111552, 0x1f00ffff, 1, 50 * COIN);
+
+        if (startNewChain)
+            MineGenesis(genesis, consensus.powLimit, true);
+
+<<<<<<< HEAD
+=======
+        genesis = CreateGenesisBlock(1578091191, 111552, 0x1f00ffff, 1, 50 * COIN);
+>>>>>>> f6af3c073522f5144beeb48a9544cc718dbfe980
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46"));
         assert(genesis.hashMerkleRoot == uint256S("0x4d050108faee132d46f0c26c346fee17e804d20f658e0b61afe3fd083c8281af"));
@@ -266,17 +323,20 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
 
-
         checkpointData = {
             {
                 {0, uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46")},
+<<<<<<< HEAD
+                {7542, uint256S("0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa")},
+=======
+>>>>>>> f6af3c073522f5144beeb48a9544cc718dbfe980
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block babfd02d9dd271a12a2fd1b8ba95a0c73aca9a0b25889d3340a7ca3fb406a2cf (height 496333)
-            0,
-            0,
+            1578519744,
+            10872,
             0.01624824080589608
         };
 
