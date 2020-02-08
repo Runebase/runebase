@@ -109,10 +109,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000014690af71ac0d9e6ed"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000003e6ca7cfb1a90b9343"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x1a97db79cfa7810a4447b52a841a37143962e83a8796c43975a16617d0694dd6"); // 46276
+        consensus.defaultAssumeValid = uint256S("0x28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2"); // 46276
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -161,13 +161,14 @@ public:
                 { 5000, uint256S("0x0000d4c58654426d78d09ecd89758112bebf06ad09113edecc79d35265b4d068")},
                 { 32411, uint256S("0xd8ca8a41167c7d8b1cd080718a6846e1729693ee5ce62de57d9eae64dd02d842")},
                 { 46276, uint256S("0x1a97db79cfa7810a4447b52a841a37143962e83a8796c43975a16617d0694dd6")},
+                { 66889, uint256S("0x28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block 5c0215809068d3e8520997febc84ca578b4ddf3f8917a86b6c7f5e1deecb5c32 (height 499049)
-            1578522304, // * UNIX timestamp of last known number of transactions
-            89144, // * total number of transactions between genesis and that timestamp
+            1581162704, // * UNIX timestamp of last known number of transactions
+            130595, // * total number of transactions between genesis and that timestamp
             //   (the tx=... number in the SetBestChain debug.log lines)
             0.03358921219453481 // * estimated number of transactions per second after that timestamp
         };
@@ -232,7 +233,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000233c76da937ee1af9"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa"); // 7542
+        consensus.defaultAssumeValid = uint256S("0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa"); // 7542
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
@@ -252,7 +253,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
-        vSeeds.emplace_back("runebase4.dynu.net"); // Runebase testnet
+        vSeeds.emplace_back("dnsseed-testnet.runebase.io"); // Runebase testnet
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,11);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,106);
