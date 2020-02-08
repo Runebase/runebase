@@ -29,6 +29,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
     _sealEngine.deleteAddresses.insert({_t.sender(), _envInfo.author()});
 
     h256 oldStateRoot = rootHash();
+    h256 oldUTXORoot = rootHashUTXO();
     bool voutLimit = false;
 
 	auto onOp = _onOp;
@@ -121,9 +122,9 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
             refund.vout.push_back(CTxOut(CAmount(_t.value().convert_to<uint64_t>()), script));
         }
         //make sure to use empty transaction if no vouts made
-        return ResultExecute{ex, dev::eth::TransactionReceipt(oldStateRoot, gas, e.logs()), refund.vout.empty() ? CTransaction() : CTransaction(refund)};
+        return ResultExecute{ex, RunebaseTransactionReceipt(oldStateRoot, oldUTXORoot, gas, e.logs()), refund.vout.empty() ? CTransaction() : CTransaction(refund)};
     }else{
-        return ResultExecute{res, dev::eth::TransactionReceipt(rootHash(), startGasUsed + e.gasUsed(), e.logs()), tx ? *tx : CTransaction()};
+        return ResultExecute{res, RunebaseTransactionReceipt(rootHash(), rootHashUTXO(), startGasUsed + e.gasUsed(), e.logs()), tx ? *tx : CTransaction()};
     }
 }
 
@@ -160,7 +161,7 @@ Vin* RunebaseState::vin(dev::Address const& _addr)
         std::string stateBack = stateUTXO.at(_addr);
         if (stateBack.empty())
             return nullptr;
-            
+
         dev::RLP state(stateBack);
         auto i = cacheUTXO.emplace(
             std::piecewise_construct,
@@ -179,7 +180,7 @@ Vin* RunebaseState::vin(dev::Address const& _addr)
 
 //     runebase::commit(cacheUTXO, stateUTXO, m_cache);
 //     cacheUTXO.clear();
-        
+
 //     m_touched += dev::eth::commit(m_cache, m_state);
 //     m_changeLog.clear();
 //     m_cache.clear();

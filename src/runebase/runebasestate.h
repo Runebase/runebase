@@ -12,7 +12,7 @@
 #include <libethereum/Executive.h>
 #include <libethcore/SealEngine.h>
 
-using OnOpFunc = std::function<void(uint64_t, uint64_t, dev::eth::Instruction, dev::bigint, dev::bigint, 
+using OnOpFunc = std::function<void(uint64_t, uint64_t, dev::eth::Instruction, dev::bigint, dev::bigint,
     dev::bigint, dev::eth::VMFace const*, dev::eth::ExtVMFace const*)>;
 using plusAndMinus = std::pair<dev::u256, dev::u256>;
 using valtype = std::vector<unsigned char>;
@@ -30,9 +30,20 @@ struct Vin{
     uint8_t alive;
 };
 
+class RunebaseTransactionReceipt: public dev::eth::TransactionReceipt {
+public:
+    RunebaseTransactionReceipt(dev::h256 const& state_root, dev::h256 const& utxo_root, dev::u256 const& gas_used, dev::eth::LogEntries const& log) : dev::eth::TransactionReceipt(state_root, gas_used, log), m_utxoRoot(utxo_root) {}
+
+    dev::h256 const& utxoRoot() const {
+        return m_utxoRoot;
+    }
+private:
+    dev::h256 m_utxoRoot;
+};
+
 struct ResultExecute{
     dev::eth::ExecutionResult execRes;
-    dev::eth::TransactionReceipt txRec;
+    RunebaseTransactionReceipt txRec;
     CTransaction tx;
 };
 
@@ -58,7 +69,7 @@ namespace runebase{
 class CondensingTX;
 
 class RunebaseState : public dev::eth::State {
-    
+
 public:
 
     RunebaseState();
@@ -139,11 +150,11 @@ struct TemporaryState{
     dev::h256 oldHashStateRoot;
     dev::h256 oldHashUTXORoot;
 
-    TemporaryState(std::unique_ptr<RunebaseState>& _globalStateRef) : 
+    TemporaryState(std::unique_ptr<RunebaseState>& _globalStateRef) :
         globalStateRef(_globalStateRef),
-        oldHashStateRoot(globalStateRef->rootHash()), 
+        oldHashStateRoot(globalStateRef->rootHash()),
         oldHashUTXORoot(globalStateRef->rootHashUTXO()) {}
-                
+
     void SetRoot(dev::h256 newHashStateRoot, dev::h256 newHashUTXORoot)
     {
         globalStateRef->setRoot(newHashStateRoot);
