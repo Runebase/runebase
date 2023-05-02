@@ -230,7 +230,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000233c76da937ee1af9"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000000a550a55"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa"); // 7542
