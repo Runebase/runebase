@@ -292,7 +292,7 @@ public:
                                     consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
 
-        consensus.nFixUTXOCacheHFHeight=5500;
+        consensus.nFixUTXOCacheHFHeight=0;
         consensus.nEnableHeaderSignatureHeight = 0;
     }
 };
