@@ -204,13 +204,13 @@ public:
         consensus.QIP6Height = 0;
         consensus.QIP7Height = 0;
         consensus.QIP9Height = 0;
-        consensus.nOfflineStakeHeight = 5500;
+        consensus.nOfflineStakeHeight = 10000;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
         consensus.nPowTargetTimespan = 16 * 60; // 16 minutes
         consensus.nPowTargetTimespanV2 = 4000;
-        consensus.nPowTargetSpacing = 2 * 64;
+        consensus.nPowTargetSpacing = 1 * 16;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = true;
         consensus.fPoSNoRetargeting = false;
@@ -221,10 +221,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000000a550a55"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000000003d003d"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa"); // 421632
+        consensus.defaultAssumeValid = uint256S("0x000039db3a454e710a82851db5626734d574cd7933b460838c8cd3e19259af50"); // 50
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
@@ -264,14 +264,14 @@ public:
         checkpointData = {
             {
                 {0, uint256S("0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46")},
-                {2592, uint256S("0x00004ca0f42bb773f8fd3cd036a08765e1155c06ecf57457e18c3b4bf3e70c23")}, //last PoW block
+                {50, uint256S("0x000039db3a454e710a82851db5626734d574cd7933b460838c8cd3e19259af50")}, //last PoW block
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block babfd02d9dd271a12a2fd1b8ba95a0c73aca9a0b25889d3340a7ca3fb406a2cf (height 496333)
-            1683012707,
-            2593,
+            1683132484,
+            51,
             0.01624824080589608
         };
 
@@ -281,7 +281,7 @@ public:
         consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
                                     consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
-        consensus.nLastMPoSBlock = 5499;
+        consensus.nLastMPoSBlock = 9999;
 
         consensus.nFixUTXOCacheHFHeight = 0;
         consensus.nEnableHeaderSignatureHeight = 6000;
