@@ -106,7 +106,7 @@ public:
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000003e6ca7cfb1a90b9343"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2"); // 498000
+        consensus.defaultAssumeValid = uint256S("0xd281ea716a2202e876f94b2a3a32c3f79c4a2f7f8c542c764cab5fee605ed28c"); // 862906
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -156,13 +156,14 @@ public:
                 { 32411, uint256S("d8ca8a41167c7d8b1cd080718a6846e1729693ee5ce62de57d9eae64dd02d842")},
                 { 46276, uint256S("1a97db79cfa7810a4447b52a841a37143962e83a8796c43975a16617d0694dd6")},
                 { 66889, uint256S("28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2")},
+                { 862906, uint256S("d281ea716a2202e876f94b2a3a32c3f79c4a2f7f8c542c764cab5fee605ed28c")},
             }
         };
 
         chainTxData = ChainTxData{
             // Data as of block 5c0215809068d3e8520997febc84ca578b4ddf3f8917a86b6c7f5e1deecb5c32 (height 499049)
-            1581162704, // * UNIX timestamp of last known number of transactions
-            130595, // * total number of transactions between genesis and that timestamp
+            1683082400, // * UNIX timestamp of last known number of transactions
+            1735093, // * total number of transactions between genesis and that timestamp
             //   (the tx=... number in the SetBestChain debug.log lines)
             0.03358921219453481 // * estimated number of transactions per second after that timestamp
         };
