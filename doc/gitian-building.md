@@ -1,6 +1,5 @@
 Gitian building
 ================
-
 *Setup instructions for a Gitian build of Runebase Core using a Debian VM or physical system.*
 
 Gitian is the deterministic build process that is used to build the Runebase
@@ -11,7 +10,7 @@ the same, tested dependencies are used and statically built into the executable.
 Multiple developers build the source code by following a specific descriptor
 ("recipe"), cryptographically sign the result, and upload the resulting signature.
 These results are compared and only if they match, the build is accepted and uploaded
-to runebase.org.
+to runebase.io.
 
 More independent Gitian builders are needed, which is why this guide exists.
 It is preferred you follow these steps yourself instead of using someone else's
@@ -152,7 +151,7 @@ To select a different button, press `Tab`.
 ![](gitian-building/debian_install_9_user_password.png)
 
 - The installer will set up the clock using a time server; this process should be automatic
-- Set up the clock: choose a time zone (depends on the locale settings that you picked earlier; specifics don't matter)  
+- Set up the clock: choose a time zone (depends on the locale settings that you picked earlier; specifics don't matter)
 
 ![](gitian-building/debian_install_10_configure_clock.png)
 
@@ -492,4 +491,4 @@ Uploading signatures
 
 After building and signing you can push your signatures (both the `.assert` and `.assert.sig` files) to the
 [runebase/gitian.sigs](https://github.com/runebase/gitian.sigs/) repository, or if that's not possible create a pull
-request. You can also mail the files to Jordan Earls (earlz@runebase.org) and he will commit them.
+request. You can also mail the files to Jordan Earls (earlz@qtum.org) and he will commit them.

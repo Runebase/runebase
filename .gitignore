@@ -1,6 +1,7 @@
 *.tar.gz
 
 *.exe
+*.pdb
 src/bitcoin
 src/bitcoind
 src/bitcoin-cli
@@ -34,6 +35,7 @@ libtool
 src/config/bitcoin-config.h
 src/config/bitcoin-config.h.in
 src/config/stamp-h1
+src/obj
 share/setup.nsi
 share/qt/Info.plist
 
@@ -62,7 +64,6 @@ src/qt/bitcoin-qt.includes
 *.pyc
 *.o
 *.o-*
-*.patch
 *.a
 *.pb.cc
 *.pb.h
@@ -75,6 +76,10 @@ src/qt/bitcoin-qt.includes
 *.json.h
 *.raw.h
 
+# Only ignore unexpected patches
+*.patch
+!depends/patches/**/*.patch
+
 #libtool object files
 *.lo
 *.la
@@ -82,9 +87,13 @@ src/qt/bitcoin-qt.includes
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
+!depends/Makefile
 bitcoin-qt
 Bitcoin-Qt.app
 background.tiff*
+
+# Qt Creator
+Makefile.am.user
 
 # Unit-tests
 Makefile.test
@@ -125,16 +134,21 @@ db4/
 # clang-check
 *.plist
 
+osx_volname
+dist/
+*.background.tiff
+
 .cproject
 .project
 .settings/language.settings.xml
-src/qtum-cli
-src/qtum-tx
-src/qtumd
-src/qtum-wallet
-src/bench/bench_qtum
-src/qt/qtum-qt
-src/qt/test/test_qtum-qt
+src/runebase-cli
+src/runebase-tx
+src/runebased
+src/runebase-wallet
+src/bench/bench_runebase
+src/qt/runebase-qt
+src/qt/test/test_runebase-qt
 src/test/buildenv.py
-src/test/test_qtum
-src/test/test_qtum_fuzzy
+src/test/test_runebase
+src/test/test_runebase_fuzzy
+Debug

@@ -1,5 +1,6 @@
 ---
 name: "runebase-dmg-signer"
+distro: "ubuntu"
 suites:
 - "bionic"
 architectures:

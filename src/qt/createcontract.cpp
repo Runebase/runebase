@@ -12,7 +12,7 @@
 #include <util/moneystr.h>
 #include <qt/addressfield.h>
 #include <qt/abifunctionfield.h>
-#include <qt/contractabi.h>
+#include <qt/contractutil.h>
 #include <qt/tabbarinfo.h>
 #include <qt/contractresult.h>
 #include <qt/sendcoinsdialog.h>
@@ -110,7 +110,7 @@ CreateContract::~CreateContract()
 void CreateContract::setLinkLabels()
 {
     ui->labelSolidity->setOpenExternalLinks(true);
-    ui->labelSolidity->setText("<a href=\"https://qmix.qtum.org/\">Solidity compiler</a>");
+    ui->labelSolidity->setText("<a href=\"https://qmix.qtum.io/\">Solidity compiler</a>");
 }
 
 void CreateContract::setModel(WalletModel *_model)
@@ -210,7 +210,7 @@ void CreateContract::on_createContractClicked()
 
         QString questionString = tr("Are you sure you want to create contract? <br />");
 
-        SendConfirmationDialog confirmationDialog(tr("Confirm contract creation."), questionString, 3, this);
+        SendConfirmationDialog confirmationDialog(tr("Confirm contract creation."), questionString, "", "", SEND_CONFIRM_DELAY, this);
         confirmationDialog.exec();
         QMessageBox::StandardButton retval = (QMessageBox::StandardButton)confirmationDialog.result();
         if(retval == QMessageBox::Yes)
@@ -299,7 +299,7 @@ QString CreateContract::toDataHex(int func, QString& errorMessage)
     }
     else
     {
-        errorMessage = function.errorMessage(errors, true);
+        errorMessage = ContractUtil::errorMessage(function, errors, true);
     }
     return "";
 }

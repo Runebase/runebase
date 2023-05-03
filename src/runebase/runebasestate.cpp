@@ -55,7 +55,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
         startGasUsed = _envInfo.gasUsed();
         if (!e.execute()){
             e.go(onOp);
-            if(chainActive.Height() >= consensusParams.QIP7Height){
+            if(ChainActive().Height() >= consensusParams.QIP7Height){
             	validateTransfersWithChangeLog();
             }
         } else {
@@ -92,7 +92,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
         printfErrorLog(dev::eth::toTransactionException(_e));
         res.excepted = dev::eth::toTransactionException(_e);
         res.gasUsed = _t.gas();
-        if(chainActive.Height() < consensusParams.nFixUTXOCacheHFHeight  && _p != Permanence::Reverted){
+        if(ChainActive().Height() < consensusParams.nFixUTXOCacheHFHeight  && _p != Permanence::Reverted){
             deleteAccounts(_sealEngine.deleteAddresses);
             commit(CommitBehaviour::RemoveEmptyAccounts);
         } else {
@@ -161,7 +161,7 @@ Vin* RunebaseState::vin(dev::Address const& _addr)
         std::string stateBack = stateUTXO.at(_addr);
         if (stateBack.empty())
             return nullptr;
-
+            
         dev::RLP state(stateBack);
         auto i = cacheUTXO.emplace(
             std::piecewise_construct,
@@ -180,7 +180,7 @@ Vin* RunebaseState::vin(dev::Address const& _addr)
 
 //     runebase::commit(cacheUTXO, stateUTXO, m_cache);
 //     cacheUTXO.clear();
-
+        
 //     m_touched += dev::eth::commit(m_cache, m_state);
 //     m_changeLog.clear();
 //     m_cache.clear();
@@ -284,6 +284,16 @@ void RunebaseState::validateTransfersWithChangeLog(){
 	}
 
 	transfers=validatedTransfers;
+}
+
+void RunebaseState::deployDelegationsContract(){
+    dev::Address delegationsAddress = uintToh160(Params().GetConsensus().delegationsAddress);
+    if(!RunebaseState::addressInUse(delegationsAddress)){
+        RunebaseState::createContract(delegationsAddress);
+        RunebaseState::setCode(delegationsAddress, bytes{fromHex(DELEGATIONS_CONTRACT_CODE)});
+        commit(CommitBehaviour::RemoveEmptyAccounts);
+        db().commit();
+    }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 CTransaction CondensingTX::createCondensingTX(){

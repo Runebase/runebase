@@ -17,7 +17,6 @@
 #include <net.h>
 #include <netbase.h>
 #include <txdb.h> // for -dbcache defaults
-#include <qt/intro.h>
 
 #ifdef ENABLE_WALLET
 #include <wallet/wallet.h>
@@ -28,6 +27,7 @@
 #include <QSettings>
 #include <QStringList>
 #include <util/moneystr.h>
+
 const char *DEFAULT_GUI_PROXY_HOST = "127.0.0.1";
 
 static const QString GetDefaultProxyAddress();
@@ -98,16 +98,29 @@ void OptionsModel::Init(bool resetSettings)
         settings.setValue("bPrune", false);
     if (!settings.contains("nPruneSize"))
         settings.setValue("nPruneSize", 2);
-    // Convert prune size from GB to MiB:
-    const uint64_t nPruneSizeMiB = (settings.value("nPruneSize").toInt() * GB_BYTES) >> 20;
-    if (!m_node.softSetArg("-prune", settings.value("bPrune").toBool() ? std::to_string(nPruneSizeMiB) : "0")) {
-        addOverriddenOption("-prune");
-    }
+    SetPrune(settings.value("bPrune").toBool());
 
     if (!settings.contains("nDatabaseCache"))
         settings.setValue("nDatabaseCache", (qint64)nDefaultDbCache);
     if (!m_node.softSetArg("-dbcache", settings.value("nDatabaseCache").toString().toStdString()))
         addOverriddenOption("-dbcache");
+
+#ifdef ENABLE_WALLET
+    if (!settings.contains("fSuperStaking"))
+        settings.setValue("fSuperStaking", false);
+    bool fSuperStaking = settings.value("fSuperStaking").toBool();
+    if (!m_node.softSetBoolArg("-superstaking", fSuperStaking))
+        addOverriddenOption("-superstaking");
+    if(fSuperStaking)
+    {
+        if (!m_node.softSetBoolArg("-staking", true))
+            addOverriddenOption("-staking");
+        if (!m_node.softSetBoolArg("-logevents", true))
+            addOverriddenOption("-logevents");
+        if (!m_node.softSetBoolArg("-addrindex", true))
+            addOverriddenOption("-addrindex");
+    }
+#endif
 
     if (!settings.contains("fLogEvents"))
         settings.setValue("fLogEvents", fLogEvents);
@@ -127,7 +140,7 @@ void OptionsModel::Init(bool resetSettings)
         addOverriddenOption("-par");
 
     if (!settings.contains("strDataDir"))
-        settings.setValue("strDataDir", Intro::getDefaultDataDirectory());
+        settings.setValue("strDataDir", GUIUtil::getDefaultDataDirectory());
 
     // Wallet
 #ifdef ENABLE_WALLET
@@ -220,7 +233,7 @@ static void CopySettings(QSettings& dst, const QSettings& src)
 /** Back up a QSettings to an ini-formatted file. */
 static void BackupSettings(const fs::path& filename, const QSettings& src)
 {
-    qWarning() << "Backing up GUI settings to" << GUIUtil::boostPathToQString(filename);
+    qInfo() << "Backing up GUI settings to" << GUIUtil::boostPathToQString(filename);
     QSettings dst(GUIUtil::boostPathToQString(filename), QSettings::IniFormat);
     dst.clear();
     CopySettings(dst, src);
@@ -234,7 +247,7 @@ void OptionsModel::Reset()
     BackupSettings(GetDataDir(true) / "guisettings.ini.bak", settings);
 
     // Save the strDataDir setting
-    QString dataDir = Intro::getDefaultDataDirectory();
+    QString dataDir = GUIUtil::getDefaultDataDirectory();
     dataDir = settings.value("strDataDir", dataDir).toString();
 
     // Remove all entries from our QSettings object
@@ -286,6 +299,22 @@ static void SetProxySetting(QSettings &settings, const QString &name, const Prox
 static const QString GetDefaultProxyAddress()
 {
     return QString("%1:%2").arg(DEFAULT_GUI_PROXY_HOST).arg(DEFAULT_GUI_PROXY_PORT);
+}
+
+void OptionsModel::SetPrune(bool prune, bool force)
+{
+    QSettings settings;
+    settings.setValue("bPrune", prune);
+    // Convert prune size from GB to MiB:
+    const uint64_t nPruneSizeMiB = (settings.value("nPruneSize").toInt() * GB_BYTES) >> 20;
+    std::string prune_val = prune ? std::to_string(nPruneSizeMiB) : "0";
+    if (force) {
+        m_node.forceSetArg("-prune", prune_val);
+        return;
+    }
+    if (!m_node.softSetArg("-prune", prune_val)) {
+        addOverriddenOption("-prune");
+    }
 }
 
 // read QSettings values and return them
@@ -351,6 +380,10 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("nDatabaseCache");
         case LogEvents:
             return settings.value("fLogEvents");
+#ifdef ENABLE_WALLET
+        case SuperStaking:
+            return settings.value("fSuperStaking");
+#endif
         case ThreadsScriptVerif:
             return settings.value("nThreadsScriptVerif");
         case Listen:
@@ -511,6 +544,12 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             }
             break;
 #ifdef ENABLE_WALLET
+        case SuperStaking:
+            if (settings.value("fSuperStaking") != value) {
+                settings.setValue("fSuperStaking", value);
+                setRestartRequired(true);
+            }
+            break;
         case ReserveBalance:
             if (settings.value("nReserveBalance") != value) {
                 settings.setValue("nReserveBalance", value);

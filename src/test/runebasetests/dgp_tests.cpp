@@ -5,7 +5,7 @@
 
 namespace dgpTest{
 
-std::vector<valtype> code = {
+const std::vector<valtype> code = {
     /*setInitialAdmin()*/
     valtype(ParseHex("6fb81cbb")),
     /*
@@ -274,18 +274,18 @@ struct EVMScheduleCustom : public dev::eth::EVMSchedule{
     }
 };
 
-EVMScheduleCustom EVMScheduleContractGasSchedule(true,true,true,true,{{10,10,10,10,10,10,10,10}},10,50,30,6,200,20000,5000,15000,
+const EVMScheduleCustom EVMScheduleContractGasSchedule(true,true,true,true,{{10,10,10,10,10,10,10,10}},10,50,30,6,200,20000,5000,15000,
     1,375,8,375,32000,700,2300,9000,25000,24000,3,512,200,21000,53000,4,68,3,700,700,400,5000,24576);
-EVMScheduleCustom EVMScheduleContractGasSchedule2(true,true,true,true,{{13,10,10,10,10,10,10,10}},10,50,30,6,200,20000,5000,15000,
+const EVMScheduleCustom EVMScheduleContractGasSchedule2(true,true,true,true,{{13,10,10,10,10,10,10,10}},10,50,30,6,200,20000,5000,15000,
     1,375,8,375,32000,700,2300,9000,25000,24000,3,512,200,21000,53000,4,68,3,700,700,400,5000,300);
-EVMScheduleCustom EVMScheduleContractGasSchedule3(true,true,true,true,{{13,13,10,10,10,10,10,10}},10,50,30,6,200,20000,5000,15000,
+const EVMScheduleCustom EVMScheduleContractGasSchedule3(true,true,true,true,{{13,13,10,10,10,10,10,10}},10,50,30,6,200,20000,5000,15000,
     1,375,8,375,32000,700,2300,9000,25000,24000,3,512,200,21000,53000,4,68,3,700,700,400,600,300);
 
-dev::h256 hash = dev::h256(ParseHex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+const dev::h256 hash = dev::h256(ParseHex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
 
 void contractLoading(){
     const CChainParams& chainparams = Params();
-    dev::eth::ChainParams cp((chainparams.EVMGenesisInfo(dev::eth::Network::runebaseMainNetwork, 1400)));
+    dev::eth::ChainParams cp(chainparams.EVMGenesisInfo(1400));
     globalState->populateFrom(cp.genesisState);
     globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
     globalState->db().commit();
@@ -317,7 +317,7 @@ bool compareUint64(const uint64_t& value1, const uint64_t& value2){
     return false;
 }
 
-void createTestContractsAndBlocks(TestChain100Setup* testChain100Setup, valtype& code1, valtype& code2, valtype& code3, dev::Address addr){
+void createTestContractsAndBlocks(TestChain100Setup* testChain100Setup, const valtype& code1, const valtype& code2, const valtype& code3, dev::Address addr){
     std::function<void(size_t n)> generateBlocks = [&](size_t n){
         dev::h256 oldHashStateRoot = globalState->rootHash();
         dev::h256 oldHashUTXORoot = globalState->rootHashUTXO();
@@ -418,7 +418,7 @@ BOOST_AUTO_TEST_CASE(gas_schedule_one_paramsInstance_introductory_block_1_test2)
 }
 
 BOOST_AUTO_TEST_CASE(gas_schedule_passage_from_0_to_130_three_paramsInstance_test){
-    initState();
+//    initState();
     contractLoading();    
     createTestContractsAndBlocks(this, code[1], code[3], code[5], GasScheduleDGP);
     RunebaseDGP runebaseDGP(globalState.get());
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_CASE(gas_schedule_passage_from_0_to_130_three_paramsInstance_tes
 }
 
 BOOST_AUTO_TEST_CASE(gas_schedule_passage_from_130_to_0_three_paramsInstance_test){
-    initState();
+//    initState();
     contractLoading();
     
     createTestContractsAndBlocks(this, code[1], code[3], code[5], GasScheduleDGP);
@@ -493,7 +493,7 @@ BOOST_AUTO_TEST_CASE(block_size_one_paramsInstance_introductory_block_1_test2){
 }
 
 BOOST_AUTO_TEST_CASE(block_size_passage_from_0_to_130_three_paramsInstance_test){
-    initState();
+//    initState();
     contractLoading();
     
     createTestContractsAndBlocks(this, code[7], code[8], code[9], BlockSizeDGP);
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE(block_size_passage_from_0_to_130_three_paramsInstance_test)
 }
 
 BOOST_AUTO_TEST_CASE(block_size_passage_from_130_to_0_three_paramsInstance_test){
-    initState();
+//    initState();
     contractLoading();
     
     createTestContractsAndBlocks(this, code[7], code[8], code[9], BlockSizeDGP);
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(min_gas_price_one_paramsInstance_introductory_block_1_test2
 }
 
 BOOST_AUTO_TEST_CASE(min_gas_price_passage_from_0_to_130_three_paramsInstance_test){
-    initState();
+//    initState();
     contractLoading();
     
     createTestContractsAndBlocks(this, code[10], code[11], code[12], GasPriceDGP);
@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE(min_gas_price_passage_from_0_to_130_three_paramsInstance_te
 }
 
 BOOST_AUTO_TEST_CASE(min_gas_price_passage_from_130_to_0_three_paramsInstance_test){
-    initState();
+//    initState();
     contractLoading();
     
     createTestContractsAndBlocks(this, code[10], code[11], code[12], GasPriceDGP);

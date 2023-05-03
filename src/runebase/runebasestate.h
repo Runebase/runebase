@@ -12,7 +12,7 @@
 #include <libethereum/Executive.h>
 #include <libethcore/SealEngine.h>
 
-using OnOpFunc = std::function<void(uint64_t, uint64_t, dev::eth::Instruction, dev::bigint, dev::bigint,
+using OnOpFunc = std::function<void(uint64_t, uint64_t, dev::eth::Instruction, dev::bigint, dev::bigint, 
     dev::bigint, dev::eth::VMFace const*, dev::eth::ExtVMFace const*)>;
 using plusAndMinus = std::pair<dev::u256, dev::u256>;
 using valtype = std::vector<unsigned char>;
@@ -69,7 +69,7 @@ namespace runebase{
 class CondensingTX;
 
 class RunebaseState : public dev::eth::State {
-
+    
 public:
 
     RunebaseState();
@@ -106,6 +106,8 @@ public:
 
         return dev::Address(hashTxIdAndVout);
     }
+
+    void deployDelegationsContract();
 
     virtual ~RunebaseState(){}
 
@@ -150,11 +152,11 @@ struct TemporaryState{
     dev::h256 oldHashStateRoot;
     dev::h256 oldHashUTXORoot;
 
-    TemporaryState(std::unique_ptr<RunebaseState>& _globalStateRef) :
+    TemporaryState(std::unique_ptr<RunebaseState>& _globalStateRef) : 
         globalStateRef(_globalStateRef),
-        oldHashStateRoot(globalStateRef->rootHash()),
+        oldHashStateRoot(globalStateRef->rootHash()), 
         oldHashUTXORoot(globalStateRef->rootHashUTXO()) {}
-
+                
     void SetRoot(dev::h256 newHashStateRoot, dev::h256 newHashUTXORoot)
     {
         globalStateRef->setRoot(newHashStateRoot);

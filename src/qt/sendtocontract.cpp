@@ -11,7 +11,7 @@
 #include <validation.h>
 #include <util/moneystr.h>
 #include <qt/abifunctionfield.h>
-#include <qt/contractabi.h>
+#include <qt/contractutil.h>
 #include <qt/tabbarinfo.h>
 #include <qt/contractresult.h>
 #include <qt/contractbookpage.h>
@@ -70,7 +70,7 @@ SendToContract::SendToContract(const PlatformStyle *platformStyle, QWidget *pare
     ui->lineEditAmount->setEnabled(true);
     ui->labelContractAddress->setToolTip(tr("The contract address that will receive the funds and data."));
     ui->labelAmount->setToolTip(tr("The amount in RUNEBASE to send. Default = 0."));
-    ui->labelSenderAddress->setToolTip(tr("The quantum address that will be used as sender."));
+    ui->labelSenderAddress->setToolTip(tr("The runebase address that will be used as sender."));
 
     m_tabInfo = new TabBarInfo(ui->stackedWidget);
     m_tabInfo->addTab(0, tr("Send To Contract"));
@@ -237,7 +237,7 @@ void SendToContract::on_sendToContractClicked()
         questionString.append(tr("<b>%1</b>?")
                               .arg(ui->lineEditContractAddress->text()));
 
-        SendConfirmationDialog confirmationDialog(tr("Confirm sending to contract."), questionString, 3, this);
+        SendConfirmationDialog confirmationDialog(tr("Confirm sending to contract."), questionString, "", "", SEND_CONFIRM_DELAY, this);
         confirmationDialog.exec();
         QMessageBox::StandardButton retval = (QMessageBox::StandardButton)confirmationDialog.result();
         if(retval == QMessageBox::Yes)
@@ -406,7 +406,7 @@ QString SendToContract::toDataHex(int func, QString& errorMessage)
     }
     else
     {
-        errorMessage = function.errorMessage(errors, true);
+        errorMessage = ContractUtil::errorMessage(function, errors, true);
     }
     return "";
 }

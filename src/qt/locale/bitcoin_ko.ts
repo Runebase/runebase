@@ -217,7 +217,7 @@
         <translation>비밀번호를 다시 기입해주세요. </translation>
     </message>
     <message>
-        <source>Show password</source>
+        <source>Show passphrase</source>
         <translation>비밀번호 표시</translation>
     </message>
     <message>
@@ -395,12 +395,12 @@
         <translation type="unfinished">거래 기록 조회</translation>
     </message>
     <message>
-        <source>&amp;RRC Tokens</source>
-        <translation type="unfinished">RRC 토큰</translation>
+        <source>&amp;QRC Tokens</source>
+        <translation type="unfinished">QRC 토큰</translation>
     </message>
     <message>
-        <source>RRC Tokens (send, receive or add Tokens in list)</source>
-        <translation type="unfinished">RRC 토큰 (입출금 또는 리스트에 추가)</translation>
+        <source>QRC Tokens (send, receive or add Tokens in list)</source>
+        <translation type="unfinished">QRC 토큰 (입출금 또는 리스트에 추가)</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -515,7 +515,7 @@
         <translation type="unfinished">오류 진단 및 수정 콘솔 열기 </translation>
     </message>
     <message>
-        <source>&amp;Sending addresses...</source>
+        <source>&amp;Sending addresses</source>
         <translation type="unfinished">주소 내보내기</translation>
     </message>
     <message>
@@ -523,7 +523,7 @@
         <translation type="unfinished">사용했던 출금 주소와 라벨 리스트 표시</translation>
     </message>
     <message>
-        <source>&amp;Receiving addresses...</source>
+        <source>&amp;Receiving addresses</source>
         <translation type="unfinished">받을 주소</translation>
     </message>
     <message>
@@ -1265,7 +1265,7 @@
         <translation type="unfinished">컨트랙트의 바이트 코드</translation>
     </message>
     <message>
-        <source>The quantum address that will be used to create the contract.</source>
+        <source>The runebase address that will be used to create the contract.</source>
         <translation type="unfinished">컨트랙트 생성을 위한 Runebase주소</translation>
     </message>
     <message>
@@ -2338,7 +2338,7 @@ Please make sure to keep an updated antivirus and operating system. We can not r
     </message>
 </context>
 <context>
-    <name>RRCToken</name>
+    <name>QRCToken</name>
     <message>
         <source>Form</source>
         <translation type="unfinished">서식</translation>
@@ -3862,7 +3862,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
         <translation type="unfinished">보낼 RUNEBASE 개수. 디폴트는 0</translation>
     </message>
     <message>
-        <source>The quantum address that will be used as sender.</source>
+        <source>The runebase address that will be used as sender.</source>
         <translation type="unfinished">보낸 주소로 사용될 퀀텀 주소</translation>
     </message>
     <message>
@@ -5475,7 +5475,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     <message>
         <source>The specified config file %s does not exist
 </source>
-        <translation type="unfinished">지정한 설정파일 %s이 존재하지 않습니다.
+        <translation type="unfinished">지정한 설정파일 %s이 존재하지 않습니다. 
 </translation>
     </message>
     <message>
@@ -5944,7 +5944,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee of &quot;100 satos
     <message>
         <source>The specified config file %s does not exist
 </source>
-        <translation type="vanished">지정한 설정파일 %s이 존재하지 않습니다.
+        <translation type="vanished">지정한 설정파일 %s이 존재하지 않습니다. 
 </translation>
     </message>
     <message>

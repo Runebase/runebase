@@ -5,6 +5,8 @@
 #ifndef BITCOIN_QT_GUICONSTANTS_H
 #define BITCOIN_QT_GUICONSTANTS_H
 
+#include <cstdint>
+
 /* Milliseconds between model updates */
 static const int MODEL_UPDATE_DELAY = 2000;
 
@@ -15,7 +17,6 @@ static const int MAX_PASSPHRASE_SIZE = 1024;
 static const int STATUSBAR_ICONSIZE = 16;
 
 static const bool DEFAULT_SPLASHSCREEN = true;
-
 
 /* Transaction list -- unconfirmed transaction */
 #define COLOR_UNCONFIRMED QColor(128, 128, 128)
@@ -38,12 +39,6 @@ static const bool DEFAULT_SPLASHSCREEN = true;
  */
 static const int TOOLTIP_WRAP_THRESHOLD = 80;
 
-/* Maximum allowed URI length */
-static const int MAX_URI_LENGTH = 255;
-
-/* QRCodeDialog -- size of exported QR Code image */
-#define QR_IMAGE_SIZE 300
-
 /* Number of frames in spinner animation */
 #define SPINNER_FRAMES 36
 
@@ -57,9 +52,9 @@ static const int MAX_URI_LENGTH = 255;
 static constexpr uint64_t GB_BYTES{1000000000};
 
 /* Mainnet runebase explorer uri */
-static const QString RUNEBASE_INFO_MAINNET = "<a href='https://explorer3.runebase.io/%1/%2'>%2</a>";
+static const QString RUNEBASE_INFO_MAINNET = "<a href='https://explorer.runebase.io/%1/%2'>%2</a>";
 
 /* Testnet runebase explorer uri */
-static const QString RUNEBASE_INFO_TESTNET = "<a href='https://testexplorer3.runebase.io/%1/%2'>%2</a>";
+static const QString RUNEBASE_INFO_TESTNET = "<a href='https://testnet.runebase.io/%1/%2'>%2</a>";
 
 #endif // BITCOIN_QT_GUICONSTANTS_H

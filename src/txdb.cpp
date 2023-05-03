@@ -5,14 +5,15 @@
 
 #include <txdb.h>
 
-#include <chainparams.h>
-#include <hash.h>
-#include <random.h>
 #include <pow.h>
+#include <random.h>
 #include <shutdown.h>
+#include <ui_interface.h>
 #include <uint256.h>
 #include <util/system.h>
-#include <ui_interface.h>
+#include <util/translation.h>
+#include <validation.h>
+#include <chainparams.h>
 
 #include <stdint.h>
 
@@ -26,6 +27,7 @@ static const char DB_BLOCK_INDEX = 'b';
 ////////////////////////////////////////// // runebase
 static const char DB_HEIGHTINDEX = 'h';
 static const char DB_STAKEINDEX = 's';
+static const char DB_DELEGATEINDEX = 'd';
 //////////////////////////////////////////
 
 static const char DB_BEST_BLOCK = 'B';
@@ -34,7 +36,6 @@ static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
 
-#ifdef ENABLE_BITCORE_RPC
 ////////////////////////////////////////// // runebase
 static const char DB_ADDRESSINDEX = 'a';
 static const char DB_ADDRESSUNSPENTINDEX = 'u';
@@ -42,7 +43,6 @@ static const char DB_TIMESTAMPINDEX = 'S';
 static const char DB_BLOCKHASHINDEX = 'z';
 static const char DB_SPENTINDEX = 'p';
 //////////////////////////////////////////
-#endif
 
 namespace {
 
@@ -66,9 +66,29 @@ struct CoinEntry {
     }
 };
 
+struct DelegateEntry {
+    uint160 address;
+    uint8_t fee;
+    DelegateEntry(uint160 _address = uint160(), uint8_t _fee = 0) :
+        address(_address), fee(_fee)
+    {}
+
+    template<typename Stream>
+    void Serialize(Stream &s) const {
+        s << address;
+        s << fee;
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        s >> address;
+        s >> fee;
+    }
+};
+
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe, true)
+CCoinsViewDB::CCoinsViewDB(fs::path ldb_path, size_t nCacheSize, bool fMemory, bool fWipe) : db(ldb_path, nCacheSize, fMemory, fWipe, true)
 {
 }
 
@@ -296,7 +316,7 @@ int CBlockTreeDB::ReadHeightIndex(int low, int high, int minconf,
         }
 
         if (minconf > 0) {
-            int conf = chainActive.Height() - nextHeight;
+            int conf = ::ChainActive().Height() - nextHeight;
             if (conf < minconf) {
                 break;
             }
@@ -433,7 +453,55 @@ bool CBlockTreeDB::EraseStakeIndex(unsigned int height) {
     return WriteBatch(batch);
 }
 
-#ifdef ENABLE_BITCORE_RPC
+bool CBlockTreeDB::WriteDelegateIndex(unsigned int height, uint160 address, uint8_t fee) {
+    CDBBatch batch(*this);
+    batch.Write(std::make_pair(DB_DELEGATEINDEX, height), DelegateEntry(address, fee));
+    return WriteBatch(batch);
+}
+
+bool CBlockTreeDB::ReadDelegateIndex(unsigned int height, uint160& address, uint8_t& fee){
+    std::unique_ptr<CDBIterator> pcursor(NewIterator());
+
+    pcursor->Seek(std::make_pair(DB_DELEGATEINDEX, height));
+
+    DelegateEntry info;
+    while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
+        std::pair<char, CHeightTxIndexKey> key;
+        pcursor->GetKey(key);
+        if (key.first == DB_DELEGATEINDEX) {
+            pcursor->GetValue(info);
+            address = info.address;
+            fee = info.fee;
+            return true;
+        }else{
+            return false;
+        }
+    }
+    return false;
+}
+
+bool CBlockTreeDB::EraseDelegateIndex(unsigned int height) {
+
+    std::unique_ptr<CDBIterator> pcursor(NewIterator());
+    CDBBatch batch(*this);
+
+    pcursor->Seek(std::make_pair(DB_DELEGATEINDEX, height));
+
+    while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
+        std::pair<char, CHeightTxIndexKey> key;
+        if (pcursor->GetKey(key) && key.first == DB_HEIGHTINDEX && key.second.height == height) {
+            batch.Erase(key);
+            pcursor->Next();
+        } else {
+            break;
+        }
+    }
+
+    return WriteBatch(batch);
+}
+
 bool CBlockTreeDB::WriteAddressIndex(const std::vector<std::pair<CAddressIndexKey, CAmount > >&vect) {
     CDBBatch batch(*this);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
@@ -585,15 +653,14 @@ bool CBlockTreeDB::UpdateSpentIndex(const std::vector<std::pair<CSpentIndexKey, 
 }
 
 bool CBlockTreeDB::blockOnchainActive(const uint256 &hash) {
-    CBlockIndex* pblockindex = mapBlockIndex[hash];
+    CBlockIndex* pblockindex = ::BlockIndex()[hash];
 
-    if (!chainActive.Contains(pblockindex)) {
+    if (!::ChainActive().Contains(pblockindex)) {
        return false;
     }
 
     return true;
 }
-#endif
 ///////////////////////////////////////////////////////
 
 bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, std::function<CBlockIndex*(const uint256&)> insertBlockIndex)
@@ -602,9 +669,10 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
 
     pcursor->Seek(std::make_pair(DB_BLOCK_INDEX, uint256()));
 
-    // Load mapBlockIndex
+    // Load m_block_index
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
+        if (ShutdownRequested()) return false;
         std::pair<char, uint256> key;
         if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
             CDiskBlockIndex diskindex;
@@ -628,14 +696,14 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
                 pindexNew->hashUTXORoot   = diskindex.hashUTXORoot; // runebase
                 pindexNew->nStakeModifier = diskindex.nStakeModifier;
                 pindexNew->prevoutStake   = diskindex.prevoutStake;
-                pindexNew->vchBlockSig    = diskindex.vchBlockSig; // runebase
+                pindexNew->vchBlockSigDlgt    = diskindex.vchBlockSigDlgt; // runebase
 
                 if (!CheckIndexProof(*pindexNew, Params().GetConsensus()))
                     return error("%s: CheckIndexProof failed: %s", __func__, pindexNew->ToString());
 
                 // NovaCoin: build setStakeSeen
                 if (pindexNew->IsProofOfStake())
-                    setStakeSeen.insert(std::make_pair(pindexNew->prevoutStake, pindexNew->nTime));
+                    ::ChainstateActive().setStakeSeen.insert(std::make_pair(pindexNew->prevoutStake, pindexNew->nTime));
                 pcursor->Next();
             } else {
                 return error("%s: failed to read value", __func__);
@@ -719,7 +787,7 @@ bool CCoinsViewDB::Upgrade() {
     int64_t count = 0;
     LogPrintf("Upgrading utxo-set database...\n");
     LogPrintf("[0%%]..."); /* Continued */
-    uiInterface.ShowProgress(_("Upgrading UTXO database"), 0, true);
+    uiInterface.ShowProgress(_("Upgrading UTXO database").translated, 0, true);
     size_t batch_size = 1 << 24;
     CDBBatch batch(db);
     int reportDone = 0;
@@ -734,7 +802,7 @@ bool CCoinsViewDB::Upgrade() {
             if (count++ % 256 == 0) {
                 uint32_t high = 0x100 * *key.second.begin() + *(key.second.begin() + 1);
                 int percentageDone = (int)(high * 100.0 / 65536.0 + 0.5);
-                uiInterface.ShowProgress(_("Upgrading UTXO database"), percentageDone, true);
+                uiInterface.ShowProgress(_("Upgrading UTXO database").translated, percentageDone, true);
                 if (reportDone < percentageDone/10) {
                     // report max. every 10% step
                     LogPrintf("[%d%%]...", percentageDone); /* Continued */

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2010 ArtForz -- public domain half-a-node
 # Copyright (c) 2012 Jeff Garzik
-# Copyright (c) 2010-2018 The Bitcoin Core developers
+# Copyright (c) 2010-2019 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Bitcoin test framework primitive and message structures
@@ -28,11 +28,11 @@ import struct
 import time
 
 from test_framework.siphash import siphash256
-from test_framework.util import hex_str_to_bytes, bytes_to_hex_str, assert_equal
+from test_framework.util import hex_str_to_bytes, assert_equal
 from test_framework.runebaseconfig import INITIAL_HASH_STATE_ROOT, INITIAL_HASH_UTXO_ROOT
 
 MIN_VERSION_SUPPORTED = 60001
-MY_VERSION = 70017  # past bip-31 for ping/pong
+MY_VERSION = 70018  # past bip-31 for ping/pong
 MY_SUBVERSION = b"/python-mininode-tester:0.0.3/"
 MY_RELAY = 1 # from version 70001 onwards, fRelay should be appended to version messages (BIP37)
 
@@ -44,7 +44,7 @@ COIN = 100000000  # 1 btc in satoshis
 BIP125_SEQUENCE_NUMBER = 0xfffffffd  # Sequence number that is BIP 125 opt-in and BIP 68-opt-out
 
 NODE_NETWORK = (1 << 0)
-# NODE_GETUTXO = (1 << 1)
+NODE_GETUTXO = (1 << 1)
 NODE_BLOOM = (1 << 2)
 NODE_WITNESS = (1 << 3)
 NODE_NETWORK_LIMITED = (1 << 10)
@@ -182,7 +182,7 @@ def FromHex(obj, hex_string):
 
 # Convert a binary-serializable object to hex (eg for submission via RPC)
 def ToHex(obj):
-    return bytes_to_hex_str(obj.serialize())
+    return obj.serialize().hex()
 
 # Objects that map to bitcoind objects, which can be serialized/deserialized
 
@@ -320,7 +320,7 @@ class CTxIn:
 
     def __repr__(self):
         return "CTxIn(prevout=%s scriptSig=%s nSequence=%i)" \
-            % (repr(self.prevout), bytes_to_hex_str(self.scriptSig),
+            % (repr(self.prevout), self.scriptSig.hex(),
                self.nSequence)
 
 
@@ -344,7 +344,7 @@ class CTxOut:
     def __repr__(self):
         return "CTxOut(nValue=%i.%08i scriptPubKey=%s)" \
             % (self.nValue // COIN, self.nValue % COIN,
-               bytes_to_hex_str(self.scriptPubKey))
+               self.scriptPubKey.hex())
 
 
 class CScriptWitness:
@@ -356,7 +356,7 @@ class CScriptWitness:
 
     def __repr__(self):
         return "CScriptWitness(%s)" % \
-               (",".join([bytes_to_hex_str(x) for x in self.stack]))
+               (",".join([x.hex() for x in self.stack]))
 
     def is_null(self):
         if self.stack:
@@ -647,7 +647,7 @@ class CBlock(CBlockHeader):
         super(CBlock, self).deserialize(f)
         self.vtx = deser_vector(f, CTransaction)
 
-    def serialize(self, with_witness=False):
+    def serialize(self, with_witness=True):
         r = b""
         r += super(CBlock, self).serialize()
         if with_witness:
@@ -709,7 +709,7 @@ class CBlock(CBlockHeader):
             self.nNonce += 1
             self.rehash()
 
-    def sign_block(self, key, low_s=True):
+    def sign_block(self, key, low_s=True, pod=None, der_sig=False):
         data = b""
         data += struct.pack("<i", self.nVersion)
         data += ser_uint256(self.hashPrevBlock)
@@ -720,8 +720,10 @@ class CBlock(CBlockHeader):
         data += ser_uint256(self.hashStateRoot)
         data += ser_uint256(self.hashUTXORoot)
         data += self.prevoutStake.serialize()
+        if pod != None:
+            data += struct.pack("<b", len(pod)) + pod
         sha256NoSig = hash256(data)
-        self.vchBlockSig = key.sign_ecdsa(sha256NoSig, low_s=low_s)
+        self.vchBlockSig = key.sign_ecdsa(sha256NoSig, low_s=low_s, der_sig=der_sig)
 
     def __repr__(self):
         return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x vtx=%s)" \
@@ -864,7 +866,9 @@ class HeaderAndShortIDs:
         return [ key0, key1 ]
 
     # Version 2 compact blocks use wtxid in shortids (rather than txid)
-    def initialize_from_block(self, block, nonce=0, prefill_list = [0], use_witness = False):
+    def initialize_from_block(self, block, nonce=0, prefill_list=None, use_witness=False):
+        if prefill_list is None:
+            prefill_list = [0]
         self.header = CBlockHeader(block)
         self.nonce = nonce
         self.prefilled_txn = [ PrefilledTransaction(i, block.vtx[i]) for i in prefill_list ]
@@ -1191,7 +1195,7 @@ class msg_block:
         self.block.deserialize(f)
 
     def serialize(self):
-        return self.block.serialize(with_witness=False)
+        return self.block.serialize()
 
     def __repr__(self):
         return "msg_block(block=%s)" % (repr(self.block))
@@ -1213,11 +1217,10 @@ class msg_generic:
         return "msg_generic()"
 
 
-class msg_witness_block(msg_block):
+class msg_no_witness_block(msg_block):
     __slots__ = ()
     def serialize(self):
-        r = self.block.serialize(with_witness=True)
-        return r
+        return self.block.serialize(with_witness=False)
 
 
 class msg_getaddr:
@@ -1503,17 +1506,15 @@ class msg_blocktxn:
 
     def serialize(self):
         r = b""
-        r += self.block_transactions.serialize(with_witness=False)
+        r += self.block_transactions.serialize()
         return r
 
     def __repr__(self):
         return "msg_blocktxn(block_transactions=%s)" % (repr(self.block_transactions))
 
 
-class msg_witness_blocktxn(msg_blocktxn):
+class msg_no_witness_blocktxn(msg_blocktxn):
     __slots__ = ()
 
     def serialize(self):
-        r = b""
-        r += self.block_transactions.serialize(with_witness=True)
-        return r
+        return self.block_transactions.serialize(with_witness=False)

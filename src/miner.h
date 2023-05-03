@@ -17,11 +17,14 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 
-#include <validation.h> 
+#include <validation.h>
 
 class CBlockIndex;
 class CChainParams;
 class CScript;
+#ifdef ENABLE_WALLET
+class CWallet;
+#endif
 
 namespace Consensus { struct Params; };
 
@@ -30,6 +33,8 @@ static const bool DEFAULT_PRINTPRIORITY = false;
 static const bool DEFAULT_STAKE = true;
 
 static const bool DEFAULT_STAKE_CACHE = true;
+
+static const bool DEFAULT_SUPER_STAKE = false;
 
 //How many seconds to look ahead and prepare a block for staking
 //Look ahead up to 3 "timeslots" in the future, 48 seconds
@@ -305,6 +310,7 @@ private:
 #ifdef ENABLE_WALLET
 /** Generate a new block, without valid proof-of-work */
 void StakeRunebases(bool fStake, CWallet *pwallet, CConnman* connman, boost::thread_group*& stakeThread);
+void RefreshDelegates(CWallet *pwallet, bool myDelegates, bool stakerDelegates);
 #endif
 
 /** Modify the extranonce in a block */

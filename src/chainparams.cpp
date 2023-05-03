@@ -79,10 +79,14 @@ public:
         consensus.BIP34Hash = uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a");
         consensus.BIP65Height = 0; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
         consensus.BIP66Height = 0; // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
+        consensus.CSVHeight = 6048; // 000000000000000004a1b34462cb8aeebd5799177f7a29cf28f2d1961716b5b5
+        consensus.SegwitHeight = 6048; // 0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893
+        consensus.MinBIP9WarningHeight = 8064; // segwit activation height + miner confirmation window
         consensus.QIP5Height = 0;
         consensus.QIP6Height = 0;
         consensus.QIP7Height = 0;
         consensus.QIP9Height = 0;
+        consensus.nOfflineStakeHeight = 900000;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -98,21 +102,11 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
-        // Deployment of BIP68, BIP112, and BIP113.
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 999999999999ULL;
-
-        // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
-
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000003e6ca7cfb1a90b9343"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2"); // 46276
+        consensus.defaultAssumeValid = uint256S("0x28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2"); // 498000
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -138,7 +132,6 @@ public:
         // This is fine at runtime as we'll fall back to using them as a oneshot if they don't support the
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
-
         vSeeds.emplace_back("dnsseed.runebase.io"); // Runebase mainnet
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,61);
@@ -154,14 +147,15 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
+        m_is_test_chain = false;
 
         checkpointData = {
             {
-                { 0, uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a")},
-                { 5000, uint256S("0x0000d4c58654426d78d09ecd89758112bebf06ad09113edecc79d35265b4d068")},
-                { 32411, uint256S("0xd8ca8a41167c7d8b1cd080718a6846e1729693ee5ce62de57d9eae64dd02d842")},
-                { 46276, uint256S("0x1a97db79cfa7810a4447b52a841a37143962e83a8796c43975a16617d0694dd6")},
-                { 66889, uint256S("0x28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2")},
+                { 0, uint256S("0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a")},
+                { 5000, uint256S("0000d4c58654426d78d09ecd89758112bebf06ad09113edecc79d35265b4d068")}, //last PoW block
+                { 32411, uint256S("d8ca8a41167c7d8b1cd080718a6846e1729693ee5ce62de57d9eae64dd02d842")},
+                { 46276, uint256S("1a97db79cfa7810a4447b52a841a37143962e83a8796c43975a16617d0694dd6")},
+                { 66889, uint256S("28d39f9de640fdc76585900f001a696d49f053eec1fe8d5e0fad1aa4deb7b1f2")},
             }
         };
 
@@ -173,17 +167,19 @@ public:
             0.03358921219453481 // * estimated number of transactions per second after that timestamp
         };
 
-        /* disable fallback fee on mainnet */
-        m_fallback_fee_enabled = false;
-
         consensus.nLastPOWBlock = 5000;
+        consensus.nLastBigReward = 5000;
         consensus.nMPoSRewardRecipients = 10;
         consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
                                     consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
+        consensus.nLastMPoSBlock = 899999;
 
-        consensus.nFixUTXOCacheHFHeight=100000;
+
+        consensus.nFixUTXOCacheHFHeight = 100000;
         consensus.nEnableHeaderSignatureHeight = 399100;
+        consensus.nCheckpointSpan = COINBASE_MATURITY;
+        consensus.delegationsAddress = uint160(ParseHex("0000000000000000000000000000000000000086")); // Delegations contract for offline staking
     }
 };
 
@@ -200,10 +196,14 @@ public:
         consensus.BIP34Hash = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46");
         consensus.BIP65Height = 0; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 0; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
+        consensus.CSVHeight = 6048; // 00000000025e930139bac5c6c31a403776da130831ab85be56578f3fa75369bb
+        consensus.SegwitHeight = 6048; // 00000000002b980fcd729daaa248fd9316a5200e9b367f4ff2c42453e84201ca
+        consensus.MinBIP9WarningHeight = 8064; // segwit activation height + miner confirmation window
         consensus.QIP5Height = 0;
         consensus.QIP6Height = 0;
         consensus.QIP7Height = 0;
         consensus.QIP9Height = 0;
+        consensus.nOfflineStakeHeight = 5500;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -219,21 +219,11 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
-        // Deployment of BIP68, BIP112, and BIP113.
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 999999999999ULL;
-
-        // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
-
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000000a550a55"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa"); // 7542
+        consensus.defaultAssumeValid = uint256S("0xc5bc836bf171df8a1b7ced7b4d4d81fd198d1b0731ad514dbe8ff4a00bc39cfa"); // 421632
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
@@ -245,7 +235,6 @@ public:
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1578091191, 111552, 0x1f00ffff, 1, 50 * COIN);
-
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46"));
         assert(genesis.hashMerkleRoot == uint256S("0x4d050108faee132d46f0c26c346fee17e804d20f658e0b61afe3fd083c8281af"));
@@ -268,11 +257,13 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
+        m_is_test_chain = true;
+
 
         checkpointData = {
             {
-                {0, uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46")},
-                {2592, uint256S("0x00004ca0f42bb773f8fd3cd036a08765e1155c06ecf57457e18c3b4bf3e70c23")},
+                {0, uint256S("0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46")},
+                {2592, uint256S("0x00004ca0f42bb773f8fd3cd036a08765e1155c06ecf57457e18c3b4bf3e70c23")}, //last PoW block
             }
         };
 
@@ -283,17 +274,18 @@ public:
             0.01624824080589608
         };
 
-        /* enable fallback fee on testnet */
-        m_fallback_fee_enabled = true;
-
         consensus.nLastPOWBlock = 5000;
+        consensus.nLastBigReward = 5000;
         consensus.nMPoSRewardRecipients = 10;
         consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
                                     consensus.nMPoSRewardRecipients +
                                     COINBASE_MATURITY;
+        consensus.nLastMPoSBlock = 5499;
 
-        consensus.nFixUTXOCacheHFHeight=0;
-        consensus.nEnableHeaderSignatureHeight = 0;
+        consensus.nFixUTXOCacheHFHeight = 0;
+        consensus.nEnableHeaderSignatureHeight = 6000;
+        consensus.nCheckpointSpan = COINBASE_MATURITY;
+        consensus.delegationsAddress = uint160(ParseHex("0000000000000000000000000000000000000086")); // Delegations contract for offline staking
     }
 };
 
@@ -306,14 +298,18 @@ public:
         strNetworkID = "regtest";
         consensus.nSubsidyHalvingInterval = 525960000;
         consensus.BIP16Exception = uint256S("0x7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69");
-        consensus.BIP34Height = 0; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests) // activate for runebase
+        consensus.BIP34Height = 0; // BIP34 activated on regtest (Used in functional tests)
         consensus.BIP34Hash = uint256S("0x7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69");
-        consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in rpc activation tests)
-        consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in rpc activation tests)
+        consensus.BIP65Height = 0; // BIP65 activated on regtest (Used in functional tests)
+        consensus.BIP66Height = 0; // BIP66 activated on regtest (Used in functional tests)
+        consensus.CSVHeight = 432; // CSV activated on regtest (Used in rpc activation tests)
+        consensus.SegwitHeight = 0; // SEGWIT is always activated on regtest unless overridden
+        consensus.MinBIP9WarningHeight = 0;
         consensus.QIP5Height = 0;
         consensus.QIP6Height = 0;
         consensus.QIP7Height = 0;
         consensus.QIP9Height = 0;
+        consensus.nOfflineStakeHeight = 1;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -327,13 +323,7 @@ public:
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 999999999999ULL;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 999999999999ULL;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
@@ -350,7 +340,7 @@ public:
         m_assumed_blockchain_size = 0;
         m_assumed_chain_state_size = 0;
 
-        UpdateVersionBitsParametersFromArgs(args);
+        UpdateActivationParametersFromArgs(args);
 
         genesis = CreateGenesisBlock(1572855389, 3, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
@@ -361,8 +351,9 @@ public:
         vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
 
         fDefaultConsistencyChecks = true;
-        fRequireStandard = false;
+        fRequireStandard = true;
         fMineBlocksOnDemand = true;
+        m_is_test_chain = true;
 
         checkpointData = {
             {
@@ -376,11 +367,15 @@ public:
             0
         };
         consensus.nLastPOWBlock = 0x7fffffff;
+        consensus.nLastBigReward = 5000;
         consensus.nMPoSRewardRecipients = 10;
         consensus.nFirstMPoSBlock = 5000;
+        consensus.nLastMPoSBlock = 0;
 
         consensus.nFixUTXOCacheHFHeight=0;
         consensus.nEnableHeaderSignatureHeight = 0;
+        consensus.nCheckpointSpan = COINBASE_MATURITY;
+        consensus.delegationsAddress = uint160(ParseHex("0000000000000000000000000000000000000086")); // Delegations contract for offline staking
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,113);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,123);
@@ -389,9 +384,6 @@ public:
         base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x39, 0x85, 0x2c};
 
         bech32_hrp = "rcrt";
-
-        /* enable fallback fee on regtest */
-        m_fallback_fee_enabled = true;
     }
 
     /**
@@ -402,11 +394,22 @@ public:
         consensus.vDeployments[d].nStartTime = nStartTime;
         consensus.vDeployments[d].nTimeout = nTimeout;
     }
-    void UpdateVersionBitsParametersFromArgs(const ArgsManager& args);
+    void UpdateActivationParametersFromArgs(const ArgsManager& args);
 };
 
-void CRegTestParams::UpdateVersionBitsParametersFromArgs(const ArgsManager& args)
+void CRegTestParams::UpdateActivationParametersFromArgs(const ArgsManager& args)
 {
+    if (gArgs.IsArgSet("-segwitheight")) {
+        int64_t height = gArgs.GetArg("-segwitheight", consensus.SegwitHeight);
+        if (height < -1 || height >= std::numeric_limits<int>::max()) {
+            throw std::runtime_error(strprintf("Activation height %ld for segwit is out of valid range. Use -1 to disable segwit.", height));
+        } else if (height == -1) {
+            LogPrintf("Segwit disabled for testing\n");
+            height = std::numeric_limits<int>::max();
+        }
+        consensus.SegwitHeight = static_cast<int>(height);
+    }
+
     if (!args.IsArgSet("-vbparams")) return;
 
     for (const std::string& strDeployment : args.GetArgs("-vbparams")) {
@@ -459,6 +462,7 @@ public:
         consensus.nSubsidyHalvingInterval = 750;
         consensus.nRuleChangeActivationThreshold = 558; // 75% for testchains
         consensus.nMinerConfirmationWindow = 744; // Faster than normal for regtest (744 instead of 2016)
+        consensus.nCheckpointSpan = 1000; // Increase the check point span for the reorganization tests from 500 to 1000
     }
 };
 
@@ -488,20 +492,25 @@ void SelectParams(const std::string& network)
     globalChainParams = CreateChainParams(network);
 }
 
-std::string CChainParams::EVMGenesisInfo(dev::eth::Network network) const
+std::string CChainParams::EVMGenesisInfo() const
 {
-    std::string genesisInfo = dev::eth::genesisInfo(network);
+    std::string genesisInfo = dev::eth::genesisInfo(GetEVMNetwork());
     ReplaceInt(consensus.QIP7Height, "QIP7_STARTING_BLOCK", genesisInfo);
     ReplaceInt(consensus.QIP6Height, "QIP6_STARTING_BLOCK", genesisInfo);
     return genesisInfo;
 }
 
-std::string CChainParams::EVMGenesisInfo(dev::eth::Network network, int nHeight) const
+std::string CChainParams::EVMGenesisInfo(int nHeight) const
 {
-    std::string genesisInfo = dev::eth::genesisInfo(network);
+    std::string genesisInfo = dev::eth::genesisInfo(GetEVMNetwork());
     ReplaceInt(nHeight, "QIP7_STARTING_BLOCK", genesisInfo);
     ReplaceInt(nHeight, "QIP6_STARTING_BLOCK", genesisInfo);
     return genesisInfo;
+}
+
+dev::eth::Network CChainParams::GetEVMNetwork() const
+{
+    return dev::eth::Network::runebaseMainNetwork;
 }
 
 void CChainParams::UpdateOpSenderBlockHeight(int nHeight)
@@ -538,6 +547,7 @@ void CChainParams::UpdateDifficultyChangeBlockHeight(int nHeight)
 {
     consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
     consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+    consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff");
     consensus.QIP9Height = nHeight;
     consensus.fPowAllowMinDifficultyBlocks = false;
     consensus.fPowNoRetargeting = true;
@@ -547,9 +557,40 @@ void CChainParams::UpdateDifficultyChangeBlockHeight(int nHeight)
     consensus.nFirstMPoSBlock = consensus.nLastPOWBlock +
                                 consensus.nMPoSRewardRecipients +
                                 COINBASE_MATURITY;
+    consensus.nLastMPoSBlock = 0;
 }
 
 void UpdateDifficultyChangeBlockHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateDifficultyChangeBlockHeight(nHeight);
+}
+
+void CChainParams::UpdateOfflineStakingBlockHeight(int nHeight)
+{
+    consensus.nOfflineStakeHeight = nHeight;
+}
+
+void UpdateOfflineStakingBlockHeight(int nHeight)
+{
+    const_cast<CChainParams*>(globalChainParams.get())->UpdateOfflineStakingBlockHeight(nHeight);
+}
+
+void CChainParams::UpdateDelegationsAddress(const uint160& address)
+{
+    consensus.delegationsAddress = address;
+}
+
+void UpdateDelegationsAddress(const uint160& address)
+{
+    const_cast<CChainParams*>(globalChainParams.get())->UpdateDelegationsAddress(address);
+}
+
+void CChainParams::UpdateLastMPoSBlockHeight(int nHeight)
+{
+    consensus.nLastMPoSBlock = nHeight;
+}
+
+void UpdateLastMPoSBlockHeight(int nHeight)
+{
+    const_cast<CChainParams*>(globalChainParams.get())->UpdateLastMPoSBlockHeight(nHeight);
 }

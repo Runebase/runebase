@@ -55,6 +55,7 @@ public:
         PruneSize,              // int
         DatabaseCache,          // int
         LogEvents,              // bool
+        SuperStaking,           // bool
         SpendZeroConfChange,    // bool
         ZeroBalanceAddressToken,// bool
         Listen,                 // bool
@@ -84,6 +85,9 @@ public:
     bool getCoinControlFeatures() const { return fCoinControlFeatures; }
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
     bool getCheckForUpdates() const { return fCheckForUpdates; }
+
+    /* Explicit setters */
+    void SetPrune(bool prune, bool force = false);
     bool getZeroBalanceAddressToken() const { return bZeroBalanceAddressToken; }
 
     /* Restart flag helper */
