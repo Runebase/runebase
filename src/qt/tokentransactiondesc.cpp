@@ -57,11 +57,11 @@ public:
     {
         if(instance().network == "main")
         {
-            return RUNEBASE_INFO_MAINNET.arg("tx", txHash);
+            return QString(RUNEBASE_INFO_MAINNET).arg("tx", txHash);
         }
         else if(instance().network == "test")
         {
-            return RUNEBASE_INFO_TESTNET.arg("tx", txHash);
+            return QString(RUNEBASE_INFO_TESTNET).arg("tx", txHash);
         }
 
         return txHash;
