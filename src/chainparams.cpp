@@ -331,13 +331,13 @@ public:
         consensus.nMinimumChainWork = uint256S("0x00");
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69");
+        consensus.defaultAssumeValid = uint256S("0x00");
 
-        pchMessageStart[0] = 0xaa;
-        pchMessageStart[1] = 0xbd;
-        pchMessageStart[2] = 0xaf;
-        pchMessageStart[3] = 0xd1;
-        nDefaultPort = 29947;
+        pchMessageStart[0] = 0xfd;
+        pchMessageStart[1] = 0xdd;
+        pchMessageStart[2] = 0xc6;
+        pchMessageStart[3] = 0xe1;
+        nDefaultPort = 23888;
         nPruneAfterHeight = 1000;
         m_assumed_blockchain_size = 0;
         m_assumed_chain_state_size = 0;
@@ -380,13 +380,13 @@ public:
         consensus.nCheckpointSpan = COINBASE_MATURITY;
         consensus.delegationsAddress = uint160(ParseHex("0000000000000000000000000000000000000086")); // Delegations contract for offline staking
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,113);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,123);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,202);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x39, 0x81, 0xab};
-        base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x39, 0x85, 0x2c};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,120);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,110);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        bech32_hrp = "rcrt";
+        bech32_hrp = "qcrt";
     }
 
     /**
