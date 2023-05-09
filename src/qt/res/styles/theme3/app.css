@@ -10,9 +10,10 @@ Main Window CSS
 QMainWindow{
     background-color: #4f9fde;
     border: 0px solid transparent;
-    background-image: url(":/styles/theme3/app-icons/bg");
-    background-position: bottom left;
-    background-repeat: no-repeat;
+    /* background-image: url(":/styles/theme3/app-icons/bg"); */
+    border-image: url(":/styles/theme3/app-icons/bg") 0 0 0 0 stretch stretch;
+    /* background-position: bottom left;
+    background-repeat: no-repeat; */
 }
 QMainWindow .QFrame{
     border: 1px solid transparent;
@@ -52,7 +53,8 @@ QFrame#vLine,
     border-left: 1px solid transparent;
 }
 WalletFrame{
-    background-color: #f2f7fd;
+    /* background-color: #f2f7fd; */
+    border-left: 3px solid #006daf;
 }
 QDialog{
     background-color: #f2f7fd;
@@ -74,6 +76,9 @@ QLabel#labelGeneral,
 }
 QLabel#overriddenByCommandLineLabel{
     color: #6b80af;
+}
+NavigationBar {
+    border-right: 3px solid #006daf;
 }
 NavigationBar #labelLogo{
     image:url(":/icons/logo");
@@ -646,7 +651,7 @@ TitleBar QTabBar::tab {
     padding: 5px 0px;
 }
 #widgetTitle, #widgetWallet {
-    background-color: #f2f7fd;
+    /* background-color: #f2f7fd; */
 }
 /*--------------------------------------------
 MenuBar CSS
