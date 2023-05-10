@@ -43,7 +43,7 @@ QString BitcoinUnits::longName(int unit)
     case BTC: return QString("RUNES");
     case mBTC: return QString("CHUNKS");
     case uBTC: return QString::fromUtf8("CHIPS (bits)");
-    case SAT: return QString("Satoshi (sat)");
+    case SAT: return QString("DUST (sat)");
     default: return QString("???");
     }
 }
@@ -52,8 +52,8 @@ QString BitcoinUnits::shortName(int unit)
 {
     switch(unit)
     {
-    case uBTC: return QString::fromUtf8("bits");
-    case SAT: return QString("sat");
+    case uBTC: return QString::fromUtf8("CHIPS");
+    case SAT: return QString("DUST");
     default: return longName(unit);
     }
 }
@@ -65,7 +65,7 @@ QString BitcoinUnits::description(int unit)
     case BTC: return QString("RUNES");
     case mBTC: return QString("CHUNKS (1 / 1" THIN_SP_UTF8 "000)");
     case uBTC: return QString("CHIPS (bits) (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
-    case SAT: return QString("Satoshi (sat) (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case SAT: return QString("DUST (sat) (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
     default: return QString("???");
     }
 }
