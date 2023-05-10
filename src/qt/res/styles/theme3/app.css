@@ -27,8 +27,10 @@ QMainWindow::separator {
     padding: 0px;
     margin: 0px;
 }
-QMainWindow .QFrame#frameBalances, 
-#frameOtherTokens, 
+QMainWindow .QFrame#frameBalances{
+    background-color: transparent;
+}
+QMainWindow #frameOtherTokens, 
 #frameRecentTransactions,
 #frameRequest,
 #frameFee{
@@ -46,15 +48,19 @@ QFrame#hLine,
 QFrame#hContractLine,
 #hContractLine2,
 #OverviewPage #hLine{
-    border-top: 4px solid #e4ebf5;
+    border-top: 4px solid #61a9e1;
 }
 QFrame#vLine,
 #vLine2{
     border-left: 1px solid transparent;
 }
 WalletFrame{
-    /* background-color: #f2f7fd; */
-    border-left: 3px solid #006daf;
+    border-width: 1px; 
+    border-style: solid; 
+    border-color:  #61a9e1;
+    border-top-style: none;
+    border-bottom-style: none;
+    border-right-style: none;
 }
 QDialog{
     background-color: #f2f7fd;
@@ -76,9 +82,6 @@ QLabel#labelGeneral,
 }
 QLabel#overriddenByCommandLineLabel{
     color: #6b80af;
-}
-NavigationBar {
-    border-right: 3px solid #006daf;
 }
 NavigationBar #labelLogo{
     image:url(":/icons/logo");
@@ -650,8 +653,21 @@ QTabWidget::pane {
 TitleBar QTabBar::tab {
     padding: 5px 0px;
 }
-#widgetTitle, #widgetWallet {
-    /* background-color: #f2f7fd; */
+#widgetWallet {
+    /* border-width: 1px; 
+    border-style: solid; 
+    border-color:  #006daf;
+    border-top-style: none;
+    border-bottom-style: none;
+    border-right-style: none; */
+}
+#widgetTitle{
+    border-width: 1px; 
+    border-style: solid; 
+    border-color:  #61a9e1;
+    border-top-style: none;
+    border-bottom-style: none;
+    border-right-style: none;
 }
 /*--------------------------------------------
 MenuBar CSS
@@ -1028,8 +1044,9 @@ Overview Page Widget CSS
 --------------------------------------------*/
 #widgetWallet #widgetTotal QLabel,
 #widgetWatch #widgetWatchTotal QLabel{
-    color: #000000;
+    color: #c2b82f;
     font: 23pt;
+    font-weight: bold;
 }
 #widgetPending #vLine,
 #widgetImmature #vLine_2,
