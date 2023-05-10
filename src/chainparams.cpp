@@ -222,10 +222,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000b6010c61b3ce425"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000000020d020d"); // runebase
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0xa1974289488ffe064cacff6b60b08c4ff83b1236d95481a11abad30588629abc"); // 50
+        consensus.defaultAssumeValid = uint256S("0x0000ce545e69ea0823c2794bed0fccb3ee48bab8768cba1ec08d1f3b9f5041d8"); // 50
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
@@ -264,15 +264,14 @@ public:
 
         checkpointData = {
             {
-                {0, uint256S("0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46")}, 
-                {5246, uint256S("a1974289488ffe064cacff6b60b08c4ff83b1236d95481a11abad30588629abc")},//last PoW block
+                {0, uint256S("0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46")},
             }
         };
 
         chainTxData = ChainTxData{
-            // Data as of block babfd02d9dd271a12a2fd1b8ba95a0c73aca9a0b25889d3340a7ca3fb406a2cf (height 496333)
-            1683484144,
-            6381,
+            // Data as of block a1974289488ffe064cacff6b60b08c4ff83b1236d95481a11abad30588629abc (height 496333)
+            1683644147,
+            283,
             0.01624824080589608
         };
 
