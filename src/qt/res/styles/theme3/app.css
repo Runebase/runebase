@@ -10,10 +10,7 @@ Main Window CSS
 QMainWindow{
     background-color: #4f9fde;
     border: 0px solid transparent;
-    /* background-image: url(":/styles/theme3/app-icons/bg"); */
     border-image: url(":/styles/theme3/app-icons/bg") 0 0 0 0 stretch stretch;
-    /* background-position: bottom left;
-    background-repeat: no-repeat; */
 }
 QMainWindow .QFrame{
     border: 1px solid transparent;
@@ -34,10 +31,10 @@ QMainWindow #frameOtherTokens,
 #frameRecentTransactions,
 #frameRequest,
 #frameFee{
-    background-color: #f2f7fd;
+    background-color: rgba(242, 247, 253, 80%);    
 }
 QMainWindow .QFrame#frameContract{
-    background-color: #f2f7fd;
+    /* background-color: #f2f7fd; */
 }
 QFrame#hLine,
 #hLine2,
@@ -194,7 +191,7 @@ QGroupBox
 {
     border: 0px solid transparent; 
     margin-top: 20px;
-    background-color: #f2f7fd;
+    /* background-color: rgba(242, 247, 253, 80%); */
 }
 QGroupBox::title {
     color: #6b80af;
@@ -488,7 +485,7 @@ QHeaderView::up-arrow {
 }
 QTableView{
     color: #6b80af;
-    background-color: #ffffff;
+    background-color: rgba(242, 247, 253, 80%);
     border: none;
     font: normal;
     qproperty-showGrid: false;
@@ -1017,18 +1014,28 @@ QToolButton#tabBarTool::hover{
 Stake Page Widget CSS
 --------------------------------------------*/
 #StakePage QLabel{
-    color: #b5bfd7;
+    color: #000000;
 }
 #frameStakeInfo {
-    background-color: #ffffff;
+    background-color: rgba(242, 247, 253, 80%);
     border: 1px dotted #b5bfd7;
-    color: #b5bfd7;
+    color: #000000;
     border-radius: 4px;
 }
-#frameStakeInfo #labelAssets{
-    color: #000000;
-    font: 17pt;
+#StakePage QLabel #labelRecordsText{
+    color: #fff;
+    font-weight: bold;
 }
+#StakePage #labelRecordsText{
+    color: #fff;
+    font-weight: bold;
+}
+#frameStakeInfo #labelAssets{
+    color: #c2b82f;
+    font: 17pt;
+    font-weight: bold;
+}
+
 #frameStakeInfo #labelHeight,
 #frameStakeInfo #labelWeight,
 #frameStakeInfo #labelReward,
@@ -1103,7 +1110,7 @@ Token Page Widget CSS
     border: 1px solid rgba(209, 219, 231, 20%);
 }
 #tokenItemFrame, #delegationItemFrame, #superStakerItemFrame{
-    background-color: #ffffff;
+    background-color: rgba(242, 247, 253, 80%);
     border-radius: 6px;
 }
 TokenListWidget{
@@ -1122,45 +1129,45 @@ TokenItemWidget #senderAddress{
     font: 10pt;
 }
 TokenItemWidget #tokenLogo{
-    background-color: #a1daff;
+    background-color: #241850;
     border-radius: 20px;
 }
 DelegationListWidget{
-    background-color: #e4ebf5;
+    background-color: rgba(242, 247, 253, 80%);
 }
 DelegationItemWidget #labelFee{
     color: #6b80af;
     font: 13pt;
 }
 DelegationItemWidget #labelStaker{
-    color: #000000;
+    color: #3d113b;
     font: 13pt;
 }
 DelegationItemWidget #labelAddress{
-    color: #d5dde9;
+    color: #000000;
     font: 10pt;
 }
 DelegationItemWidget #delegationLogo{
-    background-color: #a1daff;
+    background-color: #241850;
     border-radius: 20px;
 }
 SuperStakerListWidget{
-    background-color: #e4ebf5;
+    background-color: rgba(242, 247, 253, 80%);
 }
 SuperStakerItemWidget #labelFee{
     color: #6b80af;
     font: 13pt;
 }
 SuperStakerItemWidget #labelStaker{
-    color: #000000;
+    color: #3d113b;
     font: 13pt;
 }
 SuperStakerItemWidget #labelAddress{
-    color: #d5dde9;
+    color: #000000;
     font: 10pt;
 }
 SuperStakerItemWidget #superStakerLogo{
-    background-color: #a1daff;
+    background-color: #241850;
     border-radius: 20px;
 }
 SuperStakerItemWidget #buttonDelegations{
@@ -1210,10 +1217,10 @@ SendCoinsDialog QAbstractScrollArea::corner {
 Delegate and Staker Page Widget CSS
 --------------------------------------------*/
 #widgetStakingAssets QLabel{
-    color: #b5bfd7;
+    color: #000000;
 }
 #widgetStakingAssets #labelAssets{
-    color: #000000;
+    color: #c2b82f;
     font: 13pt;
 }
 #vLineAssets{
