@@ -16,10 +16,12 @@ class RunebasePODTest(BitcoinTestFramework):
             ['-txindex=1', '-logevents=1'],
             ['-txindex=1', '-logevents=1', '-superstaking=1', '-staking=1']
         ]
+    def skip_test_if_missing_module(self):
+        self.skip_if_no_wallet()
 
     def run_test(self):
         mocktime = int(time.time()) - 3600
-        mocktime &= 0xfffffff0
+        mocktime &= 0xffffffff - TIMESTAMP_MASK
         for n in self.nodes: n.setmocktime(mocktime)
         self.delegator = self.nodes[0]
         delegator_address = self.delegator.getnewaddress()
@@ -33,7 +35,7 @@ class RunebasePODTest(BitcoinTestFramework):
         block_count_staker = 100
         self.staker.generatetoaddress(block_count_staker, staker_address)
         self.sync_all()
-        self.delegator.generatetoaddress(COINBASE_MATURITY + 100, delegator_address)
+        generatesynchronized(self.delegator, COINBASE_MATURITY + 100, delegator_address, self.nodes)
         self.sync_all()
 
         pod = create_POD(self.delegator, delegator_address, staker_address)
@@ -45,10 +47,10 @@ class RunebasePODTest(BitcoinTestFramework):
         self.sync_all()
 
         # delegation not available for now
-        self.restart_node(0, ['-txindex=1', '-logevents=1', '-offlinestakingheight=800'])
-        self.restart_node(1, ['-txindex=1', '-logevents=1', '-offlinestakingheight=800', '-superstaking=1'])
+        self.restart_node(0, ['-txindex=1', '-logevents=1', '-offlinestakingheight=1000000'])
+        self.restart_node(1, ['-txindex=1', '-logevents=1', '-offlinestakingheight=1000000', '-superstaking=1'])
 
-        mocktime += 128
+        mocktime += 512
         for n in self.nodes: n.setmocktime(mocktime)
 
         delegator_prevouts = collect_prevouts(self.delegator)

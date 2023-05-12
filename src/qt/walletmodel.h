@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2011-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,6 +13,7 @@
 #include <script/standard.h>
 
 #include <qt/walletmodeltransaction.h>
+#include <qt/runebasehwitool.h>
 
 #include <interfaces/wallet.h>
 #include <support/allocators/secure.h>
@@ -27,6 +28,7 @@
 enum class OutputType;
 
 class AddressTableModel;
+class ClientModel;
 class OptionsModel;
 class PlatformStyle;
 class RecentRequestsTableModel;
@@ -40,17 +42,17 @@ class WalletWorker;
 class TokenItemModel;
 class SuperStakerItemModel;
 class DelegationStakerItemModel;
-
-class CCoinControl;
 class CKeyID;
 class COutPoint;
-class COutput;
 class CPubKey;
 class uint256;
 
 namespace interfaces {
 class Node;
 } // namespace interfaces
+namespace wallet {
+class CCoinControl;
+} // namespace wallet
 
 QT_BEGIN_NAMESPACE
 class QTimer;
@@ -62,7 +64,7 @@ class WalletModel : public QObject
     Q_OBJECT
 
 public:
-    explicit WalletModel(std::unique_ptr<interfaces::Wallet> wallet, interfaces::Node& node, const PlatformStyle *platformStyle, OptionsModel *optionsModel, QObject *parent = nullptr);
+    explicit WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel& client_model, const PlatformStyle *platformStyle, QObject *parent = nullptr);
     ~WalletModel();
 
     enum StatusCode // Returned by sendCoins
@@ -80,6 +82,7 @@ public:
 
     enum EncryptionStatus
     {
+        NoKeys,       // wallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)
         Unencrypted,  // !wallet->IsCrypted()
         Locked,       // wallet->IsCrypted() && wallet->IsLocked()
         Unlocked      // wallet->IsCrypted() && !wallet->IsLocked()
@@ -95,7 +98,6 @@ public:
     DelegationItemModel *getDelegationItemModel();
     SuperStakerItemModel *getSuperStakerItemModel();
     DelegationStakerItemModel *getDelegationStakerItemModel();
-
     EncryptionStatus getEncryptionStatus() const;
 
     // Check address for validity
@@ -114,20 +116,19 @@ public:
     };
 
     // prepare transaction for getting txfee before sending coins
-    SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction, const CCoinControl& coinControl);
+    SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction, const wallet::CCoinControl& coinControl);
 
     // Send coins to a list of recipients
     SendCoinsReturn sendCoins(WalletModelTransaction &transaction);
 
     // Wallet encryption
-    bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
+    bool setWalletEncrypted(const SecureString& passphrase);
     // Passphrase only needed when unlocking
     bool setWalletLocked(bool locked, const SecureString &passPhrase=SecureString());
     bool changePassphrase(const SecureString &oldPass, const SecureString &newPass);
     bool restoreWallet(const QString &filename, const QString &param);
     bool getWalletUnlockStakingOnly();
     void setWalletUnlockStakingOnly(bool unlock);
-
     // RAI object for unlocking wallet, returned by requestUnlock()
     class UnlockContext
     {
@@ -154,28 +155,44 @@ public:
 
     UnlockContext requestUnlock();
 
-    void loadReceiveRequests(std::vector<std::string>& vReceiveRequests);
-    bool saveReceiveRequest(const std::string &sAddress, const int64_t nId, const std::string &sRequest);
-
     bool bumpFee(uint256 hash, uint256& new_hash);
+    bool displayAddress(std::string sAddress);
 
     static bool isWalletEnabled();
 
     interfaces::Node& node() const { return m_node; }
     interfaces::Wallet& wallet() const { return *m_wallet; }
+    ClientModel& clientModel() const { return *m_client_model; }
+    void setClientModel(ClientModel* client_model);
 
     QString getWalletName() const;
     QString getDisplayName() const;
 
     bool isMultiwallet();
-
     QString getRestorePath();
     QString getRestoreParam();
     bool restore();
 
     uint64_t getStakeWeight();
-
     AddressTableModel* getAddressTableModel() const { return addressTableModel; }
+
+    void refresh(bool pk_hash_only = false);
+
+    uint256 getLastBlockProcessed() const;
+
+    // Get or set selected hardware device fingerprint (only for hardware wallet applicable)
+    QString getFingerprint(bool stake = false) const;
+    void setFingerprint(const QString &value, bool stake = false);
+    QList<HWDevice> getDevices();
+
+    // Get or set hardware wallet init required (only for hardware wallet applicable)
+    void importAddressesData(bool rescan = true, bool importPKH = true, bool importP2SH = true, bool importBech32 = true, QString pathPKH = QString(), QString pathP2SH = QString(), QString pathBech32 = QString());
+    bool getSignPsbtWithHwiTool();
+    bool createUnsigned();
+    bool hasLedgerProblem();
+
+    void join();
+
 private:
     std::unique_ptr<interfaces::Wallet> m_wallet;
     std::unique_ptr<interfaces::Handler> m_handler_unload;
@@ -187,6 +204,7 @@ private:
     std::unique_ptr<interfaces::Handler> m_handler_watch_only_changed;
     std::unique_ptr<interfaces::Handler> m_handler_can_get_addrs_changed;
     std::unique_ptr<interfaces::Handler> m_handler_contract_book_changed;
+    ClientModel* m_client_model;
     interfaces::Node& m_node;
 
     bool fHaveWatchOnly;
@@ -209,7 +227,11 @@ private:
     // Cache some values to be able to detect changes
     interfaces::WalletBalances m_cached_balances;
     EncryptionStatus cachedEncryptionStatus;
-    int cachedNumBlocks;
+    QTimer* timer;
+
+    // Block hash denoting when the last balance update was done.
+    uint256 m_cached_last_update_tip{};
+    int pollNum = 0;
 
     QString restorePath;
     QString restoreParam;
@@ -218,9 +240,20 @@ private:
     std::atomic<bool> updateStakeWeight;
     std::atomic<bool> updateCoinAddresses;
 
+    QString fingerprint;
+    std::atomic<bool> hardwareWalletInitRequired{false};
+    bool rescan{true};
+    bool importPKH{true};
+    bool importP2SH{true};
+    bool importBech32{true};
+    QString pathPKH;
+    QString pathP2SH;
+    QString pathBech32;
+    QList<HWDevice> devices;
+    int64_t deviceTime = 0;
+
     QThread t;
     WalletWorker *worker;
-
     void subscribeToCoreSignals();
     void unsubscribeFromCoreSignals();
     bool checkBalanceChanged(const interfaces::WalletBalances& new_balances);
@@ -261,6 +294,8 @@ Q_SIGNALS:
     // Signal that available coin addresses are changed
     void availableAddressesChanged(QStringList spendableAddresses, QStringList allAddresses, bool includeZeroValue);
 
+    void timerTimeout();
+
 public Q_SLOTS:
     /* Starts a timer to periodically update the balance */
     void startPollBalance();
@@ -283,6 +318,10 @@ public Q_SLOTS:
     void checkCoinAddressesChanged();
     /* Update stake weight when changed*/
     void checkStakeWeightChanged();
+    /* Check for hardware wallet params changes*/
+    void checkHardwareWallet();
+    /* Check for hardware device params changes*/
+    void checkHardwareDevice();
 };
 
 #endif // BITCOIN_QT_WALLETMODEL_H

@@ -21,6 +21,7 @@ static const QColor LINK_COLOR = "#2d9ad0";
 class RunebaseStyle : public QProxyStyle
 {
 public:
+    using QProxyStyle::polish;
     RunebaseStyle()
     {
         message_info_path = GetStringStyleValue("appstyle/message-info-icon", ":/styles/theme1/app-icons/message_info");
@@ -32,7 +33,7 @@ public:
         button_text_upper = GetIntStyleValue("appstyle/button_text_upper", true);
     }
 
-    void polish(QWidget *widget)
+    void polish(QWidget *widget) override
     {
         if(widget && widget->inherits("QComboBox"))
         {

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2011-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(MempoolSizeLimitTest)
     tx1.vout.resize(1);
     tx1.vout[0].scriptPubKey = CScript() << OP_1 << OP_EQUAL;
     tx1.vout[0].nValue = 10 * COIN;
-    pool.addUnchecked(entry.Fee(100000).FromTx(tx1));
+    pool.addUnchecked(entry.Fee(100000LL).FromTx(tx1));
 
     CMutableTransaction tx2 = CMutableTransaction();
     tx2.vin.resize(1);
@@ -441,15 +441,15 @@ BOOST_AUTO_TEST_CASE(MempoolSizeLimitTest)
     tx2.vout.resize(1);
     tx2.vout[0].scriptPubKey = CScript() << OP_2 << OP_EQUAL;
     tx2.vout[0].nValue = 10 * COIN;
-    pool.addUnchecked(entry.Fee(50000).FromTx(tx2));
+    pool.addUnchecked(entry.Fee(50000LL).FromTx(tx2));
 
     pool.TrimToSize(pool.DynamicMemoryUsage()); // should do nothing
-    BOOST_CHECK(pool.exists(tx1.GetHash()));
-    BOOST_CHECK(pool.exists(tx2.GetHash()));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx1.GetHash())));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx2.GetHash())));
 
     pool.TrimToSize(pool.DynamicMemoryUsage() * 3 / 4); // should remove the lower-feerate transaction
-    BOOST_CHECK(pool.exists(tx1.GetHash()));
-    BOOST_CHECK(!pool.exists(tx2.GetHash()));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx1.GetHash())));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx2.GetHash())));
 
     pool.addUnchecked(entry.FromTx(tx2));
     CMutableTransaction tx3 = CMutableTransaction();
@@ -459,17 +459,17 @@ BOOST_AUTO_TEST_CASE(MempoolSizeLimitTest)
     tx3.vout.resize(1);
     tx3.vout[0].scriptPubKey = CScript() << OP_3 << OP_EQUAL;
     tx3.vout[0].nValue = 10 * COIN;
-    pool.addUnchecked(entry.Fee(200000).FromTx(tx3));
+    pool.addUnchecked(entry.Fee(200000LL).FromTx(tx3));
 
     pool.TrimToSize(pool.DynamicMemoryUsage() * 3 / 4); // tx3 should pay for tx2 (CPFP)
-    BOOST_CHECK(!pool.exists(tx1.GetHash()));
-    BOOST_CHECK(pool.exists(tx2.GetHash()));
-    BOOST_CHECK(pool.exists(tx3.GetHash()));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx1.GetHash())));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx2.GetHash())));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx3.GetHash())));
 
     pool.TrimToSize(GetVirtualTransactionSize(CTransaction(tx1))); // mempool is limited to tx1's size in memory usage, so nothing fits
-    BOOST_CHECK(!pool.exists(tx1.GetHash()));
-    BOOST_CHECK(!pool.exists(tx2.GetHash()));
-    BOOST_CHECK(!pool.exists(tx3.GetHash()));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx1.GetHash())));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx2.GetHash())));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx3.GetHash())));
 
     CFeeRate maxFeeRateRemoved(250000, GetVirtualTransactionSize(CTransaction(tx3)) + GetVirtualTransactionSize(CTransaction(tx2)));
     BOOST_CHECK_EQUAL(pool.GetMinFee(1).GetFeePerK(), maxFeeRateRemoved.GetFeePerK() + 10000);
@@ -522,29 +522,29 @@ BOOST_AUTO_TEST_CASE(MempoolSizeLimitTest)
     tx7.vout[1].scriptPubKey = CScript() << OP_7 << OP_EQUAL;
     tx7.vout[1].nValue = 10 * COIN;
 
-    pool.addUnchecked(entry.Fee(70000).FromTx(tx4));
-    pool.addUnchecked(entry.Fee(10000).FromTx(tx5));
-    pool.addUnchecked(entry.Fee(11000).FromTx(tx6));
-    pool.addUnchecked(entry.Fee(90000).FromTx(tx7));
+    pool.addUnchecked(entry.Fee(70000LL).FromTx(tx4));
+    pool.addUnchecked(entry.Fee(10000LL).FromTx(tx5));
+    pool.addUnchecked(entry.Fee(11000LL).FromTx(tx6));
+    pool.addUnchecked(entry.Fee(90000LL).FromTx(tx7));
 
     // we only require this to remove, at max, 2 txn, because it's not clear what we're really optimizing for aside from that
     pool.TrimToSize(pool.DynamicMemoryUsage() - 1);
-    BOOST_CHECK(pool.exists(tx4.GetHash()));
-    BOOST_CHECK(pool.exists(tx6.GetHash()));
-    BOOST_CHECK(!pool.exists(tx7.GetHash()));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx4.GetHash())));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx6.GetHash())));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx7.GetHash())));
 
-    if (!pool.exists(tx5.GetHash()))
-        pool.addUnchecked(entry.Fee(10000).FromTx(tx5));
-    pool.addUnchecked(entry.Fee(90000).FromTx(tx7));
+    if (!pool.exists(GenTxid::Txid(tx5.GetHash())))
+        pool.addUnchecked(entry.Fee(10000LL).FromTx(tx5));
+    pool.addUnchecked(entry.Fee(90000LL).FromTx(tx7));
 
     pool.TrimToSize(pool.DynamicMemoryUsage() / 2); // should maximize mempool size by only removing 5/7
-    BOOST_CHECK(pool.exists(tx4.GetHash()));
-    BOOST_CHECK(!pool.exists(tx5.GetHash()));
-    BOOST_CHECK(pool.exists(tx6.GetHash()));
-    BOOST_CHECK(!pool.exists(tx7.GetHash()));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx4.GetHash())));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx5.GetHash())));
+    BOOST_CHECK(pool.exists(GenTxid::Txid(tx6.GetHash())));
+    BOOST_CHECK(!pool.exists(GenTxid::Txid(tx7.GetHash())));
 
-    pool.addUnchecked(entry.Fee(10000).FromTx(tx5));
-    pool.addUnchecked(entry.Fee(90000).FromTx(tx7));
+    pool.addUnchecked(entry.Fee(10000LL).FromTx(tx5));
+    pool.addUnchecked(entry.Fee(90000LL).FromTx(tx7));
 
     std::vector<CTransactionRef> vtx;
     SetMockTime(42);
@@ -571,8 +571,6 @@ BOOST_AUTO_TEST_CASE(MempoolSizeLimitTest)
     SetMockTime(42 + 8*CTxMemPool::ROLLING_FEE_HALFLIFE + CTxMemPool::ROLLING_FEE_HALFLIFE/2 + CTxMemPool::ROLLING_FEE_HALFLIFE/4);
     BOOST_CHECK_EQUAL(pool.GetMinFee(1).GetFeePerK(), 0);
     // ... unless it has gone all the way to 0 (after getting past 1000/2)
-
-    SetMockTime(0);
 }
 
 inline CTransactionRef make_tx(std::vector<CAmount>&& output_values, std::vector<CTransactionRef>&& inputs=std::vector<CTransactionRef>(), std::vector<uint32_t>&& input_indices=std::vector<uint32_t>())
@@ -604,7 +602,7 @@ BOOST_AUTO_TEST_CASE(MempoolAncestryTests)
     //
     // [tx1]
     //
-    CTransactionRef tx1 = make_tx(/* output_values */ {10 * COIN});
+    CTransactionRef tx1 = make_tx(/*output_values=*/{10 * COIN});
     pool.addUnchecked(entry.Fee(10000LL).FromTx(tx1));
 
     // Ancestors / descendants should be 1 / 1 (itself / itself)
@@ -616,7 +614,7 @@ BOOST_AUTO_TEST_CASE(MempoolAncestryTests)
     //
     // [tx1].0 <- [tx2]
     //
-    CTransactionRef tx2 = make_tx(/* output_values */ {495 * CENT, 5 * COIN}, /* inputs */ {tx1});
+    CTransactionRef tx2 = make_tx(/*output_values=*/{495 * CENT, 5 * COIN}, /*inputs=*/{tx1});
     pool.addUnchecked(entry.Fee(10000LL).FromTx(tx2));
 
     // Ancestors / descendants should be:
@@ -635,7 +633,7 @@ BOOST_AUTO_TEST_CASE(MempoolAncestryTests)
     //
     // [tx1].0 <- [tx2].0 <- [tx3]
     //
-    CTransactionRef tx3 = make_tx(/* output_values */ {290 * CENT, 200 * CENT}, /* inputs */ {tx2});
+    CTransactionRef tx3 = make_tx(/*output_values=*/{290 * CENT, 200 * CENT}, /*inputs=*/{tx2});
     pool.addUnchecked(entry.Fee(10000LL).FromTx(tx3));
 
     // Ancestors / descendants should be:
@@ -660,7 +658,7 @@ BOOST_AUTO_TEST_CASE(MempoolAncestryTests)
     //              |
     //              \---1 <- [tx4]
     //
-    CTransactionRef tx4 = make_tx(/* output_values */ {290 * CENT, 250 * CENT}, /* inputs */ {tx2}, /* input_indices */ {1});
+    CTransactionRef tx4 = make_tx(/*output_values=*/{290 * CENT, 250 * CENT}, /*inputs=*/{tx2}, /*input_indices=*/{1});
     pool.addUnchecked(entry.Fee(10000LL).FromTx(tx4));
 
     // Ancestors / descendants should be:
@@ -696,14 +694,14 @@ BOOST_AUTO_TEST_CASE(MempoolAncestryTests)
     CAmount v = 5 * COIN;
     for (uint64_t i = 0; i < 5; i++) {
         CTransactionRef& tyi = *ty[i];
-        tyi = make_tx(/* output_values */ {v}, /* inputs */ i > 0 ? std::vector<CTransactionRef>{*ty[i - 1]} : std::vector<CTransactionRef>{});
+        tyi = make_tx(/*output_values=*/{v}, /*inputs=*/i > 0 ? std::vector<CTransactionRef>{*ty[i - 1]} : std::vector<CTransactionRef>{});
         v -= 50 * CENT;
         pool.addUnchecked(entry.Fee(10000LL).FromTx(tyi));
         pool.GetTransactionAncestry(tyi->GetHash(), ancestors, descendants);
         BOOST_CHECK_EQUAL(ancestors, i+1);
         BOOST_CHECK_EQUAL(descendants, i+1);
     }
-    CTransactionRef ty6 = make_tx(/* output_values */ {5 * COIN}, /* inputs */ {tx3, ty5});
+    CTransactionRef ty6 = make_tx(/*output_values=*/{5 * COIN}, /*inputs=*/{tx3, ty5});
     pool.addUnchecked(entry.Fee(10000LL).FromTx(ty6));
 
     // Ancestors / descendants should be:
@@ -757,10 +755,10 @@ BOOST_AUTO_TEST_CASE(MempoolAncestryTests)
     //            \---1 <- [tc].0 --<--/
     //
     CTransactionRef ta, tb, tc, td;
-    ta = make_tx(/* output_values */ {10 * COIN});
-    tb = make_tx(/* output_values */ {5 * COIN, 3 * COIN}, /* inputs */  {ta});
-    tc = make_tx(/* output_values */ {2 * COIN}, /* inputs */ {tb}, /* input_indices */ {1});
-    td = make_tx(/* output_values */ {6 * COIN}, /* inputs */ {tb, tc}, /* input_indices */ {0, 0});
+    ta = make_tx(/*output_values=*/{10 * COIN});
+    tb = make_tx(/*output_values=*/{5 * COIN, 3 * COIN}, /*inputs=*/ {ta});
+    tc = make_tx(/*output_values=*/{2 * COIN}, /*inputs=*/{tb}, /*input_indices=*/{1});
+    td = make_tx(/*output_values=*/{6 * COIN}, /*inputs=*/{tb, tc}, /*input_indices=*/{0, 0});
     pool.clear();
     pool.addUnchecked(entry.Fee(10000LL).FromTx(ta));
     pool.addUnchecked(entry.Fee(10000LL).FromTx(tb));

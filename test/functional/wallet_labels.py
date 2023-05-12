@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2016-2020 The Bitcoin Core developers
+# Copyright (c) 2016-2021 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test label RPCs.
@@ -11,12 +11,13 @@ RPCs tested are:
 """
 from collections import defaultdict
 
+from test_framework.blocktools import COINBASE_MATURITY
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
 from test_framework.wallet_util import test_address
-from test_framework.runebaseconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
-from test_framework.runebase import convert_btc_address_to_runebase
 
+from test_framework.runebaseconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
+from test_framework.runebase import convert_btc_address_to_runebase, convert_btc_bech32_address_to_runebase
 
 class WalletLabelsTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -33,8 +34,8 @@ class WalletLabelsTest(BitcoinTestFramework):
 
         # Note each time we call generate, all generated coins go into
         # the same address, so we call twice to get two addresses w/50 each
-        node.generatetoaddress(nblocks=1, address=node.getnewaddress(label='coinbase'))
-        node.generatetoaddress(nblocks=1+COINBASE_MATURITY, address=node.getnewaddress(label='coinbase'))
+        self.generatetoaddress(node, nblocks=1, address=node.getnewaddress(label='coinbase'))
+        self.generatetoaddress(node, nblocks=COINBASE_MATURITY + 1, address=node.getnewaddress(label='coinbase'))
         assert_equal(node.getbalance(), 2*INITIAL_BLOCK_REWARD)
 
         # there should be 2 address groups
@@ -66,7 +67,7 @@ class WalletLabelsTest(BitcoinTestFramework):
         assert_equal(set([a[0] for a in address_groups[0]]), linked_addresses)
         assert_equal([a[1] for a in address_groups[0]], [0, 0])
 
-        node.generate(1)
+        self.generate(node, 1)
 
         # we want to reset so that the "" label has what's expected.
         # otherwise we're off by exactly the fee amount as that's mined
@@ -90,7 +91,7 @@ class WalletLabelsTest(BitcoinTestFramework):
             label.verify(node)
 
         # Check the amounts received.
-        node.generate(1)
+        self.generate(node, 1)
         for label in labels:
             assert_equal(
                 node.getreceivedbyaddress(label.addresses[0]), amount_to_send)
@@ -99,14 +100,14 @@ class WalletLabelsTest(BitcoinTestFramework):
         for i, label in enumerate(labels):
             to_label = labels[(i + 1) % len(labels)]
             node.sendtoaddress(to_label.addresses[0], amount_to_send)
-        node.generate(1)
+        self.generate(node, 1)
         for label in labels:
             address = node.getnewaddress(label.name)
             label.add_receive_address(address)
             label.verify(node)
             assert_equal(node.getreceivedbylabel(label.name), 2)
             label.verify(node)
-        node.generate(1+COINBASE_MATURITY)
+        self.generate(node, COINBASE_MATURITY + 1)
         expected_account_balances = {"": 504*INITIAL_BLOCK_REWARD}
 
         # Check that setlabel can assign a label to a new unused address.
@@ -118,15 +119,16 @@ class WalletLabelsTest(BitcoinTestFramework):
             assert_raises_rpc_error(-11, "No addresses with label", node.getaddressesbylabel, "")
 
         # Check that addmultisigaddress can assign labels.
-        for label in labels:
-            addresses = []
-            for x in range(10):
-                addresses.append(node.getnewaddress())
-            multisig_address = node.addmultisigaddress(5, addresses, label.name)['address']
-            label.add_address(multisig_address)
-            label.purpose[multisig_address] = "send"
-            label.verify(node)
-        node.generate(101)
+        if not self.options.descriptors:
+            for label in labels:
+                addresses = []
+                for _ in range(10):
+                    addresses.append(node.getnewaddress())
+                multisig_address = node.addmultisigaddress(5, addresses, label.name)['address']
+                label.add_address(multisig_address)
+                label.purpose[multisig_address] = "send"
+                label.verify(node)
+            self.generate(node, COINBASE_MATURITY + 1)
 
         # Check that setlabel can change the label of an address from a
         # different label.
@@ -135,6 +137,35 @@ class WalletLabelsTest(BitcoinTestFramework):
         # Check that setlabel can set the label of an address already
         # in the label. This is a no-op.
         change_label(node, labels[2].addresses[0], labels[2], labels[2])
+
+        if self.options.descriptors:
+            # This is a descriptor wallet test because of segwit v1+ addresses
+            self.log.info('Check watchonly labels')
+            node.createwallet(wallet_name='watch_only', disable_private_keys=True)
+            wallet_watch_only = node.get_wallet_rpc('watch_only')
+            BECH32_VALID = {
+                '✔️_VER15_PROG40': convert_btc_bech32_address_to_runebase('bcrt10qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqxkg7fn'),
+                '✔️_VER16_PROG03': convert_btc_bech32_address_to_runebase('bcrt1sqqqqq8uhdgr'),
+                '✔️_VER16_PROB02': convert_btc_bech32_address_to_runebase('bcrt1sqqqq4wstyw'),
+            }
+            BECH32_INVALID = {
+                '❌_VER15_PROG41': convert_btc_bech32_address_to_runebase('bcrt1sqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqajlxj8'),
+                '❌_VER16_PROB01': convert_btc_bech32_address_to_runebase('bcrt1sqq5r4036'),
+            }
+            for l in BECH32_VALID:
+                ad = BECH32_VALID[l]
+                wallet_watch_only.importaddress(label=l, rescan=False, address=ad)
+                self.generatetoaddress(node, 1, ad)
+                assert_equal(wallet_watch_only.getaddressesbylabel(label=l), {ad: {'purpose': 'receive'}})
+                assert_equal(wallet_watch_only.getreceivedbylabel(label=l), 0)
+            for l in BECH32_INVALID:
+                ad = BECH32_INVALID[l]
+                assert_raises_rpc_error(
+                    -5,
+                    "Address is not valid" if self.options.descriptors else "Invalid Runebase address or script",
+                    lambda: wallet_watch_only.importaddress(label=l, rescan=False, address=ad),
+                )
+
 
 class Label:
     def __init__(self, name):

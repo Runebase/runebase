@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2019 The Bitcoin Core developers
+// Copyright (c) 2009-2020 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,7 +7,9 @@
 
 #include <util/strencodings.h>
 
-const char* GetOpName(opcodetype opcode)
+#include <string>
+
+std::string GetOpName(opcodetype opcode)
 {
     switch (opcode)
     {
@@ -137,6 +139,9 @@ const char* GetOpName(opcodetype opcode)
     case OP_NOP8                   : return "OP_NOP8";
     case OP_NOP9                   : return "OP_NOP9";
     case OP_NOP10                  : return "OP_NOP10";
+
+    // Opcode added by BIP 342 (Tapscript)
+    case OP_CHECKSIGADD            : return "OP_CHECKSIGADD";
 
     // byte code execution
     case OP_CREATE                 : return "OP_CREATE";
@@ -359,6 +364,14 @@ bool GetScriptOp(CScriptBase::const_iterator& pc, CScriptBase::const_iterator en
     return true;
 }
 
+bool IsOpSuccess(const opcodetype& opcode)
+{
+    return opcode == 80 || opcode == 98 || (opcode >= 126 && opcode <= 129) ||
+           (opcode >= 131 && opcode <= 134) || (opcode >= 137 && opcode <= 138) ||
+           (opcode >= 141 && opcode <= 142) || (opcode >= 149 && opcode <= 153) ||
+           (opcode >= 187 && opcode <= 254);
+}
+
 bool CScript::ReplaceParam(opcodetype findOp, int posBefore, const std::vector<unsigned char> &vchParam, CScript &scriptRet) const
 {
     if(posBefore < 0)
@@ -368,7 +381,7 @@ bool CScript::ReplaceParam(opcodetype findOp, int posBefore, const std::vector<u
     bool ret = false;
     std::vector<const_iterator> opcodes;
     int minSize = posBefore + 1;
-    opcodetype opcode;
+    opcodetype opcode = OP_INVALIDOPCODE;
     opcodes.push_back(begin());
     for (const_iterator pc = begin(); pc != end() && GetOp(pc, opcode);)
     {
@@ -389,6 +402,64 @@ bool CScript::ReplaceParam(opcodetype findOp, int posBefore, const std::vector<u
     }
 
     return ret;
+}
+
+bool CScript::FindParam(opcodetype findOp, int posBefore, std::vector<unsigned char> &vchParam) const
+{
+    if(posBefore < 0)
+        return false;
+
+    // Find parameter with opcode and return the parameter before
+    bool ret = false;
+    std::vector<std::pair<const_iterator, std::vector<unsigned char>>> opcodes;
+    int minSize = posBefore + 1;
+    opcodetype opcode;
+    std::vector<unsigned char> tmpParam;
+    for (const_iterator pc = begin(); pc != end() && GetOp(pc, opcode, tmpParam);)
+    {
+        opcodes.push_back(std::make_pair(pc, tmpParam));
+        if (opcode == findOp)
+        {
+            int size = opcodes.size();
+            if(size > minSize)
+            {
+                int position = size -1 -posBefore;
+                vchParam = opcodes[position].second;
+                ret = true;
+            }
+            break;
+        }
+    }
+
+    return ret;
+}
+
+bool CScript::GetData(std::vector<unsigned char> &data) const
+{
+    if(HasOpCreate())
+    {
+        return FindParam(OP_CREATE, 1, data);
+    }
+    else if(HasOpCall())
+    {
+        return FindParam(OP_CALL, 2, data);
+    }
+
+    return false;
+}
+
+bool CScript::SetData(const std::vector<unsigned char> &data, CScript &scriptRet) const
+{
+    if(HasOpCreate())
+    {
+        return ReplaceParam(OP_CREATE, 1, data, scriptRet);
+    }
+    else if(HasOpCall())
+    {
+        return ReplaceParam(OP_CALL, 2, data, scriptRet);
+    }
+
+    return false;
 }
 
 bool CScript::IsPayToWitnessPubkeyHash() const

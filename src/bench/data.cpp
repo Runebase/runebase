@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The Bitcoin Core developers
+// Copyright (c) 2019-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,7 +8,7 @@ namespace benchmark {
 namespace data {
 
 #include <bench/data/blockbench.raw.h>
-const std::vector<uint8_t> blockbench{blockbench_raw, blockbench_raw + sizeof(blockbench_raw) / sizeof(blockbench_raw[0])};
+const std::vector<uint8_t> blockbench{std::begin(blockbench_raw), std::end(blockbench_raw)};
 
 } // namespace data
 } // namespace benchmark

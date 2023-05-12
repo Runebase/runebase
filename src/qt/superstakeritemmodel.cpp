@@ -29,7 +29,7 @@ public:
         hash = superStakerInfo.hash;
         stakerName = QString::fromStdString(superStakerInfo.staker_name);
         stakerAddress = QString::fromStdString(superStakerInfo.staker_address);
-        minFee = superStakerInfo.custom_config ? superStakerInfo.min_fee : DEFAULT_STAKING_MIN_FEE;
+        minFee = superStakerInfo.custom_config ? superStakerInfo.min_fee : wallet::DEFAULT_STAKING_MIN_FEE;
         staking = false;
         balance = 0;
         stake = 0;
@@ -79,6 +79,9 @@ public:
 private Q_SLOTS:
     void updateSuperStakerData(QString hash, QString stakerAddress)
     {
+        if(walletModel && walletModel->node().shutdownRequested())
+            return;
+
         // Get address balance
         bool staking = false;
         CAmount balance = 0;
@@ -235,8 +238,7 @@ SuperStakerItemModel::~SuperStakerItemModel()
 {
     unsubscribeFromCoreSignals();
 
-    t.quit();
-    t.wait();
+    join();
 
     if(priv)
     {
@@ -457,5 +459,16 @@ void SuperStakerItemModel::itemChanged(QString hash, qint64 balance, qint64 stak
             priv->cachedSuperStakerItem[i] = superStakerEntry;
             priv->updateEntry(superStakerEntry, CT_UPDATED);
         }
+    }
+}
+
+void SuperStakerItemModel::join()
+{
+    if(t.isRunning())
+    {
+        if(worker)
+            worker->disconnect(this);
+        t.quit();
+        t.wait();
     }
 }

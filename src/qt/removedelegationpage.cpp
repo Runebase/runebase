@@ -9,6 +9,8 @@
 #include <qt/bitcoinunits.h>
 #include <qt/execrpccommand.h>
 #include <qt/sendcoinsdialog.h>
+#include <qt/hardwaresigntx.h>
+#include <node/ui_interface.h>
 
 namespace RemoveDelegation_NS
 {
@@ -75,6 +77,13 @@ void RemoveDelegationPage::setModel(WalletModel *_model)
 
     // update the display unit, to not use the default ("RUNEBASE")
     updateDisplayUnit();
+
+    bCreateUnsigned = m_model->createUnsigned();
+
+    if (bCreateUnsigned) {
+        ui->removeDelegationButton->setText(tr("Cr&eate Unsigned"));
+        ui->removeDelegationButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+    }
 }
 
 void RemoveDelegationPage::setClientModel(ClientModel *_clientModel)
@@ -204,17 +213,30 @@ void RemoveDelegationPage::on_removeDelegationClicked()
         // Append params to the list
         ExecRPCCommand::appendParam(lstParams, PARAM_ADDRESS, address);
         ExecRPCCommand::appendParam(lstParams, PARAM_GASLIMIT, QString::number(gasLimit));
-        ExecRPCCommand::appendParam(lstParams, PARAM_GASPRICE, BitcoinUnits::format(unit, gasPrice, false, BitcoinUnits::separatorNever));
+        ExecRPCCommand::appendParam(lstParams, PARAM_GASPRICE, BitcoinUnits::format(unit, gasPrice, false, BitcoinUnits::SeparatorStyle::NEVER));
 
-        QString questionString = tr("Are you sure you want to remove the delegation for the address: <br /><br />");
+        QString questionString;
+        if (bCreateUnsigned) {
+            questionString.append(tr("Do you want to draft this transaction?"));
+            questionString.append("<br /><span style='font-size:10pt;'>");
+            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+            questionString.append("</span>");
+            questionString.append(tr("<br /><br />Remove delegation for address:<br />"));
+        } else {
+            questionString.append(tr("Are you sure you want to remove the delegation for the address: <br /><br />"));
+
+        }
         questionString.append(tr("<b>%1</b>?")
                               .arg(ui->lineEditAddress->text()));
 
-        SendConfirmationDialog confirmationDialog(tr("Confirm remove delegation."), questionString, "", "", SEND_CONFIRM_DELAY, tr("Send"), this);
+        const QString confirmation = bCreateUnsigned ? tr("Confirm remove delegation proposal.") : tr("Confirm remove delegation.");
+        const bool enable_send{!bCreateUnsigned};
+        const bool always_show_unsigned{m_model->getOptionsModel()->getEnablePSBTControls()};
+        SendConfirmationDialog confirmationDialog(confirmation, questionString, "", "", SEND_CONFIRM_DELAY, enable_send, always_show_unsigned, this);
         confirmationDialog.exec();
 
         QMessageBox::StandardButton retval = (QMessageBox::StandardButton)confirmationDialog.result();
-        if(retval == QMessageBox::Yes)
+        if(retval == QMessageBox::Yes || retval == QMessageBox::Save)
         {
             // Execute RPC command line
             if(!m_execRPCCommand->exec(m_model->node(), m_model, lstParams, result, resultJson, errorMessage))
@@ -224,8 +246,27 @@ void RemoveDelegationPage::on_removeDelegationClicked()
             else
             {
                 QVariantMap variantMap = result.toMap();
-                std::string txid = variantMap.value("txid").toString().toStdString();
-                m_model->wallet().setDelegationRemoved(sHash, txid);
+                if(bCreateUnsigned)
+                {
+                    GUIUtil::setClipboard(variantMap.value("psbt").toString());
+                    Q_EMIT message(tr("PSBT copied"), "Copied to clipboard", CClientUIInterface::MSG_INFORMATION);
+                }
+                else
+                {
+                    bool isSent = true;
+                    if(m_model->getSignPsbtWithHwiTool())
+                    {
+                        QString psbt = variantMap.value("psbt").toString();
+                        if(!HardwareSignTx::process(this, m_model, psbt, variantMap))
+                            isSent = false;
+                    }
+
+                    if(isSent)
+                    {
+                        std::string txid = variantMap.value("txid").toString().toStdString();
+                        m_model->wallet().setDelegationRemoved(sHash, txid);
+                    }
+                }
             }
 
             accept();

@@ -9,7 +9,7 @@ Note
 Always use absolute paths to configure and compile Runebase Core and the dependencies.
 For example, when specifying the path of the dependency:
 
-	../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
+    ../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
 
 Here BDB_PREFIX must be an absolute path - it is defined using $(pwd) which ensures
 the usage of the absolute path.
@@ -20,7 +20,7 @@ To Build
 ```bash
 ./autogen.sh
 ./configure
-make
+make # use "-j N" for N parallel jobs
 make install # optional
 ```
 
@@ -42,11 +42,13 @@ Optional dependencies:
  Library     | Purpose          | Description
  ------------|------------------|----------------------
  miniupnpc   | UPnP Support     | Firewall-jumping support
- libdb4.8    | Berkeley DB      | Wallet storage (only needed when wallet enabled)
+ libnatpmp   | NAT-PMP Support  | Firewall-jumping support
+ libdb4.8    | Berkeley DB      | Wallet storage (only needed when legacy wallet enabled)
  qt          | GUI              | GUI toolkit (only needed when GUI enabled)
- libqrencode | QR codes in GUI  | Optional for generating QR codes (only needed when GUI enabled)
- univalue    | Utility          | JSON parsing and encoding (bundled version will be used unless --with-system-univalue passed to configure)
- libzmq3     | ZMQ notification | Optional, allows generating ZMQ notifications (requires ZMQ version >= 4.0.0)
+ libqrencode | QR codes in GUI  | QR code generation (only needed when GUI enabled)
+ libzmq3     | ZMQ notification | ZMQ notifications (requires ZMQ version >= 4.0.0)
+ sqlite3     | SQLite DB        | Wallet storage (only needed when descriptor wallet enabled)
+ systemtap   | Tracing (USDT)   | Statically defined tracepoints
 
 For the versions used, see [dependencies.md](dependencies.md)
 
@@ -81,27 +83,30 @@ Build requirements:
 
 Now, you can either build from self-compiled [depends](/depends/README.md) or install the required dependencies:
 
-    sudo apt-get install libevent-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev libboost-thread-dev
+    sudo apt-get install libevent-dev libboost-dev
 
-BerkeleyDB is required for the wallet.
+SQLite is required for the descriptor wallet:
 
-Ubuntu and Debian have their own `libdb-dev` and `libdb++-dev` packages, but these will install
-BerkeleyDB 5.1 or later. This will break binary wallet compatibility with the distributed executables, which
-are based on BerkeleyDB 4.8. If you do not care about wallet compatibility,
-pass `--with-incompatible-bdb` to configure.
+    sudo apt install libsqlite3-dev
 
-Otherwise, you can build from self-compiled `depends` (see above).
+Berkeley DB is required for the legacy wallet. Ubuntu and Debian have their own `libdb-dev` and `libdb++-dev` packages,
+but these will install Berkeley DB 5.1 or later. This will break binary wallet compatibility with the distributed
+executables, which are based on BerkeleyDB 4.8. If you do not care about wallet compatibility, pass
+`--with-incompatible-bdb` to configure. Otherwise, you can build Berkeley DB [yourself](#berkeley-db).
 
-To build Runebase Core without wallet, see [*Disable-wallet mode*](/doc/build-unix.md#disable-wallet-mode)
+To build Runebase Core without wallet, see [*Disable-wallet mode*](#disable-wallet-mode)
 
+Optional port mapping libraries (see: `--with-miniupnpc`, `--enable-upnp-default`, and `--with-natpmp`, `--enable-natpmp-default`):
 
-Optional (see `--with-miniupnpc` and `--enable-upnp-default`):
-
-    sudo apt-get install libminiupnpc-dev
+    sudo apt install libminiupnpc-dev libnatpmp-dev
 
 ZMQ dependencies (provides ZMQ API):
 
     sudo apt-get install libzmq3-dev
+
+User-Space, Statically Defined Tracing (USDT) dependencies:
+
+    sudo apt install systemtap-sdt-dev
 
 GUI dependencies:
 
@@ -112,6 +117,10 @@ To build without GUI pass `--without-gui`.
 To build with Qt 5 you need the following:
 
     sudo apt-get install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools
+
+Additionally, to support Wayland protocol for modern desktop environments:
+
+    sudo apt install qtwayland5
 
 libqrencode (optional) can be installed with:
 
@@ -127,23 +136,59 @@ built by default.
 
 Build requirements:
 
-    sudo dnf install gcc-c++ libtool make autoconf automake libevent-devel boost-devel libdb4-devel libdb4-cxx-devel python3 gmp-devel
+    sudo dnf install gcc-c++ libtool make autoconf automake python3 gmp-devel
 
-Optional (see `--with-miniupnpc` and `--enable-upnp-default`):
+Now, you can either build from self-compiled [depends](/depends/README.md) or install the required dependencies:
 
-    sudo dnf install miniupnpc-devel
+    sudo dnf install libevent-devel boost-devel
+
+SQLite is required for the descriptor wallet:
+
+    sudo dnf install sqlite-devel
+
+Berkeley DB is required for the legacy wallet:
+
+    sudo dnf install libdb4-devel libdb4-cxx-devel
+
+Newer Fedora releases, since Fedora 33, have only `libdb-devel` and `libdb-cxx-devel` packages, but these will install
+Berkeley DB 5.3 or later. This will break binary wallet compatibility with the distributed executables, which
+are based on Berkeley DB 4.8. If you do not care about wallet compatibility,
+pass `--with-incompatible-bdb` to configure. Otherwise, you can build Berkeley DB [yourself](#berkeley-db).
+
+To build Runebase Core without wallet, see [*Disable-wallet mode*](#disable-wallet-mode)
+
+Optional port mapping libraries (see: `--with-miniupnpc`, `--enable-upnp-default`, and `--with-natpmp`, `--enable-natpmp-default`):
+
+    sudo dnf install miniupnpc-devel libnatpmp-devel
 
 ZMQ dependencies (provides ZMQ API):
 
     sudo dnf install zeromq-devel
 
+User-Space, Statically Defined Tracing (USDT) dependencies:
+
+    sudo dnf install systemtap
+
+GUI dependencies:
+
+If you want to build runebase-qt, make sure that the required packages for Qt development
+are installed. Qt 5 is necessary to build the GUI.
+To build without GUI pass `--without-gui`.
+
 To build with Qt 5 you need the following:
 
     sudo dnf install qt5-qttools-devel qt5-qtbase-devel
 
+Additionally, to support Wayland protocol for modern desktop environments:
+
+    sudo dnf install qt5-qtwayland
+
 libqrencode (optional) can be installed with:
 
     sudo dnf install qrencode-devel
+
+Once these are installed, they will be found by configure and a runebase-qt executable will be
+built by default.
 
 Dependency Build Instructions: CentOS
 -------------------------------------
@@ -159,28 +204,80 @@ To build with Qt 5 (recommended) you need the following:
 
     sudo yum install qt5-qttools-devel protobuf-devel qrencode-devel
 
+### Ubuntu 16
+#### Dependency Build Instructions
+Build requirements:
+```
+./runebase/contrib/script/setup-ubuntu16.sh
+```
+
+#### Build Installation Package
+Build Runebase:
+```
+cd runebase/contrib/script
+./build-runebase-linux.sh -j2
+```
+The home folder for the installation package need to be `runebase/contrib/script`.
+After the build finish, the installation package is present into `runebase/contrib/script`.
+Installation package example: `runebase-22.1-x86_64-pc-linux-gnu.tar.gz`
+
+`runebase-qt` require `libxcb-xinerama0` to be installed on Ubuntu 16:
+```
+sudo apt-get install libxcb-xinerama0 -y
+```
+
+### CentOS 7
+#### Dependency Build Instructions
+Build requirements:
+```
+su
+./runebase/contrib/script/setup-centos7.sh
+```
+The operating system might restart after finish with installing the build requirements.
+
+#### Build Installation Package
+Build Runebase:
+```
+cd runebase/contrib/script
+./build-runebase-linux.sh -j2
+```
+The home folder for the installation package need to be `runebase/contrib/script`.
+After the build finish, the installation package is present into `runebase/contrib/script`.
+Installation package example: `runebase-22.1-x86_64-pc-linux-gnu.tar.gz`
+
 Notes
 -----
 The release is built with GCC and then "strip runebased" to strip the debug
 symbols, which reduces the executable size by about 90%.
-
 
 miniupnpc
 ---------
 
 [miniupnpc](https://miniupnp.tuxfamily.org) may be used for UPnP port mapping.  It can be downloaded from [here](
 https://miniupnp.tuxfamily.org/files/).  UPnP support is compiled in and
-turned off by default.  See the configure options for upnp behavior desired:
+turned off by default.  See the configure options for UPnP behavior desired:
 
-	--without-miniupnpc      No UPnP support miniupnp not required
-	--disable-upnp-default   (the default) UPnP support turned off by default at runtime
-	--enable-upnp-default    UPnP support turned on by default at runtime
+    --without-miniupnpc      No UPnP support, miniupnp not required
+    --disable-upnp-default   (the default) UPnP support turned off by default at runtime
+    --enable-upnp-default    UPnP support turned on by default at runtime
 
+libnatpmp
+---------
+
+[libnatpmp](https://miniupnp.tuxfamily.org/libnatpmp.html) may be used for NAT-PMP port mapping. It can be downloaded
+from [here](https://miniupnp.tuxfamily.org/files/). NAT-PMP support is compiled in and
+turned off by default. See the configure options for NAT-PMP behavior desired:
+
+    --without-natpmp          No NAT-PMP support, libnatpmp not required
+    --disable-natpmp-default  (the default) NAT-PMP support turned off by default at runtime
+    --enable-natpmp-default   NAT-PMP support turned on by default at runtime
 
 Berkeley DB
 -----------
-It is recommended to use Berkeley DB 4.8. If you have to build it yourself,
-you can use [the installation script included in contrib/](/contrib/install_db4.sh)
+
+The legacy wallet uses Berkeley DB. To ensure backwards compatibility it is
+recommended to use Berkeley DB 4.8. If you have to build it yourself, you can
+use [the installation script included in contrib/](/contrib/install_db4.sh)
 like so:
 
 ```shell
@@ -189,16 +286,9 @@ like so:
 
 from the root of the repository.
 
-**Note**: You only need Berkeley DB if the wallet is enabled (see [*Disable-wallet mode*](/doc/build-unix.md#disable-wallet-mode)).
+Otherwise, you can build Runebase Core from self-compiled [depends](/depends/README.md).
 
-Boost
------
-If you need to build Boost yourself:
-
-	sudo su
-	./bootstrap.sh
-	./bjam install
-
+**Note**: You only need Berkeley DB if the wallet is enabled (see [*Disable-wallet mode*](#disable-wallet-mode)).
 
 Security
 --------
@@ -208,8 +298,8 @@ This can be disabled with:
 
 Hardening Flags:
 
-	./configure --enable-hardening
-	./configure --disable-hardening
+    ./configure --enable-hardening
+    ./configure --disable-hardening
 
 
 Hardening enables the following features:
@@ -224,7 +314,7 @@ Hardening enables the following features:
 
     To test that you have built PIE executable, install scanelf, part of paxutils, and use:
 
-    	scanelf -e ./runebase
+        scanelf -e ./runebase
 
     The output should contain:
 
@@ -241,8 +331,8 @@ Hardening enables the following features:
     `scanelf -e ./runebase`
 
     The output should contain:
-	STK/REL/PTL
-	RW- R-- RW-
+    STK/REL/PTL
+    RW- R-- RW-
 
     The STK RW- means that the stack is readable and writeable but not executable.
 
@@ -253,7 +343,7 @@ disable-wallet mode with:
 
     ./configure --disable-wallet
 
-In this case there is no dependency on Berkeley DB 4.8.
+In this case there is no dependency on Berkeley DB 4.8 and SQLite.
 
 Mining is also possible in disable-wallet mode using the `getblocktemplate` RPC call.
 
@@ -267,7 +357,7 @@ A list of additional configure flags can be displayed with:
 Setup and Build Example: Arch Linux
 -----------------------------------
 This example lists the steps necessary to setup and build a command line only, non-wallet distribution of the latest changes on Arch Linux:
-    
+
     pacman -S git base-devel boost libevent python gmp
     git clone https://github.com/runebase/runebase --recursive
     cd runebase/
@@ -278,8 +368,8 @@ This example lists the steps necessary to setup and build a command line only, n
 Note:
 Enabling wallet support requires either compiling against a Berkeley DB newer than 4.8 (package `db`) using `--with-incompatible-bdb`,
 or building and depending on a local version of Berkeley DB 4.8. The readily available Arch Linux packages are currently built using
-`--with-incompatible-bdb` according to the [PKGBUILD](https://projects.archlinux.org/svntogit/community.git/tree/bitcoin/trunk/PKGBUILD).
-As mentioned above, when maintaining portability of the wallet between the standard Bitcoin Core distributions and independently built
+`--with-incompatible-bdb` according to the [PKGBUILD](https://github.com/archlinux/svntogit-community/blob/packages/bitcoin/trunk/PKGBUILD).
+As mentioned above, when maintaining portability of the wallet between the standard Runebase Core distributions and independently built
 node software is desired, Berkeley DB 4.8 must be used.
 
 
@@ -300,7 +390,7 @@ To build executables for ARM:
     make HOST=arm-linux-gnueabihf NO_QT=1
     cd ..
     ./autogen.sh
-    ./configure --prefix=$PWD/depends/arm-linux-gnueabihf --enable-glibc-back-compat --enable-reduce-exports LDFLAGS=-static-libstdc++
+    CONFIG_SITE=$PWD/depends/arm-linux-gnueabihf/share/config.site ./configure --enable-reduce-exports LDFLAGS=-static-libstdc++
     make
 
 

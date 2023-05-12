@@ -6,7 +6,9 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from test_framework.script import *
-from test_framework.mininode import *
+from test_framework.p2p import *
+
+from test_framework.runebase import generatesynchronized
 import sys
 
 class RunebaseCallContractStateNotRevertedTest(BitcoinTestFramework):
@@ -18,10 +20,10 @@ class RunebaseCallContractStateNotRevertedTest(BitcoinTestFramework):
         self.skip_if_no_wallet()
 
     def run_test(self):
-        connect_nodes_bi(self.nodes, 0, 1)
-        self.nodes[0].generate(600)
+        self.connect_nodes(0, 1)
+        generatesynchronized(self.nodes[0], COINBASE_MATURITY+100, None, self.nodes)
         self.sync_all()
-        self.nodes[1].generate(600)
+        generatesynchronized(self.nodes[1], COINBASE_MATURITY+100, None, self.nodes)
         self.sync_all()
         contract_address = self.nodes[0].createcontract("00")['address']
         self.nodes[0].generate(1)

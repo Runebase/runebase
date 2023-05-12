@@ -16,7 +16,9 @@
 #include <qt/bitcoinaddressvalidator.h>
 #include <uint256.h>
 #include <qt/styleSheet.h>
+#include <qt/hardwaresigntx.h>
 #include <interfaces/node.h>
+#include <node/ui_interface.h>
 
 static const CAmount SINGLE_STEP = 0.00000001*COIN;
 
@@ -85,6 +87,13 @@ void SendTokenPage::setModel(WalletModel *_model)
 
     // update the display unit, to not use the default ("RUNEBASE")
     updateDisplayUnit();
+
+    bCreateUnsigned = m_model->createUnsigned();
+
+    if (bCreateUnsigned) {
+        ui->confirmButton->setText(tr("Cr&eate Unsigned"));
+        ui->confirmButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+    }
 }
 
 void SendTokenPage::setClientModel(ClientModel *_clientModel)
@@ -175,34 +184,72 @@ void SendTokenPage::on_confirmClicked()
         m_tokenABI->setAddress(m_selectedToken->address);
         m_tokenABI->setSender(m_selectedToken->sender);
         m_tokenABI->setGasLimit(QString::number(gasLimit).toStdString());
-        m_tokenABI->setGasPrice(BitcoinUnits::format(unit, gasPrice, false, BitcoinUnits::separatorNever).toStdString());
+        m_tokenABI->setGasPrice(BitcoinUnits::format(unit, gasPrice, false, BitcoinUnits::SeparatorStyle::NEVER).toStdString());
 
         std::string toAddress = ui->lineEditPayTo->text().toStdString();
         std::string amountToSend = ui->lineEditAmount->text().toStdString();
-        QString amountFormated = BitcoinUnits::formatToken(m_selectedToken->decimals, ui->lineEditAmount->value(), false, BitcoinUnits::separatorAlways);
+        QString amountFormated = BitcoinUnits::formatToken(m_selectedToken->decimals, ui->lineEditAmount->value(), false, BitcoinUnits::SeparatorStyle::ALWAYS);
 
-        QString questionString = tr("Are you sure you want to send? <br /><br />");
+        QString questionString;
+        if (bCreateUnsigned) {
+            questionString.append(tr("Do you want to draft this send token transaction?"));
+            questionString.append("<br /><span style='font-size:10pt;'>");
+            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+            questionString.append("</span><br /><br />");
+        } else {
+            questionString.append(tr("Are you sure you want to send? <br /><br />"));
+        }
         questionString.append(tr("<b>%1 %2 </b> to ")
                               .arg(amountFormated).arg(QString::fromStdString(m_selectedToken->symbol)));
         questionString.append(tr("<br />%3 <br />")
                               .arg(QString::fromStdString(toAddress)));
 
-        SendConfirmationDialog confirmationDialog(tr("Confirm send token."), questionString, "", "", SEND_CONFIRM_DELAY, tr("Send"), this);
+        const QString confirmation = bCreateUnsigned ? tr("Confirm send token proposal.") : tr("Confirm send token.");
+        const bool enable_send{!bCreateUnsigned};
+        const bool always_show_unsigned{m_model->getOptionsModel()->getEnablePSBTControls()};
+        SendConfirmationDialog confirmationDialog(confirmation, questionString, "", "", SEND_CONFIRM_DELAY, enable_send, always_show_unsigned, this);
         confirmationDialog.exec();
         QMessageBox::StandardButton retval = (QMessageBox::StandardButton)confirmationDialog.result();
-        if(retval == QMessageBox::Yes)
+        if(retval == QMessageBox::Yes || retval == QMessageBox::Save)
         {
-            if(m_tokenABI->transfer(toAddress, amountToSend, true))
+            bool success;
+            if(m_tokenABI->transfer(toAddress, amountToSend, success, true))
             {
-                interfaces::TokenTx tokenTx;
-                tokenTx.contract_address = m_selectedToken->address;
-                tokenTx.sender_address = m_selectedToken->sender;
-                tokenTx.receiver_address = toAddress;
-                dev::u256 nValue(amountToSend);
-                tokenTx.value = u256Touint(nValue);
-                tokenTx.tx_hash = uint256S(m_tokenABI->getTxId());
-                tokenTx.label = label;
-                m_model->wallet().addTokenTxEntry(tokenTx);
+                if(bCreateUnsigned)
+                {
+                    QString psbt = QString::fromStdString(m_tokenABI->getPsbt());
+                    GUIUtil::setClipboard(psbt);
+                    Q_EMIT message(tr("PSBT copied"), "Copied to clipboard", CClientUIInterface::MSG_INFORMATION);
+                }
+                else
+                {
+                    bool isSent = true;
+                    if(m_model->getSignPsbtWithHwiTool())
+                    {
+                        QVariantMap variantMap;
+                        QString psbt = QString::fromStdString(m_tokenABI->getPsbt());
+                        if(!HardwareSignTx::process(this, m_model, psbt, variantMap))
+                            isSent = false;
+                        else
+                        {
+                            std::string txid = variantMap["txid"].toString().toStdString();
+                            m_tokenABI->setTxId(txid);
+                        }
+                    }
+
+                    if(isSent)
+                    {
+                        interfaces::TokenTx tokenTx;
+                        tokenTx.contract_address = m_selectedToken->address;
+                        tokenTx.sender_address = m_selectedToken->sender;
+                        tokenTx.receiver_address = toAddress;
+                        dev::u256 nValue(amountToSend);
+                        tokenTx.value = u256Touint(nValue);
+                        tokenTx.tx_hash = uint256S(m_tokenABI->getTxId());
+                        tokenTx.label = label;
+                        m_model->wallet().addTokenTxEntry(tokenTx);
+                    }
+                }
             }
             else
             {
@@ -261,6 +308,6 @@ void SendTokenPage::setTokenData(std::string address, std::string sender, std::s
     {
         ui->lineEditAmount->setValue(value);
     }
-    ui->labelTokenBalance->setText(BitcoinUnits::formatTokenWithUnit(unit, m_selectedToken->decimals, totalSupply, false, BitcoinUnits::separatorAlways));
+    ui->labelTokenBalance->setText(BitcoinUnits::formatTokenWithUnit(unit, m_selectedToken->decimals, totalSupply, false, BitcoinUnits::SeparatorStyle::ALWAYS));
     setWindowTitle(tr("Send") + " " + unit);
 }

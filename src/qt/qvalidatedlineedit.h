@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2020 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -24,8 +24,8 @@ public:
     void setEmptyIsValid(bool value);
 
 protected:
-    void focusInEvent(QFocusEvent *evt);
-    void focusOutEvent(QFocusEvent *evt);
+    void focusInEvent(QFocusEvent *evt) override;
+    void focusOutEvent(QFocusEvent *evt) override;
 
 private:
     bool valid;
@@ -33,6 +33,7 @@ private:
     bool emptyIsValid;
 
 public Q_SLOTS:
+    void setText(const QString&);
     void setValid(bool valid);
     void setEnabled(bool enabled);
     void checkValidity();

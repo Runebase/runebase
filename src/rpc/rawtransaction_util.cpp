@@ -1,11 +1,12 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2019 The Bitcoin Core developers
+// Copyright (c) 2009-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <rpc/rawtransaction_util.h>
 
 #include <coins.h>
+#include <consensus/amount.h>
 #include <core_io.h>
 #include <key_io.h>
 #include <policy/policy.h>
@@ -18,15 +19,21 @@
 #include <univalue.h>
 #include <util/rbf.h>
 #include <util/strencodings.h>
-#include <validation.h>
-#include <util/moneystr.h>
+#include <util/translation.h>
 
-CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, bool rbf)
+CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, bool rbf, IRawContract* rawContract)
 {
-    if (inputs_in.isNull() || outputs_in.isNull())
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, arguments 1 and 2 must be non-null");
+    if (outputs_in.isNull()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, output argument must be non-null");
+    }
 
-    UniValue inputs = inputs_in.get_array();
+    UniValue inputs;
+    if (inputs_in.isNull()) {
+        inputs = UniValue::VARR;
+    } else {
+        inputs = inputs_in.get_array();
+    }
+
     const bool outputs_is_obj = outputs_in.isObject();
     UniValue outputs = outputs_is_obj ? outputs_in.get_obj() : outputs_in.get_array();
 
@@ -50,13 +57,13 @@ CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniVal
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, missing vout key");
         int nOutput = vout_v.get_int();
         if (nOutput < 0)
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout cannot be negative");
 
         uint32_t nSequence;
         if (rbf) {
             nSequence = MAX_BIP125_RBF_SEQUENCE; /* CTxIn::SEQUENCE_FINAL - 2 */
         } else if (rawTx.nLockTime) {
-            nSequence = CTxIn::SEQUENCE_FINAL - 1;
+            nSequence = CTxIn::MAX_SEQUENCE_NONFINAL; /* CTxIn::SEQUENCE_FINAL - 1 */
         } else {
             nSequence = CTxIn::SEQUENCE_FINAL;
         }
@@ -108,122 +115,10 @@ CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniVal
 
             CTxOut out(0, CScript() << OP_RETURN << data);
             rawTx.vout.push_back(out);
-       } else if (name_ == "contract") {
+       } else if (rawContract && name_ == "contract") {
             // Get the contract object
-            UniValue Contract = outputs[i];
-            if(!Contract.isObject())
-                throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, need to be object: ")+name_);
-
-            // Get dgp gas limit and gas price
-            LOCK(cs_main);
-            RunebaseDGP runebaseDGP(globalState.get(), fGettingValuesDGP);
-            uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(::ChainActive().Height());
-            uint64_t minGasPrice = CAmount(runebaseDGP.getMinGasPrice(::ChainActive().Height()));
-            CAmount nGasPrice = (minGasPrice>DEFAULT_GAS_PRICE)?minGasPrice:DEFAULT_GAS_PRICE;
-
-            bool createContract = Contract.exists("bytecode") && Contract["bytecode"].isStr();
-            CScript scriptPubKey;
-            CAmount nAmount = 0;
-
-            // Get gas limit
-            uint64_t nGasLimit=createContract ? DEFAULT_GAS_LIMIT_OP_CREATE : DEFAULT_GAS_LIMIT_OP_SEND;
-            if (Contract.exists("gasLimit")){
-                nGasLimit = Contract["gasLimit"].get_int64();
-                if (nGasLimit > blockGasLimit)
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Maximum is: "+i64tostr(blockGasLimit)+")");
-                if (nGasLimit < MINIMUM_GAS_LIMIT)
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Minimum is: "+i64tostr(MINIMUM_GAS_LIMIT)+")");
-                if (nGasLimit <= 0)
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit");
-            }
-
-            // Get gas price
-            if (Contract.exists("gasPrice")){
-                UniValue uGasPrice = Contract["gasPrice"];
-                if(!ParseMoney(uGasPrice.getValStr(), nGasPrice))
-                {
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasPrice");
-                }
-                CAmount maxRpcGasPrice = gArgs.GetArg("-rpcmaxgasprice", MAX_RPC_GAS_PRICE);
-                if (nGasPrice > (int64_t)maxRpcGasPrice)
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasPrice, Maximum allowed in RPC calls is: "+FormatMoney(maxRpcGasPrice)+" (use -rpcmaxgasprice to change it)");
-                if (nGasPrice < (int64_t)minGasPrice)
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasPrice (Minimum is: "+FormatMoney(minGasPrice)+")");
-                if (nGasPrice <= 0)
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasPrice");
-            }
-
-            // Get sender address
-            bool fHasSender=false;
-            CTxDestination senderAddress;
-            if (Contract.exists("senderAddress")){
-                senderAddress = DecodeDestination(Contract["senderAddress"].get_str());
-                if (!IsValidDestination(senderAddress))
-                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Runebase address to send from");
-                if (!IsValidContractSenderAddress(senderAddress))
-                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid contract sender address. Only P2PK and P2PKH allowed");
-                else
-                    fHasSender=true;
-            }
-
-            if(createContract)
-            {
-                // Get the new contract bytecode
-                if(!Contract.exists("bytecode") || !Contract["bytecode"].isStr())
-                    throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, bytecode is mandatory."));
-
-                std::string bytecodehex = Contract["bytecode"].get_str();
-                if(bytecodehex.size() % 2 != 0 || !CheckHex(bytecodehex))
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid bytecode (bytecode not hex)");
-
-                // Add create contract output
-                scriptPubKey = CScript() << CScriptNum(VersionVM::GetEVMDefault().toRaw()) << CScriptNum(nGasLimit) << CScriptNum(nGasPrice) << ParseHex(bytecodehex) <<OP_CREATE;
-            }
-            else
-            {
-                // Get the contract address
-                if(!Contract.exists("contractAddress") || !Contract["contractAddress"].isStr())
-                    throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, contract address is mandatory."));
-
-                std::string contractaddress = Contract["contractAddress"].get_str();
-                if(contractaddress.size() != 40 || !CheckHex(contractaddress))
-                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect contract address");
-
-                dev::Address addrAccount(contractaddress);
-                if(!globalState->addressInUse(addrAccount))
-                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "contract address does not exist");
-
-                // Get the contract data
-                if(!Contract.exists("data") || !Contract["data"].isStr())
-                    throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, contract data is mandatory."));
-
-                std::string datahex = Contract["data"].get_str();
-                if(datahex.size() % 2 != 0 || !CheckHex(datahex))
-                    throw JSONRPCError(RPC_TYPE_ERROR, "Invalid data (data not hex)");
-
-                // Get amount
-                if (Contract.exists("amount")){
-                    nAmount = AmountFromValue(Contract["amount"]);
-                    if (nAmount < 0)
-                        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for call contract");
-                }
-
-                // Add call contract output
-                scriptPubKey = CScript() << CScriptNum(VersionVM::GetEVMDefault().toRaw()) << CScriptNum(nGasLimit) << CScriptNum(nGasPrice) << ParseHex(datahex) << ParseHex(contractaddress) << OP_CALL;
-            }
-
-             // Build op_sender script
-            if(fHasSender && ::ChainActive().Height() >= Params().GetConsensus().QIP5Height)
-            {
-                const PKHash *keyID = boost::get<PKHash>(&senderAddress);
-                if(!keyID)
-                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Only pubkeyhash addresses are supported");
-                std::vector<unsigned char> scriptSig;
-                scriptPubKey = (CScript() << CScriptNum(addresstype::PUBKEYHASH) << ToByteVector(*keyID) << ToByteVector(scriptSig) << OP_SENDER) + scriptPubKey;
-            }
-
-            CTxOut out(nAmount, scriptPubKey);
-            rawTx.vout.push_back(out);
+            UniValue contract = outputs[i];
+            rawContract->addContract(rawTx, contract);
         } else {
             CTxDestination destination = DecodeDestination(name_);
             if (!IsValidDestination(destination)) {
@@ -258,10 +153,10 @@ static void TxInErrorToJSON(const CTxIn& txin, UniValue& vErrorsRet, const std::
     entry.pushKV("vout", (uint64_t)txin.prevout.n);
     UniValue witness(UniValue::VARR);
     for (unsigned int i = 0; i < txin.scriptWitness.stack.size(); i++) {
-        witness.push_back(HexStr(txin.scriptWitness.stack[i].begin(), txin.scriptWitness.stack[i].end()));
+        witness.push_back(HexStr(txin.scriptWitness.stack[i]));
     }
     entry.pushKV("witness", witness);
-    entry.pushKV("scriptSig", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
+    entry.pushKV("scriptSig", HexStr(txin.scriptSig));
     entry.pushKV("sequence", (uint64_t)txin.nSequence);
     entry.pushKV("error", strMessage);
     vErrorsRet.push_back(entry);
@@ -290,7 +185,7 @@ void ParsePrevouts(const UniValue& prevTxsUnival, FillableSigningProvider* keyst
 
             int nOut = find_value(prevOut, "vout").get_int();
             if (nOut < 0) {
-                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "vout must be positive");
+                throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "vout cannot be negative");
             }
 
             COutPoint out(txid, nOut);
@@ -413,22 +308,22 @@ void SignTransaction(CMutableTransaction& mtx, const SigningProvider* keystore, 
     int nHashType = ParseSighashString(hashType);
 
     // Script verification errors
-    std::map<int, std::string> input_errors;
+    std::map<int, bilingual_str> input_errors;
 
     bool complete = SignTransaction(mtx, keystore, coins, nHashType, input_errors);
     SignTransactionResultToJSON(mtx, complete, coins, input_errors, result);
 }
 
-void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const std::map<COutPoint, Coin>& coins, std::map<int, std::string>& input_errors, UniValue& result)
+void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const std::map<COutPoint, Coin>& coins, const std::map<int, bilingual_str>& input_errors, UniValue& result)
 {
     // Make errors UniValue
     UniValue vErrors(UniValue::VARR);
     for (const auto& err_pair : input_errors) {
-        if (err_pair.second == "Missing amount") {
+        if (err_pair.second.original == "Missing amount") {
             // This particular error needs to be an exception for some reason
             throw JSONRPCError(RPC_TYPE_ERROR, strprintf("Missing amount for %s", coins.at(mtx.vin.at(err_pair.first).prevout).out.ToString()));
         }
-        TxInErrorToJSON(mtx.vin.at(err_pair.first), vErrors, err_pair.second);
+        TxInErrorToJSON(mtx.vin.at(err_pair.first), vErrors, err_pair.second.original);
     }
 
     result.pushKV("hex", EncodeHexTx(CTransaction(mtx)));
@@ -445,58 +340,36 @@ static void TxOutErrorToJSON(const CTxOut& output, UniValue& vErrorsRet, const s
 {
     UniValue entry(UniValue::VOBJ);
     entry.pushKV("amount", ValueFromAmount(output.nValue));
-    entry.pushKV("scriptPubKey", HexStr(output.scriptPubKey.begin(), output.scriptPubKey.end()));
+    entry.pushKV("scriptPubKey", HexStr(MakeUCharSpan(output.scriptPubKey)));
     entry.pushKV("error", strMessage);
     vErrorsRet.push_back(entry);
 }
 
-UniValue SignTransactionSender(CMutableTransaction& mtx, FillableSigningProvider *keystore, const UniValue& hashType)
+void SignTransactionOutput(CMutableTransaction &mtx, FillableSigningProvider *keystore, const UniValue &hashType, UniValue &result)
 {
     int nHashType = ParseSighashString(hashType);
 
     // Script verification errors
+    std::map<int, std::string> output_errors;
+
+    bool complete = SignTransactionOutput(mtx, keystore, nHashType, output_errors);
+    SignTransactionOutputResultToJSON(mtx, complete, output_errors, result);
+}
+
+void SignTransactionOutputResultToJSON(CMutableTransaction &mtx, bool complete, std::map<int, std::string> &output_errors, UniValue &result)
+{
+    // Make errors UniValue
     UniValue vErrors(UniValue::VARR);
-
-    // Signing transaction outputs
-    int nOut = 0;
-    for (const auto& output : mtx.vout)
-    {
-        if(output.scriptPubKey.HasOpSender())
-        {
-            CScript scriptPubKey;
-            if(!GetSenderPubKey(output.scriptPubKey, scriptPubKey))
-            {
-                TxOutErrorToJSON(output, vErrors, "Fail to get sender public key");
-                continue;
-            }
-
-            SignatureData sigdata;
-
-            if (!ProduceSignature(*keystore, MutableTransactionSignatureOutputCreator(&mtx, nOut, output.nValue, nHashType), scriptPubKey, sigdata))
-            {
-                TxOutErrorToJSON(output, vErrors, "Signing transaction output failed");
-                continue;
-            }
-            else
-            {
-                if(!UpdateOutput(mtx.vout.at(nOut), sigdata))
-                {
-                    TxOutErrorToJSON(output, vErrors, "Update transaction output failed");
-                    continue;
-                }
-            }
-        }
-        nOut++;
+    for (const auto& err_pair : output_errors) {
+        TxOutErrorToJSON(mtx.vout.at(err_pair.first), vErrors, err_pair.second);
     }
 
-    bool fComplete = vErrors.empty();
-
-    UniValue result(UniValue::VOBJ);
     result.pushKV("hex", EncodeHexTx(CTransaction(mtx)));
-    result.pushKV("complete", fComplete);
+    result.pushKV("complete", complete);
     if (!vErrors.empty()) {
+        if (result.exists("errors")) {
+            vErrors.push_backV(result["errors"].getValues());
+        }
         result.pushKV("errors", vErrors);
     }
-
-    return result;
 }

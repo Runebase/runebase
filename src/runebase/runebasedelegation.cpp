@@ -9,6 +9,7 @@
 
 const std::string strDelegationsABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_staker\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_delegate\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"fee\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"blockHeight\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"PoD\",\"type\":\"bytes\"}],\"name\":\"AddDelegation\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_staker\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_delegate\",\"type\":\"address\"}],\"name\":\"RemoveDelegation\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_staker\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"_fee\",\"type\":\"uint8\"},{\"internalType\":\"bytes\",\"name\":\"_PoD\",\"type\":\"bytes\"}],\"name\":\"addDelegation\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"delegations\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"staker\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"fee\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"blockHeight\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"PoD\",\"type\":\"bytes\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"removeDelegation\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
 const ContractABI contractDelegationABI = strDelegationsABI;
+const size_t nPoDStartPosition = 131;
 
 const ContractABI &DelegationABI()
 {
@@ -167,7 +168,7 @@ RunebaseDelegation::~RunebaseDelegation()
     priv = 0;
 }
 
-bool RunebaseDelegation::GetDelegation(const uint160 &address, Delegation &delegation) const
+bool RunebaseDelegation::GetDelegation(const uint160 &address, Delegation &delegation, CChainState& chainstate) const
 {
     // Contract exist check
     if(!ExistDelegationContract())
@@ -188,7 +189,11 @@ bool RunebaseDelegation::GetDelegation(const uint160 &address, Delegation &deleg
         return error("Failed to serialize get delegation input parameters");
 
     // Get delegation for address
-    std::vector<ResultExecute> execResults = CallContract(priv->delegationsAddress, ParseHex(inputData));
+    std::vector<ResultExecute> execResults;
+    {
+        LOCK(cs_main);
+        execResults = CallContract(priv->delegationsAddress, ParseHex(inputData), chainstate);
+    }
     if(execResults.size() < 1)
         return error("Failed to CallContract to get delegation for address");
 
@@ -251,7 +256,7 @@ bool RunebaseDelegation::VerifyDelegation(const uint160 &address, const Delegati
     return SignStr::VerifyMessage(CKeyID(address), delegation.staker.GetReverseHex(), delegation.PoD);
 }
 
-bool RunebaseDelegation::FilterDelegationEvents(std::vector<DelegationEvent> &events, const IDelegationFilter &filter, int fromBlock, int toBlock, int minconf) const
+bool RunebaseDelegation::FilterDelegationEvents(std::vector<DelegationEvent> &events, const IDelegationFilter &filter, ChainstateManager &chainman, int fromBlock, int toBlock, int minconf) const
 {
     // Check if log events are enabled
     if(!fLogEvents)
@@ -269,11 +274,12 @@ bool RunebaseDelegation::FilterDelegationEvents(std::vector<DelegationEvent> &ev
     if(!priv->m_pfRemoveDelegationEvent)
         return error("Remove delegation ABI does not exist");
 
+    LOCK(cs_main);
     int curheight = 0;
     std::set<dev::h160> addresses;
     addresses.insert(priv->delegationsAddress);
     std::vector<std::vector<uint256>> hashesToBlock;
-    curheight = pblocktree->ReadHeightIndex(fromBlock, toBlock, minconf, hashesToBlock, addresses);
+    curheight = chainman.m_blockman.m_block_tree_db->ReadHeightIndex(fromBlock, toBlock, minconf, hashesToBlock, addresses, chainman);
 
     if (curheight == -1) {
         return error("Incorrect params");
@@ -344,6 +350,7 @@ void RunebaseDelegation::UpdateDelegationsFromEvents(const std::vector<Delegatio
 
 bool RunebaseDelegation::ExistDelegationContract() const
 {
+    LOCK(cs_main);
     // Delegation contract exist check
     return globalState && globalState->addressInUse(priv->delegationsAddress);
 }
@@ -391,6 +398,76 @@ bool RunebaseDelegation::BytecodeAdd(const std::string &hexStaker, const int &fe
     {
         errorMessage = "Fail to serialize data for add delegation";
         return false;
+    }
+
+    return true;
+}
+
+bool RunebaseDelegation::IsAddBytecode(const std::vector<unsigned char> &data)
+{
+    // Quick check for is set delegate address
+    size_t size = data.size();
+    if(size < 228)
+        return false;
+    if(data[0] != 76 || data[1] != 14 || data[2] != 150 || data[3] != 140 || data[nPoDStartPosition] != CPubKey::COMPACT_SIGNATURE_SIZE)
+        return false;
+    return true;
+}
+
+bool RunebaseDelegation::GetUnsignedStaker(const std::vector<unsigned char> &data, std::string &hexStaker)
+{
+    if(!IsAddBytecode(data))
+        return false;
+
+    // Init variables
+    size_t from = nPoDStartPosition + 1;
+    size_t to = from + CPubKey::COMPACT_SIGNATURE_SIZE;
+    size_t stakerSize = 40;
+    size_t remainSize = CPubKey::COMPACT_SIGNATURE_SIZE - stakerSize;
+    std::string strStaker;
+    std::string strRemain;
+
+    strStaker.reserve(stakerSize);
+    strRemain.reserve(remainSize);
+
+    // Get unsigned staker address from PoD
+    for(size_t i = from; i < to; i++)
+    {
+        char c = (char)data[i];
+        if(strStaker.size() < stakerSize)
+        {
+            strStaker.push_back(c);
+        }
+        else
+        {
+            strRemain.push_back(c);
+        }
+    }
+
+    // Check formatting
+    if(IsHex(strStaker) && !IsHex(strRemain))
+    {
+        hexStaker = strStaker;
+        return true;
+    }
+
+    return false;
+}
+
+bool RunebaseDelegation::SetSignedStaker(std::vector<unsigned char> &data, const std::string &base64PoD)
+{
+    if(!IsAddBytecode(data))
+        return false;
+
+    bool invalid = false;
+    std::string strPoD = DecodeBase64(base64PoD, &invalid);
+    if(invalid || strPoD.size() < CPubKey::COMPACT_SIGNATURE_SIZE)
+        return false;
+
+    size_t offset = nPoDStartPosition + 1;
+    for(size_t i = 0; i < CPubKey::COMPACT_SIGNATURE_SIZE; i++)
+    {
+        data[offset + i] = strPoD[i];
     }
 
     return true;

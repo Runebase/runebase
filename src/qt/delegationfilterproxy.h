@@ -3,7 +3,6 @@
 
 #include <qt/delegationstakeritemmodel.h>
 
-#include <amount.h>
 #include <QDateTime>
 #include <QSortFilterProxyModel>
 
@@ -25,7 +24,7 @@ public:
     void setMinAmount(const CAmount& minimum);
 
 protected:
-    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const;
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
 
 private:
     QString addrStaker;

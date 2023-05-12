@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2019 The Bitcoin Core developers
+// Copyright (c) 2017-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,12 +8,22 @@
 #include <map>
 #include <string>
 
+struct bilingual_str;
 class FillableSigningProvider;
 class UniValue;
 struct CMutableTransaction;
 class Coin;
 class COutPoint;
 class SigningProvider;
+
+/**
+ * @brief The IRawContract class Parse the contract output for raw transaction
+ */
+class IRawContract
+{
+public:
+    virtual void addContract(CMutableTransaction& rawTx, const UniValue& contract) = 0;
+};
 
 /**
  * Sign a transaction with the given keystore and previous transactions
@@ -25,7 +35,7 @@ class SigningProvider;
  * @param result         JSON object where signed transaction results accumulate
  */
 void SignTransaction(CMutableTransaction& mtx, const SigningProvider* keystore, const std::map<COutPoint, Coin>& coins, const UniValue& hashType, UniValue& result);
-void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const std::map<COutPoint, Coin>& coins, std::map<int, std::string>& input_errors, UniValue& result);
+void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const std::map<COutPoint, Coin>& coins, const std::map<int, bilingual_str>& input_errors, UniValue& result);
 
 /**
   * Parse a prevtxs UniValue array and get the map of coins from it
@@ -37,9 +47,10 @@ void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const 
 void ParsePrevouts(const UniValue& prevTxsUnival, FillableSigningProvider* keystore, std::map<COutPoint, Coin>& coins);
 
 /** Create a transaction from univalue parameters */
-CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, bool rbf);
+CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, bool rbf, IRawContract* rawContract = nullptr);
 
-UniValue SignTransactionSender(CMutableTransaction& mtx, FillableSigningProvider *keystore, const UniValue& hashType);
+void SignTransactionOutput(CMutableTransaction& mtx, FillableSigningProvider *keystore, const UniValue& hashType, UniValue& result);
+void SignTransactionOutputResultToJSON(CMutableTransaction& mtx, bool complete, std::map<int, std::string>& output_errors, UniValue& result);
 
 void CheckSenderSignatures(CMutableTransaction& mtx);
 

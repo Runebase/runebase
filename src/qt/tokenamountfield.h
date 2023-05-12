@@ -1,7 +1,6 @@
 #ifndef TOKENAMOUNTFIELD_H
 #define TOKENAMOUNTFIELD_H
 
-#include <amount.h>
 #include <QWidget>
 
 #include <boost/multiprecision/cpp_int.hpp>
@@ -52,7 +51,7 @@ Q_SIGNALS:
 
 protected:
     /** Intercept focus-in event and ',' key presses */
-    bool eventFilter(QObject *object, QEvent *event);
+    bool eventFilter(QObject *object, QEvent *event) override;
 
 public Q_SLOTS:
 

@@ -1,354 +1,483 @@
-<TS language="bn" version="2.1">
+<TS version="2.1" language="bn">
 <context>
     <name>AddressBookPage</name>
     <message>
         <source>Right-click to edit address or label</source>
-        <translation>ঠিকানা কিংবা লেভেল সম্পাদনার জন্য রাইট-ক্লিক করুন</translation>
+        <translation type="unfinished">ঠিকানা বা লেবেল পরিবর্তন করতে ডান ক্লিক করুন।</translation>
     </message>
     <message>
         <source>Create a new address</source>
-        <translation>নতুন একটি ঠিকানা তৈরি করুন</translation>
+        <translation type="unfinished">নতুন একটি ঠিকানা তৈরি করুন</translation>
     </message>
     <message>
         <source>&amp;New</source>
-        <translation>নতুন</translation>
+        <translation type="unfinished">নতুন</translation>
+    </message>
+    <message>
+        <source>Copy the currently selected address to the system clipboard</source>
+        <translation type="unfinished">বর্তমানে নির্বাচিত ঠিকানাটি সিস্টেম ক্লিপবোর্ডে কপি করুন</translation>
     </message>
     <message>
         <source>&amp;Copy</source>
-        <translation>কপি/প্রতিলিপি</translation>
+        <translation type="unfinished">&amp;কপি</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
-        <translation>কপি/প্রতিলিপি</translation>
+        <translation type="unfinished">বন্ধ করুন</translation>
     </message>
     <message>
         <source>Delete the currently selected address from the list</source>
-        <translation>বাছাইকৃত ঠিকানাটি লিস্ট থেকে মুছুন</translation>
+        <translation type="unfinished">বাছাইকৃত ঠিকানাটি লিস্ট থেকে মুছুন</translation>
     </message>
     <message>
-        <source>Export the data in the current tab to a file</source>
-        <translation>বর্তমান ট্যাবের ডেটা একটি ফাইলে এক্সপোর্ট করুন</translation>
-    </message>
-    <message>
-        <source>&amp;Export</source>
-        <translation>এক্সপোর্ট</translation>
+        <source>Enter address or label to search</source>
+        <translation type="unfinished">খুঁজতে ঠিকানা বা লেবেল লিখুন</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
-        <translation>মুছুন</translation>
+        <translation type="unfinished">&amp;মুছুন</translation>
     </message>
     <message>
         <source>Choose the address to send coins to</source>
-        <translation>কয়েন পাঠানোর ঠিকানা বাছাই করুন</translation>
+        <translation type="unfinished">কয়েন পাঠানোর ঠিকানা বাছাই করুন</translation>
     </message>
     <message>
-        <source>Choose the address to receive coins with</source>
-        <translation>কয়েন পাওয়ার ঠিকানা বাছাই করুন</translation>
+        <source>These are your Runebase addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.
+Signing is only possible with addresses of the type 'legacy'.</source>
+        <translation type="unfinished">পেমেন্ট পাওয়ার জন্য এটি আপনার বিটকয়েন ঠিকানা। নতুন ঠিকানা তৈরী করতে "নতুন গ্রহণের ঠিকানা তৈরী করুন" বোতাম ব্যবহার করুন। সাইন ইন করা শুধুমাত্র "উত্তরাধিকার" ঠিকানার মাধ্যমেই সম্ভব।</translation>
     </message>
     <message>
-        <source>Receiving addresses</source>
-        <translation>গ্রহণের ঠিকানা</translation>
-    </message>
-    <message>
-        <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>এগুলো আপনার পেমেন্ট পাঠানোর বিটকয়েন ঠিকানা। কয়েন পাঠানোর আগে পরিমাণ ও গ্রহণের ঠিকানা সব সময় যাচাই করুন।</translation>
-    </message>
-    <message>
-        <source>Export Address List</source>
-        <translation>ঠিকানার তালিকা এক্সপোর্ট করুন</translation>
-    </message>
-    <message>
-        <source>Comma separated file (*.csv)</source>
-        <translation>কমা দিয়ে পৃথককৃত ফাইল (*.csv)</translation>
-    </message>
-    <message>
-        <source>Exporting Failed</source>
-        <translation>এক্সপোর্ট ব্যর্থ হয়েছে</translation>
+        <source>Comma separated file</source>
+        <extracomment>Expanded name of the CSV file format. See: https://en.wikipedia.org/wiki/Comma-separated_values.</extracomment>
+        <translation type="unfinished">কমা দিয়ে আলাদা করা ফাইল</translation>
     </message>
     </context>
 <context>
-    <name>AddressTableModel</name>
+    <name>BitcoinApplication</name>
     <message>
-        <source>Label</source>
-        <translation>লেবেল</translation>
+        <source>Runaway exception</source>
+        <translation type="unfinished">পলাতক ব্যতিক্রম</translation>
     </message>
     <message>
-        <source>Address</source>
-        <translation>ঠিকানা </translation>
+        <source>A fatal error occurred. %1 can no longer continue safely and will quit.</source>
+        <translation type="unfinished">একটি মারাত্মক ত্রুটি ঘটেছে।%1 নিরাপদে চলতে পারবেনা এবং প্রস্থান করবে</translation>
     </message>
     <message>
-        <source>(no label)</source>
-        <translation>(লেবেলহীন)</translation>
+        <source>Internal error</source>
+        <translation type="unfinished">অভ্যন্তরীণ ত্রুটি</translation>
+    </message>
+    <message>
+        <source>An internal error occurred. %1 will attempt to continue safely. This is an unexpected bug which can be reported as described below.</source>
+        <translation type="unfinished">একটি অভ্যন্তরীণ ত্রুটি ঘটেছে। %1 নিরাপদে চালিয়ে যাওয়ার চেষ্টা করবে। এটি একটি অপ্রত্যাশিত বাগ যা নীচের বর্ণনা অনুযায়ী রিপোর্ট করা যেতে পারে৷</translation>
     </message>
 </context>
 <context>
-    <name>AskPassphraseDialog</name>
+    <name>QObject</name>
     <message>
-        <source>Passphrase Dialog</source>
-        <translation>পাসফ্রেজ ডায়লগ</translation>
+        <source>%1 didn't yet exit safely…</source>
+        <translation type="unfinished">%1 এখনো নিরাপদে বের হয়নি</translation>
     </message>
     <message>
-        <source>Enter passphrase</source>
-        <translation>পাসফ্রেজ প্রদান করুন</translation>
+        <source>Inbound</source>
+        <extracomment>An inbound connection from a peer. An inbound connection is a connection initiated by a peer.</extracomment>
+        <translation type="unfinished">অন্তর্মুখী</translation>
     </message>
     <message>
-        <source>New passphrase</source>
-        <translation>নতুন পাসফ্রেজ</translation>
+        <source>Outbound</source>
+        <extracomment>An outbound connection to a peer. An outbound connection is a connection initiated by us.</extracomment>
+        <translation type="unfinished">বহির্গামী</translation>
     </message>
-    <message>
-        <source>Repeat new passphrase</source>
-        <translation>পুনরায় নতুন পাসফ্রেজ</translation>
+    <message numerus="yes">
+        <source>%n second(s)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
-    <message>
-        <source>Show passphrase</source>
-        <translation>পাসফ্রেজ দেখুন</translation>
+    <message numerus="yes">
+        <source>%n minute(s)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
-    <message>
-        <source>Encrypt wallet</source>
-        <translation>ওয়ালেট এনক্রিপ্ট করুন</translation>
+    <message numerus="yes">
+        <source>%n hour(s)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
-    <message>
-        <source>This operation needs your wallet passphrase to unlock the wallet.</source>
-        <translation>ওয়ালেট খুলতে আপনার ওয়ালেট পাসফ্রেজ প্রয়োজন</translation>
+    <message numerus="yes">
+        <source>%n day(s)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
-    <message>
-        <source>Unlock wallet</source>
-        <translation>ওয়ালেট খুলুন</translation>
+    <message numerus="yes">
+        <source>%n week(s)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
-    <message>
-        <source>This operation needs your wallet passphrase to decrypt the wallet.</source>
-        <translation>ওয়ালেট ডিক্রিপ্ট করতে আপনার ওয়ালেট পাসফ্রেজ প্রয়োজন</translation>
-    </message>
-    <message>
-        <source>Decrypt wallet</source>
-        <translation>ওয়ালেট ডিক্রিপ্ট করুন</translation>
-    </message>
-    <message>
-        <source>Change passphrase</source>
-        <translation>পাসফ্রেজ পরিবর্তন করুন</translation>
-    </message>
-    <message>
-        <source>Confirm wallet encryption</source>
-        <translation>ওয়ালেট এনক্রিপশন নিশ্চিত করুন</translation>
-    </message>
-    <message>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR RUNEBASES&lt;/b&gt;!</source>
-        <translation>সতর্কতা : ওয়ালেট এনক্রিপ্ট করে পাসফ্রেজ ভুলে গেলে আপনি &lt;b&gt;সব বিটকয়েন হারাবেন&lt;/b&gt;!</translation>
-    </message>
-    <message>
-        <source>Are you sure you wish to encrypt your wallet?</source>
-        <translation>সত্যিই আপনার ওয়ালেট এনক্রিপ্ট করতে চান?</translation>
-    </message>
-    <message>
-        <source>Wallet encrypted</source>
-        <translation>ওয়ালেট এনক্রিপ্ট করা হয়েছে</translation>
-    </message>
-    <message>
-        <source>Enter the old passphrase and new passphrase for the wallet.</source>
-        <translation>ওয়ালেটের পুরাতন ও নতুন পাসফ্রেজ দিন</translation>
-    </message>
-    <message>
-        <source>Wallet to be encrypted</source>
-        <translation>ওয়ালেট এনক্রিপ্ট হতে যাচ্ছে</translation>
+    <message numerus="yes">
+        <source>%n year(s)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
     </context>
 <context>
-    <name>BanTableModel</name>
-    </context>
-<context>
-    <name>RunebaseGUI</name>
+    <name>bitcoin-core</name>
     <message>
-        <source>Warning</source>
-        <translation>সতর্কতা</translation>
+        <source>SQLiteDatabase: Unexpected application id. Expected %u, got %u</source>
+        <translation type="unfinished">এস. কিয়ু. লাইট ডাটাবেস : অপ্রত্যাশিত এপ্লিকেশন আই.ডি. প্রত্যাশিত %u, পাওয়া গেলো %u </translation>
+    </message>
+    <message>
+        <source>Starting network threads…</source>
+        <translation type="unfinished">নেটওয়ার্ক থ্রেড শুরু হচ্ছে...</translation>
+    </message>
+    <message>
+        <source>The specified config file %s does not exist</source>
+        <translation type="unfinished">নির্দিষ্ট কনফিগ ফাইল %s এর অস্তিত্ব নেই</translation>
+    </message>
+    <message>
+        <source>Unable to open %s for writing</source>
+        <translation type="unfinished">লেখার জন্যে %s খোলা যাচ্ছে না</translation>
+    </message>
+    <message>
+        <source>Unknown new rules activated (versionbit %i)</source>
+        <translation type="unfinished">অজানা নতুন নিয়ম সক্রিয় হলো (ভার্শনবিট %i)</translation>
+    </message>
+    <message>
+        <source>Verifying blocks…</source>
+        <translation type="unfinished">ব্লকস যাচাই করা হচ্ছে...</translation>
+    </message>
+    <message>
+        <source>Verifying wallet(s)…</source>
+        <translation type="unfinished">ওয়ালেট(স) যাচাই করা হচ্ছে...</translation>
     </message>
     </context>
+<context>
+    <name>BitcoinGUI</name>
+    <message>
+        <source>Create a new wallet</source>
+        <translation type="unfinished">একটি নতুন ওয়ালেট তৈরি করুন</translation>
+    </message>
+    <message>
+        <source>&amp;Options…</source>
+        <translation type="unfinished">&amp;বিকল্প...</translation>
+    </message>
+    <message>
+        <source>&amp;Encrypt Wallet…</source>
+        <translation type="unfinished">&amp;ওয়ালেট এনক্রিপ্ট করুন...</translation>
+    </message>
+    <message>
+        <source>Close Wallet…</source>
+        <translation type="unfinished">ওয়ালেট বন্ধ করুন...</translation>
+    </message>
+    <message>
+        <source>Create Wallet…</source>
+        <translation type="unfinished">ওয়ালেট তৈরী করুন...</translation>
+    </message>
+    <message>
+        <source>Close All Wallets…</source>
+        <translation type="unfinished">সব ওয়ালেট গুলো বন্ধ করুন...</translation>
+    </message>
+    <message>
+        <source>Syncing Headers (%1%)…</source>
+        <translation type="unfinished">শিরোনাম সিঙ্ক করা হচ্ছে (%1%)...</translation>
+    </message>
+    <message>
+        <source>Synchronizing with network…</source>
+        <translation type="unfinished">নেটওয়ার্কের সাথে সিঙ্ক্রোনাইজ করা হচ্ছে...</translation>
+    </message>
+    <message>
+        <source>Indexing blocks on disk…</source>
+        <translation type="unfinished">ডিস্ক এ ব্লকস ইনডেক্স করা হচ্ছে...</translation>
+    </message>
+    <message>
+        <source>Processing blocks on disk…</source>
+        <translation type="unfinished">ডিস্কে ব্লক প্রসেস করা হচ্ছে...</translation>
+    </message>
+    <message>
+        <source>Reindexing blocks on disk…</source>
+        <translation type="unfinished">ডিস্ক এ ব্লকস পুনর্বিন্যাস করা হচ্ছে...</translation>
+    </message>
+    <message>
+        <source>Connecting to peers…</source>
+        <translation type="unfinished">সহকর্মীদের সাথে সংযোগ করা হচ্ছে...</translation>
+    </message>
+    <message numerus="yes">
+        <source>Processed %n block(s) of transaction history.</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
+    </message>
+    <message>
+        <source>Load Partially Signed Runebase Transaction</source>
+        <translation type="unfinished">আংশিক স্বাক্ষরিত বিটকয়েন লেনদেন লোড করুন</translation>
+    </message>
+    <message>
+        <source>Load Partially Signed Runebase Transaction from clipboard</source>
+        <translation type="unfinished">ক্লিপবোর্ড থেকে আংশিক স্বাক্ষরিত বিটকয়েন লেনদেন লোড করুন</translation>
+    </message>
+    <message>
+        <source>Close all wallets</source>
+        <translation type="unfinished">সব ওয়ালেটগুলি  বন্ধ করুন</translation>
+    </message>
+    <message>
+        <source>&amp;Mask values</source>
+        <translation type="unfinished">অক্ষরগুলি আড়াল করুন </translation>
+    </message>
+    <message>
+        <source>Mask the values in the Overview tab</source>
+        <translation type="unfinished">ওভারভিউ ট্যাবে মানগুলি আড়াল করুন</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n active connection(s) to Runebase network.</source>
+        <extracomment>A substring of the tooltip.</extracomment>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
+    </message>
+    </context>
+<context>
+    <name>UnitDisplayStatusBarControl</name>
+    <message>
+        <source>Unit to show amounts in. Click to select another unit.</source>
+        <translation type="unfinished">পরিমাণ দেখানোর জন্য একক। অন্য একক নির্বাচন করতে ক্লিক করুন।</translation>
+    </message>
+</context>
 <context>
     <name>CoinControlDialog</name>
     <message>
-        <source>(no label)</source>
-        <translation>(লেবেলহীন)</translation>
+        <source>Date</source>
+        <translation type="unfinished">তারিখ</translation>
+    </message>
+    <message>
+        <source>Confirmed</source>
+        <translation type="unfinished">নিশ্চিত করা হয়েছে</translation>
     </message>
     </context>
 <context>
-    <name>CreateWalletActivity</name>
-    </context>
+    <name>WalletController</name>
+    <message>
+        <source>Close wallet</source>
+        <translation type="unfinished">ওয়ালেট বন্ধ করুন</translation>
+    </message>
+    <message>
+        <source>Are you sure you wish to close the wallet &lt;i&gt;%1&lt;/i&gt;?</source>
+        <translation type="unfinished">আপনি কি নিশ্চিত যে আপনি ওয়ালেট বন্ধ করতে চান&lt;i&gt;%1&lt;/i&gt;?</translation>
+    </message>
+    <message>
+        <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
+        <translation type="unfinished">ওয়ালেটটি অনেকক্ষণ বন্ধ করার ফলে পুনঃসুসংগত করতে পুরো চেইনটি পুনরায় সিঙ্ক করতে হতে পারে।</translation>
+    </message>
+    <message>
+        <source>Close all wallets</source>
+        <translation type="unfinished">সব ওয়ালেটগুলি  বন্ধ করুন</translation>
+    </message>
+    <message>
+        <source>Are you sure you wish to close all wallets?</source>
+        <translation type="unfinished">আপনি কি নিশ্চিত যে আপনি সমস্ত ওয়ালেট বন্ধ করতে চান?</translation>
+    </message>
+</context>
 <context>
     <name>CreateWalletDialog</name>
-    </context>
-<context>
-    <name>EditAddressDialog</name>
-    </context>
-<context>
-    <name>FreespaceChecker</name>
-    </context>
-<context>
-    <name>HelpMessageDialog</name>
+    <message>
+        <source>Advanced Options</source>
+        <translation type="unfinished">উন্নত বিকল্প </translation>
+    </message>
+    <message>
+        <source>Use descriptors for scriptPubKey management</source>
+        <translation type="unfinished">ScriptPub-এর জন্য বর্ণনাকারীর ব্যবস্থা করুন 
+ </translation>
+    </message>
+    <message>
+        <source>Descriptor Wallet</source>
+        <translation type="unfinished">বর্ণনাকারী ওয়ালেট </translation>
+    </message>
+    <message>
+        <source>Compiled without sqlite support (required for descriptor wallets)</source>
+        <translation type="unfinished">sqlite সমর্থন ছাড়াই সংকলিত (বরণাকারী  ওয়ালেটের জন্য প্রয়োজনীয়)</translation>
+    </message>
     </context>
 <context>
     <name>Intro</name>
-    </context>
-<context>
-    <name>ModalOverlay</name>
-    </context>
-<context>
-    <name>OpenURIDialog</name>
-    </context>
-<context>
-    <name>OpenWalletActivity</name>
-    </context>
-<context>
-    <name>OptionsDialog</name>
-    </context>
-<context>
-    <name>OverviewPage</name>
-    </context>
-<context>
-    <name>PaymentServer</name>
+    <message numerus="yes">
+        <source>(sufficient to restore backups %n day(s) old)</source>
+        <extracomment>Explanatory text on the capability of the current prune target.</extracomment>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
+    </message>
     </context>
 <context>
     <name>PeerTableModel</name>
-    </context>
-<context>
-    <name>QObject</name>
-    </context>
-<context>
-    <name>QRImageWidget</name>
-    </context>
-<context>
-    <name>RPCConsole</name>
-    </context>
-<context>
-    <name>ReceiveCoinsDialog</name>
-    </context>
-<context>
-    <name>ReceiveRequestDialog</name>
-    <message>
-        <source>QR Code</source>
-        <translation>QR কোড</translation>
-    </message>
     <message>
         <source>Address</source>
-        <translation>ঠিকানা </translation>
+        <extracomment>Title of Peers Table column which contains the IP/Onion/I2P address of the connected peer.</extracomment>
+        <translation type="unfinished">ঠিকানা</translation>
     </message>
     <message>
-        <source>Label</source>
-        <translation>লেবেল</translation>
+        <source>Type</source>
+        <extracomment>Title of Peers Table column which describes the type of peer connection. The "type" describes why the connection exists.</extracomment>
+        <translation type="unfinished">টাইপ</translation>
+    </message>
+    <message>
+        <source>Inbound</source>
+        <extracomment>An Inbound Connection from a Peer.</extracomment>
+        <translation type="unfinished">অন্তর্মুখী</translation>
+    </message>
+    <message>
+        <source>Outbound</source>
+        <extracomment>An Outbound Connection to a Peer.</extracomment>
+        <translation type="unfinished">বহির্গামী</translation>
+    </message>
+</context>
+<context>
+    <name>RPCConsole</name>
+    <message>
+        <source>Unknown</source>
+        <translation type="unfinished">অজানা</translation>
+    </message>
+</context>
+<context>
+    <name>ReceiveCoinsDialog</name>
+    <message>
+        <source>&amp;Amount:</source>
+        <translation type="unfinished">&amp;পরিমাণঃ</translation>
+    </message>
+    <message>
+        <source>&amp;Label:</source>
+        <translation type="unfinished">&amp;লেবেলঃ</translation>
+    </message>
+    <message>
+        <source>&amp;Message:</source>
+        <translation type="unfinished">&amp;বার্তাঃ</translation>
     </message>
     </context>
 <context>
     <name>RecentRequestsTableModel</name>
     <message>
-        <source>Label</source>
-        <translation>লেবেল</translation>
+        <source>Date</source>
+        <translation type="unfinished">তারিখ</translation>
     </message>
     <message>
-        <source>(no label)</source>
-        <translation>(লেবেলহীন)</translation>
+        <source>Label</source>
+        <translation type="unfinished">লেবেল</translation>
     </message>
     </context>
 <context>
     <name>SendCoinsDialog</name>
-    <message>
-        <source>(no label)</source>
-        <translation>(লেবেলহীন)</translation>
+    <message numerus="yes">
+        <source>Estimated to begin confirmation within %n block(s).</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
-</context>
+    </context>
 <context>
     <name>SendCoinsEntry</name>
-    </context>
-<context>
-    <name>ShutdownWindow</name>
-    </context>
-<context>
-    <name>SignVerifyMessageDialog</name>
     <message>
-        <source>The entered address is invalid.</source>
-        <translation>প্রবেশকৃত ঠিকানাটি শুদ্ধ নয়।</translation>
+        <source>&amp;Label:</source>
+        <translation type="unfinished">&amp;লেবেলঃ</translation>
     </message>
-    <message>
-        <source>Please check the signature and try again.</source>
-        <translation>অনুগ্রহ করে স্বাক্ষরটি পুনরায় পরীক্ষা করে আবারও চেষ্টা করুন।</translation>
-    </message>
-    </context>
-<context>
-    <name>TrafficGraphWidget</name>
     </context>
 <context>
     <name>TransactionDesc</name>
-    </context>
-<context>
-    <name>TransactionDescDialog</name>
+    <message>
+        <source>Date</source>
+        <translation type="unfinished">তারিখ</translation>
+    </message>
+    <message numerus="yes">
+        <source>matures in %n more block(s)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
+    </message>
     </context>
 <context>
     <name>TransactionTableModel</name>
     <message>
-        <source>Label</source>
-        <translation>লেবেল</translation>
+        <source>Date</source>
+        <translation type="unfinished">তারিখ</translation>
     </message>
     <message>
-        <source>(no label)</source>
-        <translation>(লেবেলহীন)</translation>
+        <source>Type</source>
+        <translation type="unfinished">টাইপ</translation>
+    </message>
+    <message>
+        <source>Label</source>
+        <translation type="unfinished">লেবেল</translation>
     </message>
     </context>
 <context>
     <name>TransactionView</name>
     <message>
-        <source>Comma separated file (*.csv)</source>
-        <translation>কমা দিয়ে পৃথককৃত ফাইল (*.csv)</translation>
+        <source>Comma separated file</source>
+        <extracomment>Expanded name of the CSV file format. See: https://en.wikipedia.org/wiki/Comma-separated_values.</extracomment>
+        <translation type="unfinished">কমা দিয়ে আলাদা করা ফাইল</translation>
+    </message>
+    <message>
+        <source>Confirmed</source>
+        <translation type="unfinished">নিশ্চিত করা হয়েছে</translation>
+    </message>
+    <message>
+        <source>Watch-only</source>
+        <translation type="unfinished">শুধুমাত্র দেখার জন্য</translation>
+    </message>
+    <message>
+        <source>Date</source>
+        <translation type="unfinished">তারিখ</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation type="unfinished">টাইপ</translation>
     </message>
     <message>
         <source>Label</source>
-        <translation>লেবেল</translation>
+        <translation type="unfinished">লেবেল</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>ঠিকানা </translation>
+        <translation type="unfinished">ঠিকানা</translation>
     </message>
     <message>
-        <source>Exporting Failed</source>
-        <translation>এক্সপোর্ট ব্যর্থ হয়েছে</translation>
+        <source>ID</source>
+        <translation type="unfinished">আইডি</translation>
     </message>
-    </context>
-<context>
-    <name>UnitDisplayStatusBarControl</name>
-    </context>
-<context>
-    <name>WalletController</name>
-    </context>
+    <message>
+        <source>Exporting Successful</source>
+        <translation type="unfinished">রপ্তানি সফল হয়েছে</translation>
+    </message>
+    <message>
+        <source>The transaction history was successfully saved to %1.</source>
+        <translation type="unfinished">লেনদেনের ইতিহাস সফলভাবে %1 এ সংরক্ষিত হয়েছে।</translation>
+    </message>
+    <message>
+        <source>Range:</source>
+        <translation type="unfinished">পরিসীমাঃ</translation>
+    </message>
+    <message>
+        <source>to</source>
+        <translation type="unfinished">প্রতি</translation>
+    </message>
+</context>
 <context>
     <name>WalletFrame</name>
-    </context>
-<context>
-    <name>WalletModel</name>
-    </context>
-<context>
-    <name>WalletView</name>
     <message>
-        <source>&amp;Export</source>
-        <translation>এক্সপোর্ট</translation>
-    </message>
-    <message>
-        <source>Export the data in the current tab to a file</source>
-        <translation>বর্তমান ট্যাবের ডেটা একটি ফাইলে এক্সপোর্ট করুন</translation>
-    </message>
-    </context>
-<context>
-    <name>runebase-core</name>
-    <message>
-        <source>Do you want to rebuild the block database now?</source>
-        <translation>আপনি কি পুনরায় ব্লক ডাটাবেইজ এখনই তৈরি করতে চান?</translation>
-    </message>
-    <message>
-        <source>This is experimental software.</source>
-        <translation>এটি পরীক্ষামূলক সফটওয়্যার।</translation>
-    </message>
-    <message>
-        <source>Transaction amount too small</source>
-        <translation>লেনদেনের পরিমান অনেক ছোট</translation>
-    </message>
-    <message>
-        <source>Transaction too large</source>
-        <translation>লেনদেনর অংক অনেক বড়</translation>
+        <source>Create a new wallet</source>
+        <translation type="unfinished">একটি নতুন ওয়ালেট তৈরি করুন</translation>
     </message>
     </context>
 </TS>

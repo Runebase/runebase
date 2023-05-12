@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2011-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,13 +9,15 @@
 #include <config/bitcoin-config.h>
 #endif
 
+#include <qt/guiutil.h>
 #include <qt/optionsdialog.h>
 
-#include <amount.h>
+#include <consensus/amount.h>
 
 #include <QLabel>
 #include <QMainWindow>
 #include <QMap>
+#include <QMenu>
 #include <QPoint>
 #include <QSystemTrayIcon>
 
@@ -41,19 +43,22 @@ class ModalOverlay;
 class TitleBar;
 class NavigationBar;
 class RunebaseVersionChecker;
+enum class SynchronizationState;
 
 namespace interfaces {
 class Handler;
 class Node;
+struct BlockAndHeaderTipInfo;
 }
 
 QT_BEGIN_NAMESPACE
 class QAction;
 class QComboBox;
-class QMenu;
+class QDateTime;
 class QProgressBar;
 class QProgressDialog;
 class QDockWidget;
+class QTimer;
 QT_END_NAMESPACE
 
 namespace GUIUtil {
@@ -78,9 +83,10 @@ public:
     /** Set the client model.
         The client model represents the part of the core that communicates with the P2P network, and is wallet-agnostic.
     */
-    void setClientModel(ClientModel *clientModel);
+    void setClientModel(ClientModel *clientModel = nullptr, interfaces::BlockAndHeaderTipInfo* tip_info = nullptr);
 #ifdef ENABLE_WALLET
     void setWalletController(WalletController* wallet_controller);
+    WalletController* getWalletController();
 #endif
 
 #ifdef ENABLE_WALLET
@@ -92,7 +98,6 @@ public:
     void removeWallet(WalletModel* walletModel);
     void removeAllWallets();
 #endif // ENABLE_WALLET
-    void setTabBarInfo(QObject* into);
     bool enableWallet = false;
 
     /** Get the tray icon status.
@@ -105,13 +110,17 @@ public:
 
     WalletFrame *getWalletFrame() const;
 
+    bool isPrivacyModeActivated() const;
+
+    void join();
+
 protected:
-    void changeEvent(QEvent *e);
-    void closeEvent(QCloseEvent *event);
-    void showEvent(QShowEvent *event);
-    void dragEnterEvent(QDragEnterEvent *event);
-    void dropEvent(QDropEvent *event);
-    bool eventFilter(QObject *object, QEvent *event);
+    void changeEvent(QEvent *e) override;
+    void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent *event) override;
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
+    bool eventFilter(QObject *object, QEvent *event) override;
 
 private:
     interfaces::Node& m_node;
@@ -122,33 +131,34 @@ private:
     WalletFrame* walletFrame = nullptr;
 
     UnitDisplayStatusBarControl* unitDisplayControl = nullptr;
-    QLabel* labelWalletEncryptionIcon = nullptr;
-    QLabel* labelWalletHDStatusIcon = nullptr;
+    QLabel *labelLedgerIcon = nullptr;
+    GUIUtil::ThemedLabel* labelWalletEncryptionIcon = nullptr;
+    GUIUtil::ThemedLabel* labelWalletHDStatusIcon = nullptr;
     GUIUtil::ClickableLabel* labelProxyIcon = nullptr;
     GUIUtil::ClickableLabel* connectionsControl = nullptr;
     GUIUtil::ClickableLabel* labelBlocksIcon = nullptr;
     QLabel* progressBarLabel = nullptr;
     GUIUtil::ClickableProgressBar* progressBar = nullptr;
     QProgressDialog* progressDialog = nullptr;
-    QLabel *labelStakingIcon = nullptr;
+    QLabel* labelStakingIcon = nullptr;
+    QTimer* timerStakingIcon = nullptr;
 
     QMenuBar* appMenuBar = nullptr;
-    TitleBar *appTitleBar = nullptr;
-    NavigationBar *appNavigationBar = nullptr;
+    TitleBar* appTitleBar = nullptr;
+    NavigationBar* appNavigationBar = nullptr;
     QAction* overviewAction = nullptr;
     QAction* historyAction = nullptr;
     QAction* quitAction = nullptr;
     QAction* sendCoinsAction = nullptr;
-    QAction* sendCoinsMenuAction = nullptr;
     QAction* usedSendingAddressesAction = nullptr;
     QAction* usedReceivingAddressesAction = nullptr;
     QAction* signMessageAction = nullptr;
     QAction* verifyMessageAction = nullptr;
+    QAction* m_load_psbt_action = nullptr;
+    QAction* m_load_psbt_clipboard_action = nullptr;
     QAction* aboutAction = nullptr;
     QAction* receiveCoinsAction = nullptr;
-    QAction* receiveCoinsMenuAction = nullptr;
     QAction* optionsAction = nullptr;
-    QAction* toggleHideAction = nullptr;
     QAction* encryptWalletAction = nullptr;
     QAction* backupWalletAction = nullptr;
     QAction* changePassphraseAction = nullptr;
@@ -171,12 +181,15 @@ private:
     QAction* delegationAction = nullptr;
     QAction* superStakerAction = nullptr;
     QAction* walletStakeAction = nullptr;
+    QAction* signTxHardwareAction = nullptr;
     QAction* m_create_wallet_action{nullptr};
     QAction* m_open_wallet_action{nullptr};
     QMenu* m_open_wallet_menu{nullptr};
     QAction* m_close_wallet_action{nullptr};
+    QAction* m_close_all_wallets_action{nullptr};
     QAction* m_wallet_selector_label_action = nullptr;
     QAction* m_wallet_selector_action = nullptr;
+    QAction* m_mask_values_action{nullptr};
 
     QLabel *m_wallet_selector_label = nullptr;
     QComboBox* m_wallet_selector = nullptr;
@@ -189,6 +202,8 @@ private:
     ModalOverlay* modalOverlay = nullptr;
     ModalOverlay *modalBackupOverlay = nullptr;
     RunebaseVersionChecker *runebaseVersionChecker = nullptr;
+
+    QMenu* m_network_context_menu = new QMenu(this);
 
 #ifdef Q_OS_MAC
     CAppNapInhibitor* m_app_nap_inhibitor = nullptr;
@@ -232,27 +247,30 @@ private:
     void addDockWindows(Qt::DockWidgetArea area, QWidget* widget);
 
 Q_SIGNALS:
+    void quitRequested();
     /** Signal raised when a URI was entered or dragged to the GUI */
     void receivedURI(const QString &uri);
     /** Signal raised when RPC console shown */
     void consoleShown(RPCConsole* console);
+    void setPrivacy(bool privacy);
 
 public Q_SLOTS:
     /** Set number of connections shown in the UI */
     void setNumConnections(int count);
     /** Set network state shown in the UI */
-    void setNetworkActive(bool networkActive);
+    void setNetworkActive(bool network_active);
     /** Set number of blocks and last block date shown in the UI */
-    void setNumBlocks(int count, const QDateTime& blockDate, double nVerificationProgress, bool headers);
+    void setNumBlocks(int count, const QDateTime& blockDate, double nVerificationProgress, bool headers, SynchronizationState sync_state);
 
     /** Notify the user of an event from the core network or transaction handling code.
-       @param[in] title     the message box / notification title
-       @param[in] message   the displayed text
-       @param[in] style     modality and style definitions (icon and used buttons - buttons only for message boxes)
-                            @see CClientUIInterface::MessageBoxFlags
-       @param[in] ret       pointer to a bool that will be modified to whether Ok was clicked (modal only)
+       @param[in] title             the message box / notification title
+       @param[in] message           the displayed text
+       @param[in] style             modality and style definitions (icon and used buttons - buttons only for message boxes)
+                                    @see CClientUIInterface::MessageBoxFlags
+       @param[in] ret               pointer to a bool that will be modified to whether Ok was clicked (modal only)
+       @param[in] detailed_message  the text to be displayed in the details area
     */
-    void message(const QString& title, QString message, unsigned int style, bool* ret = nullptr);
+    void message(const QString& title, QString message, unsigned int style, bool* ret = nullptr, const QString& detailed_message = QString());
 
 #ifdef ENABLE_WALLET
     void setCurrentWallet(WalletModel* wallet_model);
@@ -282,6 +300,7 @@ public Q_SLOTS:
 
     /** Show incoming transaction notification for new token transactions. */
     void incomingTokenTransaction(const QString& date, const QString& amount, const QString& type, const QString& address, const QString& label, const QString& walletName, const QString& title);
+
 #endif // ENABLE_WALLET
 
 private:
@@ -313,11 +332,14 @@ public Q_SLOTS:
     void gotoDelegationPage();
     /** Switch to super staker page */
     void gotoSuperStakerPage();
-
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
     /** Show Sign/Verify Message dialog and switch to verify message tab */
     void gotoVerifyMessageTab(QString addr = "");
+    /** Load Partially Signed Bitcoin Transaction from file or clipboard */
+    void gotoLoadPSBT(bool from_clipboard = false);
+    /** Sign transaction with hardware wallet*/
+    void signTxHardware(const QString& tx = "");
 
     /** Show open dialog */
     void openClicked();
@@ -332,32 +354,26 @@ public Q_SLOTS:
     void showDebugWindowActivateConsole();
     /** Show help message dialog */
     void showHelpMessageClicked();
-#ifndef Q_OS_MAC
-    /** Handle tray icon clicked */
-    void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
-#else
-    /** Handle macOS Dock icon clicked */
-    void macosDockIconActivated();
-#endif
 
     /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */
     void showNormalIfMinimized() { showNormalIfMinimized(false); }
     void showNormalIfMinimized(bool fToggleHidden);
     /** Simply calls showNormalIfMinimized(true) for use in SLOT() macro */
     void toggleHidden();
+
 #ifdef ENABLE_WALLET
+    /** Update ledger icon **/
+    void updateLedgerIcon();
     /** Update staking icon **/
     void updateStakingIcon();
 #endif // ENABLE_WALLET
+
 
     /** called by a timer to check if ShutdownRequested() has been set **/
     void detectShutdown();
 
     /** Show progress dialog e.g. for verifychain */
     void showProgress(const QString &title, int nProgress);
-
-    /** When hideTrayIcon setting is changed in OptionsModel hide or show the icon accordingly. */
-    void setTrayIconVisible(bool);
 
     void showModalOverlay();
 
@@ -375,15 +391,19 @@ public:
 
 protected:
     /** So that it responds to left-button clicks */
-    void mousePressEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void changeEvent(QEvent* e) override;
 
 private:
     OptionsModel *optionsModel;
     QMenu* menu;
+    const PlatformStyle* m_platform_style;
+
     int menuMargin;
     int iconHeight;
     int iconWidth;
     QString iconPath;
+
 
     /** Shows context menu with Display Unit options by the mouse coordinates */
     void onDisplayUnitsClicked(const QPoint& point);

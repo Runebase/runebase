@@ -1035,7 +1035,6 @@ Stake Page Widget CSS
     font: 17pt;
     font-weight: bold;
 }
-
 #frameStakeInfo #labelHeight,
 #frameStakeInfo #labelWeight,
 #frameStakeInfo #labelReward,
@@ -1073,7 +1072,7 @@ Overview Page Widget CSS
     border: 1px solid #e3eaf3;
 }
 
-#widgetRecent #showMoreButton{
+#widgetListTransaction #showMoreButton{
     min-width: 3em;
     padding: 1px;
     border-radius: 8px;

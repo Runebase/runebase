@@ -1,6 +1,9 @@
 #include <boost/test/unit_test.hpp>
 #include <test/util/setup_common.h>
 #include <runebasetests/test_utils.h>
+#include <chainparams.h>
+
+namespace ButecodeExecTest{
 
 const dev::u256 GASLIMIT = dev::u256(500000);
 const dev::Address SENDERADDRESS = dev::Address("0101010101010101010101010101010101010101");
@@ -77,12 +80,22 @@ const std::vector<valtype> CODE =
     valtype(ParseHex("6060604052734de45add9f5f0b6887081cfcfe3aca6da9eb3365600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505b5b5b60b68061006a6000396000f30060606040523615603d576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806341c0e1b5146045575b60435b5b565b005b604b604d565b005b600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16ff5b5600a165627a7a72305820e296f585c72ea3d4dce6880122cfe387d26c48b7960676a52e811b56ef8297a80029"))
 };
 
+int initAddressesSize = 0;
+void genesisLoading(){
+    const CChainParams& chainparams = Params();
+    dev::eth::ChainParams cp(chainparams.EVMGenesisInfo(0x7fffffff));
+    globalState->populateFrom(cp.genesisState);
+    globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
+    globalState->db().commit();
+    initAddressesSize = globalState->addresses().size();
+}
+
 void checkExecResult(std::vector<ResultExecute>& result, size_t execResSize, size_t addressesSize, 
                      dev::eth::TransactionException except, std::vector<dev::Address> newAddresses, 
                      valtype output, dev::u256 balance, bool normalAndIncorrect = false){
     std::unordered_map<dev::Address, dev::u256> addresses = globalState->addresses();
     BOOST_CHECK(result.size() == execResSize);
-    BOOST_CHECK(addresses.size() == addressesSize);
+    BOOST_CHECK(addresses.size() == (addressesSize + initAddressesSize));
     for(size_t i = 0; i < result.size(); i++){
         if(normalAndIncorrect){
             if(i%2 == 0){
@@ -117,17 +130,17 @@ void checkBCEResult(ByteCodeExecResult result, uint64_t usedGas, CAmount refundS
 BOOST_FIXTURE_TEST_SUITE(bytecodeexec_tests, TestingSetup)
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_txs_empty){
-    initState();
+    genesisLoading();
     std::vector<RunebaseTransaction> txs;
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
     BOOST_CHECK(result.first.size() == 0);
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract){
-    initState();
+    genesisLoading();
     RunebaseTransaction txEth = createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address());
     std::vector<RunebaseTransaction> txs(1, txEth);
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
     
     std::vector<dev::Address> addrs = {createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout())};
     valtype code = ParseHex("60606040525b600b5b5b565b0000a165627a7a723058209cedb722bf57a30e3eb00eeefc392103ea791a2001deed29f5c3809ff10eb1dd0029");
@@ -136,10 +149,10 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract){
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract_OutOfGasIntrinsic){
-    initState();
+    genesisLoading();
     RunebaseTransaction txEth = createRunebaseTransaction(CODE[0], 0, dev::u256(100), dev::u256(1), HASHTX, dev::Address());
     std::vector<RunebaseTransaction> txs(1, txEth);
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
     std::vector<dev::Address> addrs = {dev::Address()};
     checkExecResult(result.first, 1, 0, dev::eth::TransactionException::OutOfGasIntrinsic, addrs, valtype(), dev::u256(0));
@@ -147,10 +160,10 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract_OutOfGasIntrinsic){
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract_OutOfGas){
-    initState();
+    genesisLoading();
     RunebaseTransaction txEth = createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address());
     std::vector<RunebaseTransaction> txs(1, txEth);
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
     std::vector<dev::Address> addrs = {dev::Address()};
     checkExecResult(result.first, 1, 0, dev::eth::TransactionException::OutOfGas, addrs, valtype(), dev::u256(0));
@@ -158,7 +171,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract_OutOfGas){
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_OutOfGasIntrinsic_create_contract_normal_create_contract){
-    initState();
+    genesisLoading();
     std::vector<dev::Address> newAddressGen;
     std::vector<RunebaseTransaction> txs;
     dev::h256 hash(HASHTX);
@@ -169,7 +182,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_OutOfGasIntrinsic_create_contract_normal_creat
         txs.push_back(txEth);
         ++hash;
     }
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
     valtype code = ParseHex("60606040525b600b5b5b565b0000a165627a7a723058209cedb722bf57a30e3eb00eeefc392103ea791a2001deed29f5c3809ff10eb1dd0029");
     checkExecResult(result.first, 10, 5, dev::eth::TransactionException::OutOfGasIntrinsic, newAddressGen, code, dev::u256(0), true);
@@ -177,7 +190,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_OutOfGasIntrinsic_create_contract_normal_creat
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_OutOfGas_create_contract_normal_create_contract){
-    initState();
+    genesisLoading();
     std::vector<dev::Address> newAddressGen;
     std::vector<RunebaseTransaction> txs;
     dev::h256 hash(HASHTX);
@@ -188,7 +201,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_OutOfGas_create_contract_normal_create_contrac
         txs.push_back(txEth);
         ++hash;
     }
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
     
     valtype code = ParseHex("60606040525b600b5b5b565b0000a165627a7a723058209cedb722bf57a30e3eb00eeefc392103ea791a2001deed29f5c3809ff10eb1dd0029");
     checkExecResult(result.first, 10, 5, dev::eth::TransactionException::OutOfGas, newAddressGen, code, dev::u256(0), true);
@@ -196,7 +209,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_OutOfGas_create_contract_normal_create_contrac
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract_many){
-    initState();
+    genesisLoading();
     std::vector<dev::Address> newAddressGen;
     std::vector<RunebaseTransaction> txs;
     dev::h256 hash(HASHTX);
@@ -206,7 +219,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract_many){
         txs.push_back(txEth);
         ++hash;
     }
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
     valtype code = ParseHex("60606040525b600b5b5b565b0000a165627a7a723058209cedb722bf57a30e3eb00eeefc392103ea791a2001deed29f5c3809ff10eb1dd0029");
     checkExecResult(result.first, 130, 130, dev::eth::TransactionException::None, newAddressGen, code, dev::u256(0));
@@ -214,28 +227,28 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_create_contract_many){
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer){
-    initState();
+    genesisLoading();
     RunebaseTransaction txEthCreate = createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address());
     std::vector<RunebaseTransaction> txsCreate(1, txEthCreate);
-    executeBC(txsCreate);
+    executeBC(txsCreate, *m_node.chainman);
     std::vector<dev::Address> addrs = {createRunebaseAddress(txsCreate[0].getHashWith(), txsCreate[0].getNVout())};
     RunebaseTransaction txEthCall = createRunebaseTransaction(ParseHex("00"), 1300, GASLIMIT, dev::u256(1), HASHTX, addrs[0]);
     std::vector<RunebaseTransaction> txsCall(1, txEthCall);
-    auto result = executeBC(txsCall);
+    auto result = executeBC(txsCall, *m_node.chainman);
 
     checkExecResult(result.first, 1, 1, dev::eth::TransactionException::None, addrs, valtype(), dev::u256(1300));
     checkBCEResult(result.second, 21037, 478963, 1, CAmount(GASLIMIT), 1);
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer_OutOfGasIntrinsic_return_value){
-    initState();
+    genesisLoading();
     RunebaseTransaction txEthCreate = createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address());
     std::vector<RunebaseTransaction> txsCreate(1, txEthCreate);
-    executeBC(txsCreate);
+    executeBC(txsCreate, *m_node.chainman);
     dev::Address newAddress(createRunebaseAddress(txsCreate[0].getHashWith(), txsCreate[0].getNVout()));
     RunebaseTransaction txEthCall = createRunebaseTransaction(ParseHex("00"), 1300, dev::u256(1), dev::u256(1), HASHTX, newAddress);
     std::vector<RunebaseTransaction> txsCall(1, txEthCall);
-    auto result = executeBC(txsCall);
+    auto result = executeBC(txsCall, *m_node.chainman);
 
     std::vector<dev::Address> addrs = {txEthCall.receiveAddress()};
     checkExecResult(result.first, 1, 1, dev::eth::TransactionException::OutOfGasIntrinsic, addrs, valtype(), dev::u256(0));
@@ -243,14 +256,14 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer_OutOfGasIntrinsic_retur
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer_OutOfGas_return_value){
-    initState();
+    genesisLoading();
     RunebaseTransaction txEthCreate = createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address());
     std::vector<RunebaseTransaction> txsCreate(1, txEthCreate);
-    executeBC(txsCreate);
+    executeBC(txsCreate, *m_node.chainman);
     dev::Address newAddress(createRunebaseAddress(txsCreate[0].getHashWith(), txsCreate[0].getNVout()));
     RunebaseTransaction txEthCall = createRunebaseTransaction(ParseHex("00"), 1300, GASLIMIT, dev::u256(1), HASHTX, newAddress);
     std::vector<RunebaseTransaction> txsCall(1, txEthCall);
-    auto result = executeBC(txsCall);
+    auto result = executeBC(txsCall, *m_node.chainman);
 
     std::vector<dev::Address> addrs = {txEthCall.receiveAddress()};
     checkExecResult(result.first, 1, 1, dev::eth::TransactionException::OutOfGas, addrs, valtype(), dev::u256(0));
@@ -258,7 +271,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer_OutOfGas_return_value){
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer_many){
-    initState();
+    genesisLoading();
     std::vector<dev::Address> newAddressGen;
     std::vector<RunebaseTransaction> txs;
     dev::h256 hash(HASHTX);
@@ -268,7 +281,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer_many){
         txs.push_back(txEth);
         ++hash;
     }
-    executeBC(txs);
+    executeBC(txs, *m_node.chainman);
     std::vector<RunebaseTransaction> txsCall;
     std::vector<dev::Address> addrs;
     valtype codeCall(ParseHex("00"));
@@ -279,14 +292,14 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_transfer_many){
         addrs.push_back(txEthCall.receiveAddress());
         ++hashCall;
     }
-    auto result = executeBC(txsCall);
+    auto result = executeBC(txsCall, *m_node.chainman);
     
     checkExecResult(result.first, 130, 130, dev::eth::TransactionException::None, addrs, valtype(), dev::u256(1300));
     checkBCEResult(result.second, 2734810, 62265190, 130, CAmount(GASLIMIT * 130), 130);
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_OutOfGas_transfer_many_return_value){
-    initState();
+    genesisLoading();
     std::vector<dev::Address> newAddressGen;
     std::vector<RunebaseTransaction> txs;
     dev::h256 hash(HASHTX);
@@ -296,7 +309,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_OutOfGas_transfer_many_return_va
         txs.push_back(txEth);
         ++hash;
     }
-    executeBC(txs);
+    executeBC(txs, *m_node.chainman);
     std::vector<RunebaseTransaction> txsCall;
     std::vector<dev::Address> addrs;
     valtype codeCall(ParseHex("00"));
@@ -307,14 +320,14 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_call_contract_OutOfGas_transfer_many_return_va
         addrs.push_back(txEthCall.receiveAddress());
         ++hashCall;
     }
-    auto result = executeBC(txsCall);
+    auto result = executeBC(txsCall, *m_node.chainman);
 
     checkExecResult(result.first, 130, 130, dev::eth::TransactionException::OutOfGas, addrs, valtype(), dev::u256(0));
     checkBCEResult(result.second, CAmount(GASLIMIT) * 130, 0, 0, CAmount(GASLIMIT) * 130, 130);
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_suicide){
-    initState();
+    genesisLoading();
     std::vector<RunebaseTransaction> txsCreate;
     std::vector<dev::Address> newAddresses;
     dev::h256 hash(HASHTX);
@@ -334,7 +347,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_suicide){
         ++hash;
     }
 
-    executeBC(txsCreate);
+    executeBC(txsCreate, *m_node.chainman);
 
     std::vector<RunebaseTransaction> txsCall;
     std::vector<dev::Address> addrs;
@@ -344,17 +357,17 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_suicide){
         txsCall.push_back(txEthCall);
         addrs.push_back(txEthCall.receiveAddress());
     }
-    auto result = executeBC(txsCall);
+    auto result = executeBC(txsCall, *m_node.chainman);
 
     checkExecResult(result.first, 9, 1, dev::eth::TransactionException::None, addrs, valtype(), dev::u256(0));
     checkBCEResult(result.second, 96588, 4403412, 9, CAmount(GASLIMIT * 9), 9);
 }
 
 BOOST_AUTO_TEST_CASE(bytecodeexec_contract_create_contracts){
-    initState();
+    genesisLoading();
     RunebaseTransaction txEthCreate = createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address());
     std::vector<RunebaseTransaction> txs(1, txEthCreate);
-    executeBC(txs);
+    executeBC(txs, *m_node.chainman);
     std::vector<RunebaseTransaction> txsCall;
     valtype codeCall(ParseHex("3f811b80"));
     dev::Address newAddress(createRunebaseAddress(txEthCreate.getHashWith(), txEthCreate.getNVout()));
@@ -364,7 +377,7 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_contract_create_contracts){
         txsCall.push_back(txEthCall);
         addrs.push_back(txEthCall.receiveAddress());
     }
-    auto result = executeBC(txsCall);
+    auto result = executeBC(txsCall, *m_node.chainman);
 
     checkExecResult(result.first, 20, 21, dev::eth::TransactionException::None, addrs, valtype(), dev::u256(0));
     BOOST_CHECK(result.second.usedGas + result.second.refundSender == GASLIMIT * 20);
@@ -375,3 +388,5 @@ BOOST_AUTO_TEST_CASE(bytecodeexec_contract_create_contracts){
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}

@@ -1,11 +1,25 @@
-0.20.1 Release Notes
-====================
+*After branching off for a major version release of Bitcoin Core, use this
+template to create the initial release notes draft.*
 
-Bitcoin Core version 0.20.1 is now available from:
+*The release notes draft is a temporary file that can be added to by anyone. See
+[/doc/developer-notes.md#release-notes](/doc/developer-notes.md#release-notes)
+for the process.*
 
-  <https://bitcoincore.org/bin/bitcoin-core-0.20.1/>
+*Create the draft, named* "*version* Release Notes Draft"
+*(e.g. "22.0 Release Notes Draft"), as a collaborative wiki in:*
 
-This minor release includes various bug fixes and performance
+https://github.com/bitcoin-core/bitcoin-devwiki/wiki/
+
+*Before the final release, move the notes back to this git repository.*
+
+*version* Release Notes Draft
+===============================
+
+Bitcoin Core version *version* is now available from:
+
+  <https://bitcoincore.org/bin/bitcoin-core-*version*/>
+
+This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
@@ -32,285 +46,187 @@ Compatibility
 ==============
 
 Bitcoin Core is supported and extensively tested on operating systems
-using the Linux kernel, macOS 10.12+, and Windows 7 and newer.  Bitcoin
+using the Linux kernel, macOS 10.15+, and Windows 7 and newer.  Bitcoin
 Core should also work on most other Unix-like systems but is not as
 frequently tested on them.  It is not recommended to use Bitcoin Core on
 unsupported systems.
 
-From Bitcoin Core 0.20.0 onwards, macOS versions earlier than 10.12 are no
-longer supported. Additionally, Bitcoin Core does not yet change appearance
-when macOS "dark mode" is activated.
-
-Known Bugs
-==========
-
-The process for generating the source code release ("tarball") has changed in an
-effort to make it more complete, however, there are a few regressions in
-this release:
-
-- The generated `configure` script is currently missing, and you will need to
-  install autotools and run `./autogen.sh` before you can run
-  `./configure`. This is the same as when checking out from git.
-
-- Instead of running `make` simply, you should instead run
-  `BITCOIN_GENBUILD_NO_GIT=1 make`.
-
 Notable changes
 ===============
 
-Changes regarding misbehaving peers
------------------------------------
+P2P and network changes
+-----------------------
 
-Peers that misbehave (e.g. send us invalid blocks) are now referred to as
-discouraged nodes in log output, as they're not (and weren't) strictly banned:
-incoming connections are still allowed from them, but they're preferred for
-eviction.
+- A bitcoind node will no longer rumour addresses to inbound peers by default.
+  They will become eligible for address gossip after sending an ADDR, ADDRV2,
+  or GETADDR message. (#21528)
 
-Furthermore, a few additional changes are introduced to how discouraged
-addresses are treated:
+Fee estimation changes
+----------------------
 
-- Discouraging an address does not time out automatically after 24 hours
-  (or the `-bantime` setting). Depending on traffic from other peers,
-  discouragement may time out at an indeterminate time.
+- Fee estimation now takes the feerate of replacement (RBF) transactions into
+  account. (#22539)
 
-- Discouragement is not persisted over restarts.
+Rescan startup parameter removed
+--------------------------------
 
-- There is no method to list discouraged addresses. They are not returned by
-  the `listbanned` RPC. That RPC also no longer reports the `ban_reason`
-  field, as `"manually added"` is the only remaining option.
-
-- Discouragement cannot be removed with the `setban remove` RPC command.
-  If you need to remove a discouragement, you can remove all discouragements by
-  stop-starting your node.
-
-Notification changes
---------------------
-
-`-walletnotify` notifications are now sent for wallet transactions that are
-removed from the mempool because they conflict with a new block. These
-notifications were sent previously before the v0.19 release, but had been
-broken since that release (bug
-[#18325](https://github.com/bitcoin/bitcoin/issues/18325)).
-
-PSBT changes
-------------
-
-PSBTs will contain both the non-witness utxo and the witness utxo for segwit
-inputs in order to restore compatibility with wallet software that are now
-requiring the full previous transaction for segwit inputs. The witness utxo
-is still provided to maintain compatibility with software which relied on its
-existence to determine whether an input was segwit.
-
-- The `walletprocesspsbt` and `walletcreatefundedpsbt` RPCs now include
-  BIP32 derivation paths by default for public keys if we know them.
-  This can be disabled by setting the `bip32derivs` parameter to
-  `false`.  (#17264)
-
-- The `bumpfee` RPC's parameter `totalFee`, which was deprecated in
-  0.19, has been removed.  (#18312)
-
-- The `bumpfee` RPC will return a PSBT when used with wallets that have
-  private keys disabled.  (#16373)
-
-- The `getpeerinfo` RPC now includes a `mapped_as` field to indicate the
-  mapped Autonomous System used for diversifying peer selection. See the
-  `-asmap` configuration option described below in _New Settings_.  (#16702)
-
-- The `createmultisig` and `addmultisigaddress` RPCs now return an
-  output script descriptor for the newly created address.  (#18032)
-
-Build System
-------------
-
-- OpenSSL is no longer used by Bitcoin Core.  (#17265)
-
-- BIP70 support has been fully removed from Bitcoin Core. The
-  `--enable-bip70` option remains, but it will throw an error during configure.
-  (#17165)
-
-- glibc 2.17 or greater is now required to run the release binaries. This
-  retains compatibility with RHEL 7, CentOS 7, Debian 8 and Ubuntu 14.04 LTS. (#17538)
-
-- The source code archives that are provided with gitian builds no longer contain
-  any autotools artifacts. Therefore, to build from such source, a user
-  should run the `./autogen.sh` script from the root of the unpacked archive.
-  This implies that `autotools` and other required packages are installed on the
-  user's system. (#18331)
-
-New settings
-------------
-
-- New `rpcwhitelist` and `rpcwhitelistdefault` configuration parameters
-  allow giving certain RPC users permissions to only some RPC calls.
-  (#12763)
-
-- A new `-asmap` configuration option has been added to diversify the
-  node's network connections by mapping IP addresses Autonomous System
-  Numbers (ASNs) and then limiting the number of connections made to any
-  single ASN.  See [issue #16599](https://github.com/bitcoin/bitcoin/issues/16599),
-  [PR #16702](https://github.com/bitcoin/bitcoin/pull/16702), and the
-  `bitcoind help` for more information.  This option is experimental and
-  subject to removal or breaking changes in future releases, so the
-  legacy /16 prefix mapping of IP addresses remains the default.  (#16702)
-
-Updated settings
-----------------
-
-- All custom settings configured when Bitcoin Core starts are now
-  written to the `debug.log` file to assist troubleshooting.  (#16115)
-
-- Importing blocks upon startup via the `bootstrap.dat` file no longer
-  occurs by default. The file must now be specified with
-  `-loadblock=<file>`.  (#17044)
-
-- The `-debug=db` logging category has been renamed to
-  `-debug=walletdb` to distinguish it from `coindb`.  The `-debug=db`
-  option has been deprecated and will be removed in the next major
-  release.  (#17410)
-
-- The `-walletnotify` configuration parameter will now replace any `%w`
-  in its argument with the name of the wallet generating the
-  notification.  This is not supported on Windows. (#13339)
-
-Removed settings
-----------------
-
-- The `-whitelistforcerelay` configuration parameter has been removed after
-  it was discovered that it was rendered ineffective in version 0.13 and
-  hasn't actually been supported for almost four years.  (#17985)
-
-GUI changes
------------
-
-- The "Start Bitcoin Core on system login" option has been removed on macOS.
-  (#17567)
-
-- In the Peers window, the details for a peer now displays a `Mapped AS`
-  field to indicate the mapped Autonomous System used for diversifying
-  peer selection. See the `-asmap` configuration option in _New
-  Settings_, above.  (#18402)
-
-- A "known bug" [announced](https://bitcoincore.org/en/releases/0.18.0/#wallet-gui)
-  in the release notes of version 0.18 has been fixed.  The issue
-  affected anyone who simultaneously used multiple Bitcoin Core wallets
-  and the GUI coin control feature. (#18894)
-
-- For watch-only wallets, creating a new transaction in the Send screen
-  or fee bumping an existing transaction in the Transactions screen will
-  automatically copy a Partially-Signed Bitcoin Transaction (PSBT) to
-  the system clipboard.  This can then be pasted into an external
-  program such as [HWI](https://github.com/bitcoin-core/HWI) for
-  signing.  Future versions of Bitcoin Core should support a GUI option
-  for finalizing and broadcasting PSBTs, but for now the debug console
-  may be used with the `finalizepsbt` and `sendrawtransaction` RPCs.
-  (#16944, #17492)
-
-Wallet
-------
-
-- The wallet now by default uses bech32 addresses when using RPC, and
-  creates native segwit change outputs.  (#16884)
-
-- The way that output trust was computed has been fixed, which affects
-  confirmed/unconfirmed balance status and coin selection.  (#16766)
-
-- The `gettransaction`, `listtransactions` and `listsinceblock` RPC
-  responses now also include the height of the block that contains the
-  wallet transaction, if any.  (#17437)
-
-- The `getaddressinfo` RPC has had its `label` field deprecated
-  (re-enable for this release using the configuration parameter
-  `-deprecatedrpc=label`).  The `labels` field is altered from returning
-  JSON objects to returning a JSON array of label names (re-enable
-  previous behavior for this release using the configuration parameter
-  `-deprecatedrpc=labelspurpose`).  Backwards compatibility using the
-  deprecated configuration parameters is expected to be dropped in the
-  0.21 release.  (#17585, #17578)
-
-Documentation changes
----------------------
-
-- Bitcoin Core's automatically-generated source code documentation is
-  now available at https://doxygen.bitcoincore.org.  (#17596)
-
-Low-level changes
-=================
-
-Utilities
----------
-
-- The `bitcoin-cli` utility used with the `-getinfo` parameter now
-  returns a `headers` field with the number of downloaded block headers
-  on the best headers chain (similar to the `blocks` field that is also
-  returned) and a `verificationprogress` field that estimates how much
-  of the best block chain has been synced by the local node.  The
-  information returned no longer includes the `protocolversion`,
-  `walletversion`, and `keypoololdest` fields.  (#17302, #17650)
-
-- The `bitcoin-cli` utility now accepts a `-stdinwalletpassphrase`
-  parameter that can be used when calling the `walletpassphrase` and
-  `walletpassphrasechange` RPCs to read the passphrase from standard
-  input without echoing it to the terminal, improving security against
-  anyone who can look at your screen.  The existing `-stdinrpcpass`
-  parameter is also updated to not echo the passphrase. (#13716)
-
-Command line
-------------
-
-- Command line options prefixed with main/test/regtest network names like
-  `-main.port=8333` `-test.server=1` previously were allowed but ignored. Now
-  they trigger "Invalid parameter" errors on startup. (#17482)
-
-New RPCs
---------
-
-- The `dumptxoutset` RPC outputs a serialized snapshot of the current
-  UTXO set.  A script is provided in the `contrib/devtools` directory
-  for generating a snapshot of the UTXO set at a particular block
-  height.  (#16899)
-
-- The `generatetodescriptor` RPC allows testers using regtest mode to
-  generate blocks that pay an arbitrary output script descriptor.
-  (#16943)
+The `-rescan` startup parameter has been removed. Wallets which require
+rescanning due to corruption will still be rescanned on startup.
+Otherwise, please use the `rescanblockchain` RPC to trigger a rescan. (#23123)
 
 Updated RPCs
 ------------
 
-- The `verifychain` RPC default values are now static instead of
-  depending on the command line options or configuration file
-  (`-checklevel`, and `-checkblocks`). Users can pass in the RPC
-  arguments explicitly when they don't want to rely on the default
-  values. (#18541)
+- The `validateaddress` RPC now returns an `error_locations` array for invalid
+  addresses, with the indices of invalid character locations in the address (if
+  known). For example, this will attempt to locate up to two Bech32 errors, and
+  return their locations if successful. Success and correctness are only guaranteed
+  if fewer than two substitution errors have been made.
+  The error message returned in the `error` field now also returns more specific
+  errors when decoding fails. (#16807)
 
-- The `getblockchaininfo` RPC's `verificationprogress` field will no
-  longer report values higher than 1.  Previously it would occasionally
-  report the chain was more than 100% verified.  (#17328)
+- The `-deprecatedrpc=addresses` configuration option has been removed.  RPCs
+  `gettxout`, `getrawtransaction`, `decoderawtransaction`, `decodescript`,
+  `gettransaction verbose=true` and REST endpoints `/rest/tx`, `/rest/getutxos`,
+  `/rest/block` no longer return the `addresses` and `reqSigs` fields, which
+  were previously deprecated in 22.0. (#22650)
+- The `getblock` RPC command now supports verbosity level 3 containing transaction inputs'
+  `prevout` information.  The existing `/rest/block/` REST endpoint is modified to contain
+  this information too. Every `vin` field will contain an additional `prevout` subfield
+  describing the spent output. `prevout` contains the following keys:
+  - `generated` - true if the spent coins was a coinbase.
+  - `height`
+  - `value`
+  - `scriptPubKey`
+
+- The top-level fee fields `fee`, `modifiedfee`, `ancestorfees` and `descendantfees`
+  returned by RPCs `getmempoolentry`,`getrawmempool(verbose=true)`,
+  `getmempoolancestors(verbose=true)` and `getmempooldescendants(verbose=true)`
+  are deprecated and will be removed in the next major version (use
+  `-deprecated=fees` if needed in this version). The same fee fields can be accessed
+  through the `fees` object in the result. WARNING: deprecated
+  fields `ancestorfees` and `descendantfees` are denominated in sats, whereas all
+  fields in the `fees` object are denominated in BTC. (#22689)
+
+- Both `createmultisig` and `addmultisigaddress` now include a `warnings`
+  field, which will show a warning if a non-legacy address type is requested
+  when using uncompressed public keys. (#23113)
+
+New RPCs
+--------
+
+- Information on soft fork status has been moved from `getblockchaininfo`
+  to the new `getdeploymentinfo` RPC which allows querying soft fork status at any
+  block, rather than just at the chain tip. Inclusion of soft fork
+  status in `getblockchaininfo` can currently be restored using the
+  configuration `-deprecatedrpc=softforks`, but this will be removed in
+  a future release. Note that in either case, the `status` field
+  now reflects the status of the current block rather than the next
+  block. (#23508)
+
+Build System
+------------
+
+Files
+-----
+
+* On startup, the list of banned hosts and networks (via `setban` RPC) in
+  `banlist.dat` is ignored and only `banlist.json` is considered. Bitcoin Core
+  version 22.x is the only version that can read `banlist.dat` and also write
+  it to `banlist.json`. If `banlist.json` already exists, version 22.x will not
+  try to translate the `banlist.dat` into json. After an upgrade, `listbanned`
+  can be used to double check the parsed entries. (#22570)
+
+New settings
+------------
+
+Updated settings
+----------------
+
+- In previous releases, the meaning of the command line option
+  `-persistmempool` (without a value provided) incorrectly disabled mempool
+  persistence.  `-persistmempool` is now treated like other boolean options to
+  mean `-persistmempool=1`. Passing `-persistmempool=0`, `-persistmempool=1`
+  and `-nopersistmempool` is unaffected. (#23061)
+
+- `-maxuploadtarget` now allows human readable byte units [k|K|m|M|g|G|t|T].
+  E.g. `-maxuploadtarget=500g`. No whitespace, +- or fractions allowed.
+  Default is `M` if no suffix provided. (#23249)
+
+- If `-proxy=` is given together with `-noonion` then the provided proxy will
+  not be set as a proxy for reaching the Tor network. So it will not be
+  possible to open manual connections to the Tor network for example with the
+  `addnode` RPC. To mimic the old behavior use `-proxy=` together with
+  `-onlynet=` listing all relevant networks except `onion`. (#22834)
+
+Tools and Utilities
+-------------------
+
+- Update `-getinfo` to return data in a user-friendly format that also reduces vertical space. (#21832)
+
+- CLI `-addrinfo` now returns a single field for the number of `onion` addresses
+  known to the node instead of separate `torv2` and `torv3` fields, as support
+  for Tor V2 addresses was removed from Bitcoin Core in 22.0. (#22544)
+
+Wallet
+------
+
+- `upgradewallet` will now automatically flush the keypool if upgrading
+  from a non-HD wallet to an HD wallet, to immediately start using the
+  newly-generated HD keys. (#23093)
+
+- a new RPC `newkeypool` has been added, which will flush (entirely
+  clear and refill) the keypool. (#23093)
+
+- `listunspent` now includes `ancestorcount`, `ancestorsize`, and
+  `ancestorfees` for each transaction output that is still in the mempool.
+  (#12677)
+
+- `lockunspent` now optionally takes a third parameter, `persistent`, which
+  causes the lock to be written persistently to the wallet database. This
+  allows UTXOs to remain locked even after node restarts or crashes. (#23065)
+
+- `receivedby` RPCs now include coinbase transactions. Previously, the
+  following wallet RPCs excluded coinbase transactions: `getreceivedbyaddress`,
+  `getreceivedbylabel`, `listreceivedbyaddress`, `listreceivedbylabel`. This
+  release changes this behaviour and returns results accounting for received
+  coins from coinbase outputs. The previous behaviour can be restored using the
+  configuration `-deprecatedrpc=exclude_coinbase`, but may be removed in a
+  future release. (#14707)
+
+- A new option in the same `receivedby` RPCs, `include_immature_coinbase`
+  (default=`false`), determines whether to account for immature coinbase
+  transactions. Immature coinbase transactions are coinbase transactions that
+  have 100 or fewer confirmations, and are not spendable. (#14707)
+
+GUI changes
+-----------
+
+- UTXOs which are locked via the GUI are now stored persistently in the
+  wallet database, so are not lost on node shutdown or crash. (#23065)
+
+- The Bech32 checkbox has been replaced with a dropdown for all address types, including the new Bech32m (BIP-350) standard for Taproot enabled wallets.
+
+Low-level changes
+=================
+
+RPC
+---
+
+- `getblockchaininfo` now returns a new `time` field, that provides the chain tip time. (#22407)
 
 Tests
 -----
 
-- It is now an error to use an unqualified `walletdir=path` setting in
-  the config file if running on testnet or regtest networks. The setting
-  now needs to be qualified as `chain.walletdir=path` or placed in the
-  appropriate `[chain]` section. (#17447)
-
-- `-fallbackfee` was 0 (disabled) by default for the main chain, but
-  0.0002 by default for the test chains. Now it is 0 by default for all
-  chains. Testnet and regtest users will have to add
-  `fallbackfee=0.0002` to their configuration if they weren't setting it
-  and they want it to keep working like before. (#16524)
-
-Build system
-------------
-
-- Support is provided for building with the Android Native Development
-  Kit (NDK).  (#16110)
+- For the `regtest` network the activation heights of several softforks were
+  set to block height 1. They can be changed by the runtime setting
+  `-testactivationheight=name@height`. (#22818)
 
 Credits
 =======
 
 Thanks to everyone who directly contributed to this release:
 
-(todo)
+
 As well as to everyone that helped with translations on
 [Transifex](https://www.transifex.com/bitcoin/bitcoin/).
