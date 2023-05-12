@@ -3,7 +3,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from test_framework.script import *
-from test_framework.mininode import *
+from test_framework.p2p import *
 from test_framework.runebase import *
 from test_framework.blocktools import *
 from test_framework.key import *
@@ -105,7 +105,7 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
 
 
         NUM_DROPS = 200
-        NUM_OUTPUTS = 101
+        NUM_OUTPUTS = 101 // FACTOR_REDUCED_BLOCK_TIME
 
         witness_program = CScript([OP_2DROP]*NUM_DROPS + [OP_TRUE])
         witness_hash = uint256_from_str(sha256(witness_program))

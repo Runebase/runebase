@@ -8,6 +8,7 @@
 #include <interfaces/handler.h>
 #include <algorithm>
 #include <consensus/consensus.h>
+#include <chainparams.h>
 
 #include <QDateTime>
 #include <QFont>
@@ -69,6 +70,9 @@ public:
 private Q_SLOTS:
     void updateTokenTx(const QString &hash)
     {
+        if(walletModel && walletModel->node().shutdownRequested())
+            return;
+
         // Initialize variables
         uint256 tokenHash = uint256S(hash.toStdString());
         int64_t fromBlock = 0;
@@ -77,7 +81,7 @@ private Q_SLOTS:
         uint256 blockHash;
         bool found = false;
 
-        int64_t backInPast = first ? COINBASE_MATURITY : 10;
+        int64_t backInPast = first ? Params().GetConsensus().MaxCheckpointSpan() : 10;
         first = false;
 
         // Get current height and block hash
@@ -122,6 +126,7 @@ private Q_SLOTS:
             tokenAbi.setAddress(tokenInfo.contract_address);
             tokenAbi.setSender(tokenInfo.sender_address);
             tokenAbi.transferEvents(tokenEvents, fromBlock, toBlock);
+            tokenAbi.burnEvents(tokenEvents, fromBlock, toBlock);
             for(size_t i = 0; i < tokenEvents.size(); i++)
             {
                 TokenEvent event = tokenEvents[i];
@@ -142,11 +147,17 @@ private Q_SLOTS:
 
     void cleanTokenTxEntries()
     {
+        if(walletModel && walletModel->node().shutdownRequested())
+            return;
+
         if(walletModel) walletModel->wallet().cleanTokenTxEntries();
     }
 
     void updateBalance(QString hash, QString contractAddress, QString senderAddress)
     {
+        if(walletModel && walletModel->node().shutdownRequested())
+            return;
+
         tokenAbi.setAddress(contractAddress.toStdString());
         tokenAbi.setSender(senderAddress.toStdString());
         std::string strBalance;
@@ -321,8 +332,7 @@ TokenItemModel::~TokenItemModel()
 {
     unsubscribeFromCoreSignals();
 
-    t.quit();
-    t.wait();
+    join();
 
     if(priv)
     {
@@ -376,7 +386,7 @@ QVariant TokenItemModel::data(const QModelIndex &index, int role) const
         case Symbol:
             return rec->tokenSymbol;
         case Balance:
-            return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::separatorAlways);
+            return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::SeparatorStyle::ALWAYS);
         default:
             break;
         }
@@ -400,7 +410,7 @@ QVariant TokenItemModel::data(const QModelIndex &index, int role) const
         return rec->senderAddress;
         break;
     case TokenItemModel::BalanceRole:
-        return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::separatorAlways);
+        return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::SeparatorStyle::ALWAYS);
         break;
     case TokenItemModel::RawBalanceRole:
         return QString::fromStdString(rec->balance.str());
@@ -526,4 +536,15 @@ void TokenItemModel::updateBalance(const TokenItemEntry &entry)
     QString hash = QString::fromStdString(entry.hash.ToString());
     QMetaObject::invokeMethod(worker, "updateBalance", Qt::QueuedConnection,
                               Q_ARG(QString, hash), Q_ARG(QString, entry.contractAddress), Q_ARG(QString, entry.senderAddress));
+}
+
+void TokenItemModel::join()
+{
+    if(t.isRunning())
+    {
+        if(worker)
+            worker->disconnect(this);
+        t.quit();
+        t.wait();
+    }
 }

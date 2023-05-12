@@ -396,6 +396,13 @@ QVariant TokenTransactionTableModel::txAddressDecoration(const TokenTransactionR
 
 QString TokenTransactionTableModel::formatTxToAddress(const TokenTransactionRecord *wtx, bool tooltip) const
 {
+    if(wtx->address.empty() &&
+            (wtx->type == TokenTransactionRecord::SendToOther ||
+             wtx->type == TokenTransactionRecord::SendToAddress))
+    {
+        return tr("(null)");
+    }
+
     switch(wtx->type)
     {
     case TokenTransactionRecord::RecvFromOther:
@@ -518,7 +525,7 @@ QVariant TokenTransactionTableModel::data(const QModelIndex &index, int role) co
         case Name:
             return formatTxTokenSymbol(rec);
         case Amount:
-            return formatTxAmount(rec, true, BitcoinUnits::separatorAlways);
+            return formatTxAmount(rec, true, BitcoinUnits::SeparatorStyle::ALWAYS);
         }
         break;
     case Qt::EditRole:
@@ -602,7 +609,7 @@ QVariant TokenTransactionTableModel::data(const QModelIndex &index, int role) co
                 details.append(QString::fromStdString(rec->address));
                 details.append(" ");
             }
-            details.append(formatTxAmount(rec, false, BitcoinUnits::separatorNever));
+            details.append(formatTxAmount(rec, false, BitcoinUnits::SeparatorStyle::NEVER));
             details.append(" " + symbol);
             return details;
         }
@@ -610,9 +617,9 @@ QVariant TokenTransactionTableModel::data(const QModelIndex &index, int role) co
         return rec->status.countsForBalance;
     case FormattedAmountRole:
         // Used for copy/export, so don't include separators
-        return formatTxAmount(rec, false, BitcoinUnits::separatorNever);
+        return formatTxAmount(rec, false, BitcoinUnits::SeparatorStyle::NEVER);
     case FormattedAmountWithUnitRole:
-        return formatTxAmountWithUnit(rec, false, BitcoinUnits::separatorAlways);
+        return formatTxAmountWithUnit(rec, false, BitcoinUnits::SeparatorStyle::ALWAYS);
     case StatusRole:
         return rec->status.status;
     }

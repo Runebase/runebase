@@ -12,6 +12,7 @@ namespace ContractABI_NS
     result.param = json[#param].get_bool();
 #define ReadJsonArray(json, param, result) if(json.exists(#param) && json[#param].isArray())\
     result = json[#param].get_array();
+#define JsonExist(json, param) json.exists(#param)
 
 // String parsing functions
 inline bool startsWithString(const std::string& str, const std::string& s, size_t& pos)
@@ -72,9 +73,29 @@ bool ContractABI::loads(const std::string &json_data)
             FunctionABI function;
             ReadJsonString(json_function, name, function);
             ReadJsonString(json_function, type, function);
-            ReadJsonBool(json_function, payable, function);
-            ReadJsonBool(json_function, constant, function);
             ReadJsonBool(json_function, anonymous, function);
+            ReadJsonString(json_function, stateMutability, function);
+
+            // Payable might not exist in newer ABI, so determine it from state mutability if it not exists
+            if(JsonExist(json_function, payable))
+            {
+                ReadJsonBool(json_function, payable, function);
+            }
+            else
+            {
+                function.payable = function.stateMutability == "payable";
+            }
+
+            // Constant might not exist in newer ABI, so determine it from state mutability if it not exists
+            if(JsonExist(json_function, constant))
+            {
+                ReadJsonBool(json_function, constant, function);
+            }
+            else
+            {
+                function.constant = function.stateMutability == "pure"
+                        || function.stateMutability == "view";
+            }
 
             UniValue json_inputs;
             ReadJsonArray(json_function, inputs, json_inputs);
@@ -312,6 +333,7 @@ bool ParameterABI::abiInBasic(ParameterType::Type abiType, std::string value, st
         break;
     case ParameterType::abi_bool:
         value = value == "false" ? "0" : "1";
+        [[fallthrough]];
     case ParameterType::abi_int:
     case ParameterType::abi_uint:
     {
@@ -409,6 +431,7 @@ bool ParameterABI::abiIn(const std::vector<std::string> &value, std::string &dat
             switch (abiType) {
             case ParameterType::abi_bytes:
                 _value = dev::asString(dev::fromHex(_value));
+                [[fallthrough]];
             case ParameterType::abi_string:
             {
                 std::string paramData = dev::toHex(dev::eth::ABISerialiser<std::string>::serialise(_value));
@@ -463,9 +486,9 @@ bool ParameterABI::abiIn(const std::vector<std::string> &value, std::string &dat
     return true;
 }
 
-std::string deserialiseString(dev::bytesConstRef& io_t, unsigned p)
+std::string deserialiseString(dev::bytesConstRef& io_t, unsigned p, int index = 0)
 {
-    unsigned o = (uint16_t)dev::u256(dev::h256(io_t.cropped(0, 32))) - p;
+    unsigned o = (uint16_t)dev::u256(dev::h256(io_t.cropped(index*32, 32))) - p;
     unsigned s = (uint16_t)dev::u256(dev::h256(io_t.cropped(o, 32)));
     std::string ret;
     ret.resize(s);
@@ -538,8 +561,28 @@ bool ParameterABI::abiOut(const std::string &data, size_t &pos, std::vector<std:
             // Read list
             for(size_t i = 0; i < length; i++)
             {
-                if(!abiOutBasic(abiType, data, pos, paramValue))
-                    return false;
+                // Decode complex type
+                switch (abiType) {
+                case ParameterType::abi_bytes:
+                {
+                    dev::bytes rawData = dev::fromHex(data.substr(pos));
+                    dev::bytesConstRef o(&rawData);
+                    std::string outData = deserialiseString(o, 0, i);
+                    paramValue = dev::toHex(outData);
+                }
+                    break;
+                case ParameterType::abi_string:
+                {
+                    dev::bytes rawData = dev::fromHex(data.substr(pos));
+                    dev::bytesConstRef o(&rawData);
+                    paramValue = deserialiseString(o, 0, i);
+                }
+                    break;
+                // Decode basic type
+                default:
+                    if(!abiOutBasic(abiType, data, pos, paramValue))
+                        return false;
+                }
                 value.push_back(paramValue);
             }
 
@@ -808,4 +851,13 @@ void ParameterType::clean()
 ParameterType::Type ParameterType::type() const
 {
     return m_type;
+}
+
+int FunctionABI::numIndexed() const
+{
+    int ret = 0;
+    for(const ParameterABI& param : inputs)
+        if(param.indexed)
+            ret++;
+    return ret;
 }

@@ -8,6 +8,7 @@
 #include <qt/bitcoinunits.h>
 #include <qt/optionsmodel.h>
 #include <qt/walletmodel.h>
+#include <qt/clientmodel.h>
 #include <interfaces/node.h>
 #include <chainparams.h>
 #include <rpc/server.h>
@@ -36,7 +37,8 @@ SuperStakerItemWidget::SuperStakerItemWidget(const PlatformStyle *platformStyle,
     m_platfromStyle(platformStyle),
     m_type(type),
     m_position(-1),
-    m_model(0)
+    m_model(0),
+    m_clientModel(0)
 
 {
     ui->setupUi(this);
@@ -128,7 +130,7 @@ int SuperStakerItemWidget::position() const
 
 void SuperStakerItemWidget::updateLogo()
 {
-    if(!m_model)
+    if(!m_model || !m_clientModel)
         return;
 
     if(m_model->node().shutdownRequested())
@@ -147,7 +149,8 @@ void SuperStakerItemWidget::updateLogo()
     if (d->staking_on && nWeight && nDelegationsWeight)
     {
         uint64_t nNetworkWeight = GetPoSKernelPS();
-        static int64_t nTargetSpacing = Params().GetConsensus().nPowTargetSpacing;
+        int headersTipHeight = m_clientModel->getHeaderTipHeight();
+        int64_t nTargetSpacing = Params().GetConsensus().TargetSpacing(headersTipHeight);
 
         unsigned nEstimateTime = nTargetSpacing * nNetworkWeight / nDelegationsWeight;
 
@@ -177,7 +180,7 @@ void SuperStakerItemWidget::updateLogo()
     }
     else
     {
-        if (m_model->node().getNodeCount(CConnman::CONNECTIONS_ALL) == 0)
+        if (m_model->node().getNodeCount(ConnectionDirection::Both) == 0)
             ui->superStakerLogo->setToolTip(tr("Not staking because wallet is offline"));
         else if (m_model->node().isInitialBlockDownload())
             ui->superStakerLogo->setToolTip(tr("Not staking because wallet is syncing"));
@@ -189,6 +192,8 @@ void SuperStakerItemWidget::updateLogo()
             ui->superStakerLogo->setToolTip(tr("Not staking because you don't have mature delegated coins"));
         else if (m_model->wallet().isLocked())
             ui->superStakerLogo->setToolTip(tr("Not staking because wallet is locked"));
+        else if(m_model->hasLedgerProblem())
+            ui->superStakerLogo->setToolTip(tr("Not staking because the ledger device failed to connect"));
         else
             ui->superStakerLogo->setToolTip(tr("Not staking"));
     }
@@ -204,6 +209,11 @@ void SuperStakerItemWidget::setModel(WalletModel *_model)
     updateDisplayUnit();
 }
 
+void SuperStakerItemWidget::setClientModel(ClientModel *_clientModel)
+{
+    m_clientModel = _clientModel;
+}
+
 void SuperStakerItemWidget::updateDisplayUnit()
 {
     updateBalance();
@@ -214,8 +224,8 @@ void SuperStakerItemWidget::updateBalance()
     int unit = BitcoinUnits::BTC;
     if(m_model && m_model->getOptionsModel())
         unit = m_model->getOptionsModel()->getDisplayUnit();
-    ui->labelAssets->setText(BitcoinUnits::formatWithUnit(unit, d->balance, false, BitcoinUnits::separatorAlways));
-    ui->labelStake->setText(BitcoinUnits::formatWithUnit(unit, d->stake, false, BitcoinUnits::separatorAlways));
+    ui->labelAssets->setText(BitcoinUnits::formatWithUnit(unit, d->balance, false, BitcoinUnits::SeparatorStyle::ALWAYS));
+    ui->labelStake->setText(BitcoinUnits::formatWithUnit(unit, d->stake, false, BitcoinUnits::SeparatorStyle::ALWAYS));
 }
 
 void SuperStakerItemWidget::updateLabelStaker()

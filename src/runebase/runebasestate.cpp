@@ -4,6 +4,8 @@
 #include <chainparams.h>
 #include <script/script.h>
 #include <runebase/runebasestate.h>
+#include <libevm/VMFace.h>
+#include <validation.h>
 
 using namespace std;
 using namespace dev;
@@ -20,7 +22,7 @@ RunebaseState::RunebaseState() : dev::eth::State(dev::Invalid256, dev::OverlayDB
     stateUTXO = SecureTrieDB<Address, OverlayDB>(&dbUTXO);
 }
 
-ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace const& _sealEngine, RunebaseTransaction const& _t, Permanence _p, OnOpFunc const& _onOp){
+ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace const& _sealEngine, RunebaseTransaction const& _t, CChain& _chain, Permanence _p, OnOpFunc const& _onOp){
 
     assert(_t.getVersion().toRaw() == VersionVM::GetEVMDefault().toRaw());
 
@@ -32,8 +34,10 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
     h256 oldStateRoot = rootHash();
     h256 oldUTXORoot = rootHashUTXO();
     bool voutLimit = false;
+    m_createdContracts.clear();
+    m_destructedContracts.clear();
 
-	auto onOp = _onOp;
+    auto onOp = _onOp;
 #if ETH_VMTRACE
 	if (isChannelVisible<VMTraceChannel>())
 		onOp = Executive::simpleTrace(); // override tracer
@@ -56,7 +60,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
         startGasUsed = _envInfo.gasUsed();
         if (!e.execute()){
             e.go(onOp);
-            if(ChainActive().Height() >= consensusParams.QIP7Height){
+            if(_chain.Height() >= consensusParams.QIP7Height){
             	validateTransfersWithChangeLog();
             }
         } else {
@@ -67,6 +71,8 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
         if (_p == Permanence::Reverted){
             m_cache.clear();
             cacheUTXO.clear();
+            m_changeLog.clear();
+            m_unchangedCacheEntries.clear();
         } else {
             deleteAccounts(_sealEngine.deleteAddresses);
             if(res.excepted == TransactionException::None){
@@ -93,7 +99,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
         printfErrorLog(dev::eth::toTransactionException(_e));
         res.excepted = dev::eth::toTransactionException(_e);
         res.gasUsed = _t.gas();
-        if(ChainActive().Height() < consensusParams.nFixUTXOCacheHFHeight  && _p != Permanence::Reverted){
+        if(_chain.Height() < consensusParams.nFixUTXOCacheHFHeight  && _p != Permanence::Reverted){
             deleteAccounts(_sealEngine.deleteAddresses);
             commit(CommitBehaviour::RemoveEmptyAccounts);
         } else {
@@ -123,9 +129,30 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
             refund.vout.push_back(CTxOut(CAmount(_t.value().convert_to<uint64_t>()), script));
         }
         //make sure to use empty transaction if no vouts made
-        return ResultExecute{ex, RunebaseTransactionReceipt(oldStateRoot, oldUTXORoot, gas, e.logs()), refund.vout.empty() ? CTransaction() : CTransaction(refund)};
+        return ResultExecute{
+            ex,
+            RunebaseTransactionReceipt(oldStateRoot, oldUTXORoot, gas, e.logs(), {}, {}),
+            refund.vout.empty() ? CTransaction() : CTransaction(refund)
+        };
     }else{
-        return ResultExecute{res, RunebaseTransactionReceipt(rootHash(), rootHashUTXO(), startGasUsed + e.gasUsed(), e.logs()), tx ? *tx : CTransaction()};
+        if (res.excepted == dev::eth::TransactionException::None) {
+            return ResultExecute{
+                res,
+                RunebaseTransactionReceipt(
+                    rootHash(), rootHashUTXO(),
+                    startGasUsed + e.gasUsed(),
+                    e.logs(),
+                    std::move(m_createdContracts),
+                    std::move(m_destructedContracts)),
+                tx ? *tx : CTransaction()
+            };
+        } else {
+            return ResultExecute{
+                res,
+                RunebaseTransactionReceipt(rootHash(), rootHashUTXO(), startGasUsed + e.gasUsed(), e.logs(), {}, {}),
+                tx ? *tx : CTransaction()
+            };
+        }
     }
 }
 
@@ -162,7 +189,7 @@ Vin* RunebaseState::vin(dev::Address const& _addr)
         std::string stateBack = stateUTXO.at(_addr);
         if (stateBack.empty())
             return nullptr;
-            
+
         dev::RLP state(stateBack);
         auto i = cacheUTXO.emplace(
             std::piecewise_construct,
@@ -181,7 +208,7 @@ Vin* RunebaseState::vin(dev::Address const& _addr)
 
 //     runebase::commit(cacheUTXO, stateUTXO, m_cache);
 //     cacheUTXO.clear();
-        
+
 //     m_touched += dev::eth::commit(m_cache, m_state);
 //     m_changeLog.clear();
 //     m_cache.clear();
@@ -291,7 +318,7 @@ void RunebaseState::deployDelegationsContract(){
     dev::Address delegationsAddress = uintToh160(Params().GetConsensus().delegationsAddress);
     if(!RunebaseState::addressInUse(delegationsAddress)){
         RunebaseState::createContract(delegationsAddress);
-        RunebaseState::setCode(delegationsAddress, bytes{fromHex(DELEGATIONS_CONTRACT_CODE)});
+        RunebaseState::setCode(delegationsAddress, bytes{fromHex(DELEGATIONS_CONTRACT_CODE)}, RunebaseState::version(delegationsAddress));
         commit(CommitBehaviour::RemoveEmptyAccounts);
         db().commit();
     }

@@ -1,3 +1,6 @@
+#ifndef RUNEBASETESTS_TEST_UTILS_H
+#define RUNEBASETESTS_TEST_UTILS_H
+
 #include <util/system.h>
 #include <validation.h>
 #include <util/strencodings.h>
@@ -60,11 +63,11 @@ inline RunebaseTransaction createRunebaseTransaction(valtype data, dev::u256 val
     return txEth;
 }
 
-inline std::pair<std::vector<ResultExecute>, ByteCodeExecResult> executeBC(std::vector<RunebaseTransaction> txs){
+inline std::pair<std::vector<ResultExecute>, ByteCodeExecResult> executeBC(std::vector<RunebaseTransaction> txs, ChainstateManager& chainman){
     CBlock block(generateBlock());
-    RunebaseDGP runebaseDGP(globalState.get(), fGettingValuesDGP);
-    uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(ChainActive().Tip()->nHeight + 1);
-    ByteCodeExec exec(block, txs, blockGasLimit, ChainActive().Tip());
+    RunebaseDGP runebaseDGP(globalState.get(), chainman.ActiveChainstate(), fGettingValuesDGP);
+    uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(chainman.ActiveChain().Tip()->nHeight + 1);
+    ByteCodeExec exec(block, txs, blockGasLimit, chainman.ActiveChain().Tip(), chainman.ActiveChain());
     exec.performByteCode();
     std::vector<ResultExecute> res = exec.getResult();
     ByteCodeExecResult bceExecRes;
@@ -73,3 +76,5 @@ inline std::pair<std::vector<ResultExecute>, ByteCodeExecResult> executeBC(std::
     globalState->dbUtxo().commit();
     return std::make_pair(res, bceExecRes);
 }
+
+#endif // RUNEBASETESTS_TEST_UTILS_H

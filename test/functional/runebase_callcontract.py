@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from test_framework.script import *
-from test_framework.mininode import *
+from test_framework.p2p import *
 from test_framework.runebase import *
 from test_framework.runebaseconfig import *
 import sys
@@ -16,14 +16,14 @@ class CallContractTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
-        self.extra_args = [['-txindex=1']]
+        self.extra_args = [['-txindex=1', '-londonheight=1000000']]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
     # Verifies that the fallback function is correctly called
     def callcontract_fallback_function_test(self):
-        connect_nodes(self.nodes[0], 1)
+        self.connect_nodes(0, 1)
         self.node = self.nodes[0]
         """
         pragma solidity ^0.4.10;
@@ -73,7 +73,7 @@ class CallContractTest(BitcoinTestFramework):
         # call add()
         ret = self.node.callcontract(contract_address, "4f2be91f")
         assert(ret['address'] == contract_address)
-        assert(ret['executionResult']['gasUsed'] == 26878)
+        assert(ret['executionResult']['gasUsed'] == 27870 if ENABLE_REDUCED_BLOCK_TIME else 26878)
         assert(ret['executionResult']['excepted'] == "None")
         assert(ret['executionResult']['newAddress'] == contract_address)
         assert(ret['executionResult']['output'] == "000000000000000000000000000000000000000000000000000000000000001a")
@@ -81,7 +81,7 @@ class CallContractTest(BitcoinTestFramework):
         assert(ret['executionResult']['gasRefunded'] == 0)
         assert(ret['executionResult']['depositSize'] == 0)
         assert(ret['executionResult']['gasForDeposit'] == 0)
-        assert(ret['transactionReceipt']['gasUsed'] == 26878)
+        assert(ret['transactionReceipt']['gasUsed'] == 27870 if ENABLE_REDUCED_BLOCK_TIME else 26878)
         assert(ret['transactionReceipt']['bloom'] == "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
         assert(ret['transactionReceipt']['log'] == [])
 
@@ -211,7 +211,8 @@ class CallContractTest(BitcoinTestFramework):
         ]
 
         assert(ret['address'] == contract_address)
-        assert(ret['executionResult']['gasUsed'] == 36501)
+        print(ret['executionResult']['gasUsed'])
+        assert(ret['executionResult']['gasUsed'] == 36893 if ENABLE_REDUCED_BLOCK_TIME else 36501)
         assert(ret['executionResult']['excepted'] == "None")
         assert(ret['executionResult']['newAddress'] == contract_address)
         assert(ret['executionResult']['output'] == "")
@@ -219,7 +220,7 @@ class CallContractTest(BitcoinTestFramework):
         assert(ret['executionResult']['gasRefunded'] == 0)
         assert(ret['executionResult']['depositSize'] == 0)
         assert(ret['executionResult']['gasForDeposit'] == 0)
-        assert(ret['transactionReceipt']['gasUsed'] == 36501)
+        assert(ret['transactionReceipt']['gasUsed'] == 36893 if ENABLE_REDUCED_BLOCK_TIME else 36501)
         assert(ret['transactionReceipt']['bloom'] != "")
         assert(ret['transactionReceipt']['log'] == expected_log)
 

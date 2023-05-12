@@ -30,13 +30,13 @@ QString RestoreDialog::getParam()
     {
         param = "-reindex";
     }
-    else if(ui->rbZapWallet->isChecked())
-    {
-        param = "-zapwallettxes=2";
-    }
     else if(ui->rbLocalDeleteData->isChecked())
     {
         param = "-deleteblockchaindata";
+    }
+    else if(ui->rbInitialBlocksDownload->isChecked())
+    {
+        param = "-forceinitialblocksdownloadmode";
     }
 
     return param;

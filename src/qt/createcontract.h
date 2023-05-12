@@ -23,7 +23,6 @@ public:
     explicit CreateContract(const PlatformStyle *platformStyle, QWidget *parent = 0);
     ~CreateContract();
 
-    void setLinkLabels();
     void setClientModel(ClientModel *clientModel);
     void setModel(WalletModel *model);
     bool isValidBytecode();
@@ -31,6 +30,8 @@ public:
     bool isDataValid();
 
 Q_SIGNALS:
+    // Fired when a message should be reported to the user
+    void message(const QString &title, const QString &message, unsigned int style);
 
 public Q_SLOTS:
     void on_clearAllClicked();
@@ -55,6 +56,7 @@ private:
     ContractABI* m_contractABI;
     TabBarInfo* m_tabInfo;
     int m_results;
+    bool bCreateUnsigned = false;
 };
 
 #endif // CREATECONTRACT_H

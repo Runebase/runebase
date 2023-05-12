@@ -1,5 +1,6 @@
 #pragma once
 
+#include <libdevcore/UndefMacros.h>
 #include <libethereum/State.h>
 #include <libevm/ExtVMFace.h>
 #include <crypto/sha256.h>
@@ -12,7 +13,9 @@
 #include <libethereum/Executive.h>
 #include <libethcore/SealEngine.h>
 
-using OnOpFunc = std::function<void(uint64_t, uint64_t, dev::eth::Instruction, dev::bigint, dev::bigint, 
+class CChain;
+
+using OnOpFunc = std::function<void(uint64_t, uint64_t, dev::eth::Instruction, dev::bigint, dev::bigint,
     dev::bigint, dev::eth::VMFace const*, dev::eth::ExtVMFace const*)>;
 using plusAndMinus = std::pair<dev::u256, dev::u256>;
 using valtype = std::vector<unsigned char>;
@@ -32,13 +35,29 @@ struct Vin{
 
 class RunebaseTransactionReceipt: public dev::eth::TransactionReceipt {
 public:
-    RunebaseTransactionReceipt(dev::h256 const& state_root, dev::h256 const& utxo_root, dev::u256 const& gas_used, dev::eth::LogEntries const& log) : dev::eth::TransactionReceipt(state_root, gas_used, log), m_utxoRoot(utxo_root) {}
+    RunebaseTransactionReceipt(
+        dev::h256 const& state_root, dev::h256 const& utxo_root,
+        dev::u256 const& gas_used, dev::eth::LogEntries const& log,
+        std::vector<std::pair<dev::Address, dev::bytes>>&& createdContracts,
+        std::vector<dev::Address>&& destructedContracts) : dev::eth::TransactionReceipt(state_root, gas_used, log),
+                                                           m_utxoRoot(utxo_root),
+                                                           m_createdContracts(std::move(createdContracts)),
+                                                           m_destructedContracts(std::move(destructedContracts)) {}
 
     dev::h256 const& utxoRoot() const {
         return m_utxoRoot;
     }
+    std::vector<std::pair<dev::Address, dev::bytes>> const& createdContracts() const {
+        return m_createdContracts;
+    }
+    std::vector<dev::Address> const& destructedContracts() const {
+        return m_destructedContracts;
+    }
+
 private:
     dev::h256 m_utxoRoot;
+    std::vector<std::pair<dev::Address, dev::bytes>> m_createdContracts;
+    std::vector<dev::Address> m_destructedContracts;
 };
 
 struct ResultExecute{
@@ -69,14 +88,14 @@ namespace runebase{
 class CondensingTX;
 
 class RunebaseState : public dev::eth::State {
-    
+
 public:
 
     RunebaseState();
 
     RunebaseState(dev::u256 const& _accountStartNonce, dev::OverlayDB const& _db, const std::string& _path, dev::eth::BaseState _bs = dev::eth::BaseState::PreExisting);
 
-    ResultExecute execute(dev::eth::EnvInfo const& _envInfo, dev::eth::SealEngineFace const& _sealEngine, RunebaseTransaction const& _t, dev::eth::Permanence _p = dev::eth::Permanence::Committed, dev::eth::OnOpFunc const& _onOp = OnOpFunc());
+    ResultExecute execute(dev::eth::EnvInfo const& _envInfo, dev::eth::SealEngineFace const& _sealEngine, RunebaseTransaction const& _t, CChain& _chain, dev::eth::Permanence _p = dev::eth::Permanence::Committed, dev::eth::OnOpFunc const& _onOp = OnOpFunc());
 
     void setRootUTXO(dev::h256 const& _r) { cacheUTXO.clear(); stateUTXO.setRoot(_r); }
 
@@ -115,7 +134,7 @@ public:
 
 private:
 
-    void transferBalance(dev::Address const& _from, dev::Address const& _to, dev::u256 const& _value);
+    void transferBalance(dev::Address const& _from, dev::Address const& _to, dev::u256 const& _value) override;
 
     Vin const* vin(dev::Address const& _a) const;
 
@@ -123,9 +142,9 @@ private:
 
     // void commit(CommitBehaviour _commitBehaviour);
 
-    void kill(dev::Address _addr);
+    void kill(dev::Address _addr) override;
 
-    void addBalance(dev::Address const& _id, dev::u256 const& _amount);
+    void addBalance(dev::Address const& _id, dev::u256 const& _amount) override;
 
     void deleteAccounts(std::set<dev::Address>& addrs);
 
@@ -152,11 +171,11 @@ struct TemporaryState{
     dev::h256 oldHashStateRoot;
     dev::h256 oldHashUTXORoot;
 
-    TemporaryState(std::unique_ptr<RunebaseState>& _globalStateRef) : 
+    TemporaryState(std::unique_ptr<RunebaseState>& _globalStateRef) :
         globalStateRef(_globalStateRef),
-        oldHashStateRoot(globalStateRef->rootHash()), 
+        oldHashStateRoot(globalStateRef->rootHash()),
         oldHashUTXORoot(globalStateRef->rootHashUTXO()) {}
-                
+
     void SetRoot(dev::h256 newHashStateRoot, dev::h256 newHashUTXORoot)
     {
         globalStateRef->setRoot(newHashStateRoot);

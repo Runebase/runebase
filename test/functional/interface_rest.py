@@ -13,8 +13,6 @@ from struct import pack, unpack
 
 import http.client
 import urllib.parse
-from test_framework.runebaseconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
-from test_framework.runebase import convert_btc_address_to_runebase
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -23,8 +21,10 @@ from test_framework.util import (
     assert_greater_than_or_equal,
     hex_str_to_bytes,
 )
-
 from test_framework.messages import CBlockHeader
+
+from test_framework.runebaseconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD
+from test_framework.runebase import convert_btc_address_to_runebase, generatesynchronized
 
 BLOCK_HEADER_SIZE = len(CBlockHeader().serialize())
 
@@ -88,8 +88,7 @@ class RESTTest (BitcoinTestFramework):
 
         self.nodes[0].generate(1)
         self.sync_all()
-        for i in range(0, COINBASE_MATURITY, 100):
-            self.nodes[1].generatetoaddress(100, not_related_address)
+        self.nodes[1].generatetoaddress(COINBASE_MATURITY, not_related_address)
         self.sync_all()
 
         assert_equal(self.nodes[0].getbalance(), INITIAL_BLOCK_REWARD)
@@ -233,9 +232,9 @@ class RESTTest (BitcoinTestFramework):
 
         # Compare with block header
         response_header = self.test_rest_request("/headers/1/{}".format(bb_hash), req_type=ReqType.BIN, ret_type=RetType.OBJ)
-        assert_equal(int(response_header.getheader('content-length')), 181)
+        assert_equal(int(response_header.getheader('content-length')), BLOCK_HEADER_SIZE)
         response_header_bytes = response_header.read()
-        assert_equal(response_bytes[:181], response_header_bytes)
+        assert_equal(response_bytes[:BLOCK_HEADER_SIZE], response_header_bytes)
 
         # Check block hex format
         response_hex = self.test_rest_request("/block/{}".format(bb_hash), req_type=ReqType.HEX, ret_type=RetType.OBJ)
