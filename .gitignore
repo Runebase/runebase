@@ -169,3 +169,4 @@ src/test/test_runebase_fuzzy
 Debug
 src/secp256k1/gen_context
 src/secp256k1/src/ecmult_static_context.h
+src/minisketch/test
