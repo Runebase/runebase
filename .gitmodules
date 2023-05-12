@@ -1,3 +1,4 @@
 [submodule "src/evmone"]
 	path = src/evmone
 	url = https://github.com/runebase/runebase-evmone
+	branch = runebaseinfo
