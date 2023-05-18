@@ -37,7 +37,7 @@ the `src/qt/test/test_main.cpp` file.
 For example, to run just the `getarg_tests` suite of tests:
 
 ```bash
-test_bitcoin --log_level=all --run_test=getarg_tests
+test_runebase --log_level=all --run_test=getarg_tests
 ```
 
 `log_level` controls the verbosity of the test framework, which logs when a

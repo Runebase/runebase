@@ -286,13 +286,13 @@ public:
         // nodes with support for servicebits filtering should be at the top
         vSeeds.emplace_back("runebase4.dynu.net"); // Runebase testnet
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,11);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,106);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,229);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x37, 0x82, 0xbf};
-        base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x37, 0x84, 0xa4};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,120);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,110);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        bech32_hrp = "tr";
+        bech32_hrp = "tq";
 
         vFixedSeeds = std::vector<uint8_t>(std::begin(chainparams_seed_test), std::end(chainparams_seed_test));
 
@@ -455,7 +455,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        bech32_hrp = "tr";
+        bech32_hrp = "tq";
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
@@ -463,7 +463,7 @@ public:
         m_is_test_chain = true;
         m_is_mockable_chain = false;
 
-        consensus.nBlocktimeDownscaleFactor = 1;
+        consensus.nBlocktimeDownscaleFactor = 4;
         consensus.nCoinbaseMaturity = 500;
         consensus.nRBTCoinbaseMaturity = consensus.nBlocktimeDownscaleFactor*500;
         consensus.nSubsidyHalvingIntervalV2 = consensus.nBlocktimeDownscaleFactor*525960000; // runebase halving every 4 years (nSubsidyHalvingInterval * nBlocktimeDownscaleFactor)
@@ -494,7 +494,7 @@ public:
         strNetworkID =  CBaseChainParams::REGTEST;
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
-        consensus.nSubsidyHalvingInterval = 525960000;
+        consensus.nSubsidyHalvingInterval = 985500;
         consensus.BIP16Exception = uint256();
         consensus.BIP34Height = 1; // Always active unless overridden
         consensus.BIP34Hash = uint256();
@@ -568,7 +568,7 @@ public:
 
         checkpointData = {
             {
-                {0, uint256S("0x7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69")},
+                {0, uint256S("7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69")},
             }
         };
 
@@ -585,7 +585,7 @@ public:
         consensus.nBlocktimeDownscaleFactor = 1;
         consensus.nCoinbaseMaturity = 500;
         consensus.nRBTCoinbaseMaturity = consensus.nBlocktimeDownscaleFactor*500;
-        consensus.nSubsidyHalvingIntervalV2 = consensus.nBlocktimeDownscaleFactor*525960000; // runebase halving every 4 years (nSubsidyHalvingInterval * nBlocktimeDownscaleFactor)
+        consensus.nSubsidyHalvingIntervalV2 = consensus.nBlocktimeDownscaleFactor*985500; // runebase halving every 4 years (nSubsidyHalvingInterval * nBlocktimeDownscaleFactor)
 
         consensus.nLastPOWBlock = 0x7fffffff;
         consensus.nLastBigReward = 5000;
@@ -714,7 +714,7 @@ public:
         consensus.nRuleChangeActivationThreshold = consensus.nBlocktimeDownscaleFactor*558; // 75% for testchains
         consensus.nMinerConfirmationWindow = consensus.nBlocktimeDownscaleFactor*744; // Faster than normal for regtest (744 instead of 2016)
 
-        consensus.nBlocktimeDownscaleFactor = 1;
+        consensus.nBlocktimeDownscaleFactor = 4;
         consensus.nCoinbaseMaturity = 500;
         consensus.nRBTCoinbaseMaturity = consensus.nBlocktimeDownscaleFactor*500;
 
