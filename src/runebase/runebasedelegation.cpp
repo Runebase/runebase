@@ -386,6 +386,9 @@ bool RunebaseDelegation::BytecodeAdd(const std::string &hexStaker, const int &fe
             std::vector<std::string> value;
             value.push_back(HexStr(PoD));
             values.push_back(value);
+            // Here
+            LogPrintf("TEST ADD");
+            LogPrintf("\n%s", HexStr(PoD));
         }
         else
         {

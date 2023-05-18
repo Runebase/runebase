@@ -234,7 +234,7 @@ public:
         consensus.QIP7Height = 0;
         consensus.QIP9Height = 0;
         consensus.nOfflineStakeHeight = 8100;
-        consensus.nReduceBlocktimeHeight = 10001;
+        consensus.nReduceBlocktimeHeight = 11001;
         consensus.nMuirGlacierHeight = 11001;
         consensus.nLondonHeight = 11002;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -494,7 +494,7 @@ public:
         strNetworkID =  CBaseChainParams::REGTEST;
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
-        consensus.nSubsidyHalvingInterval = 985500;
+        consensus.nSubsidyHalvingInterval = 525960000;
         consensus.BIP16Exception = uint256();
         consensus.BIP34Height = 1; // Always active unless overridden
         consensus.BIP34Hash = uint256();
@@ -714,7 +714,7 @@ public:
         consensus.nRuleChangeActivationThreshold = consensus.nBlocktimeDownscaleFactor*558; // 75% for testchains
         consensus.nMinerConfirmationWindow = consensus.nBlocktimeDownscaleFactor*744; // Faster than normal for regtest (744 instead of 2016)
 
-        consensus.nBlocktimeDownscaleFactor = 4;
+        consensus.nBlocktimeDownscaleFactor = 1;
         consensus.nCoinbaseMaturity = 500;
         consensus.nRBTCoinbaseMaturity = consensus.nBlocktimeDownscaleFactor*500;
 

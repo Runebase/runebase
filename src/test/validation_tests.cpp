@@ -64,28 +64,10 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
         int nBlocktimeDownscaleFactor = consensusParams.BlocktimeDownscaleFactor(nHeight);
 
         if(nSubsidyHalvingWeight <= 0){
-            BOOST_CHECK_EQUAL(nSubsidy, (20000 * COIN));
+            BOOST_CHECK_EQUAL(nSubsidy, (39999900 * COIN));
         }
         else if(nSubsidyHalvingWeight <= nSubsidyHalvingInterval){
-            BOOST_CHECK_EQUAL(nSubsidy, 4 * COIN / nBlocktimeDownscaleFactor);
-        }
-        else if(nSubsidyHalvingWeight <= nSubsidyHalvingInterval*2){
-            BOOST_CHECK_EQUAL(nSubsidy, 2 * COIN / nBlocktimeDownscaleFactor);
-        }
-        else if(nSubsidyHalvingWeight <= nSubsidyHalvingInterval*3){
-            BOOST_CHECK_EQUAL(nSubsidy, 1 * COIN / nBlocktimeDownscaleFactor);
-        }
-        else if(nSubsidyHalvingWeight <= nSubsidyHalvingInterval*4){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.5 * COIN / nBlocktimeDownscaleFactor);
-        }
-        else if(nSubsidyHalvingWeight <= nSubsidyHalvingInterval*5){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.25 * COIN / nBlocktimeDownscaleFactor);
-        }
-        else if(nSubsidyHalvingWeight <= nSubsidyHalvingInterval*6){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.125 * COIN / nBlocktimeDownscaleFactor);
-        }
-        else if(nSubsidyHalvingWeight <= nSubsidyHalvingInterval*7){
-            BOOST_CHECK_EQUAL(nSubsidy, 0.0625 * COIN / nBlocktimeDownscaleFactor);
+            BOOST_CHECK_EQUAL(nSubsidy, 100 * COIN / nBlocktimeDownscaleFactor);
         }
         else{
             BOOST_CHECK_EQUAL(nSubsidy, 0);
@@ -93,7 +75,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
         nSum += nSubsidy;
         BOOST_CHECK(MoneyRange(nSum));
     }
-    BOOST_CHECK_EQUAL(nSum, CAmount{10782240625000000});
+    BOOST_CHECK_EQUAL(nSum, CAmount{143999980000000000});
 }
 
 BOOST_AUTO_TEST_CASE(signet_parse_tests)

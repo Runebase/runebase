@@ -279,12 +279,12 @@ TestChain100Setup::TestChain100Setup(const std::vector<const char*>& extra_args)
 
     // Generate a 100-block chain:
     int coinbaseMaturity = Params().GetConsensus().CoinbaseMaturity(0);
-    this->mineBlocks(coinbaseMaturity);
+    this->mineBlocks(coinbaseMaturity);    
     {
         LOCK(::cs_main);
         assert(
             m_node.chainman->ActiveChain().Tip()->GetBlockHash().ToString() ==
-            "45a945fe6cba854f6a1d5318e33807037a1cb4d8e1258a1f09c84edf1391c388");
+            "004c1701ce1c836195628a3344a12c42ff7d0aaf90dc81fb6c60bd88c033dce4");
     }
 }
 
