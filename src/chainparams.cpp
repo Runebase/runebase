@@ -234,9 +234,9 @@ public:
         consensus.QIP7Height = 0;
         consensus.QIP9Height = 0;
         consensus.nOfflineStakeHeight = 8100;
-        consensus.nReduceBlocktimeHeight = 11000;
-        consensus.nMuirGlacierHeight = 11000;
-        consensus.nLondonHeight = 11001;
+        consensus.nReduceBlocktimeHeight = 10001;
+        consensus.nMuirGlacierHeight = 11001;
+        consensus.nLondonHeight = 11002;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -245,7 +245,7 @@ public:
         consensus.nPowTargetTimespanV2 = 4000;
         consensus.nRBTPowTargetTimespan = 1000;
         consensus.nPowTargetSpacing = 1 * 8;
-        consensus.nRBTPowTargetSpacing = 32;
+        consensus.nRBTPowTargetSpacing = 1 * 8;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = true;
         consensus.fPoSNoRetargeting = false;
