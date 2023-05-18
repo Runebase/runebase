@@ -264,8 +264,8 @@ public:
         // Replace 0xffffc0 with the activation block number
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 13002;
 
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000000020d020d"); // runebase
-        consensus.defaultAssumeValid = uint256S("0x0000ce545e69ea0823c2794bed0fccb3ee48bab8768cba1ec08d1f3b9f5041d8"); // 50
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000020002"); // runebase
+        consensus.defaultAssumeValid = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46"); // 50
 
         pchMessageStart[0] = 0xac;
         pchMessageStart[1] = 0xb2;
