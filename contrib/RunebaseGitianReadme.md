@@ -3,7 +3,7 @@
 ```
 
 export SIGNER=Bago213
-export VERSION=0.18.2
+export VERSION=0.20.2
 
 ```
 
@@ -11,7 +11,7 @@ export VERSION=0.18.2
 
 ```
 
-sudo runebase/contrib/gitian-build-linux.py ${SIGNER} ${VERSION} --build --docker -j3
+sudo runebase/contrib/gitian-build-linux.py ${SIGNER} ${VERSION} --build --docker -j12
 
 sudo ./bin/gsign --signer ${SIGNER} --release ${VERSION}-linux-unsigned --destination ../gitian.sigs/ ../runebase/contrib/gitian-descriptors/gitian-linux.yml
 
@@ -24,7 +24,7 @@ sudo ./bin/gsign --signer ${SIGNER} --release ${VERSION}-linux-unsigned --destin
 
 ```
 
-sudo runebase/contrib/gitian-build-windows.py ${SIGNER} ${VERSION} --build --docker -j3
+sudo runebase/contrib/gitian-build-windows.py ${SIGNER} ${VERSION} --build --docker -j12
 
 sudo ./bin/gsign --signer ${SIGNER} --release ${VERSION}-windows-unsigned --destination ../gitian.sigs/ ../runebase/contrib/gitian-descriptors/gitian-windows.yml
 
@@ -36,7 +36,7 @@ sudo ./bin/gsign --signer ${SIGNER} --release ${VERSION}-windows-unsigned --dest
 
 ```
 
-sudo runebase/contrib/gitian-build-osx.py ${SIGNER} ${VERSION} --build --docker -j3
+sudo runebase/contrib/gitian-build-osx.py ${SIGNER} ${VERSION} --build --docker -j12
 
 sudo ./bin/gsign --signer ${SIGNER} --release ${VERSION}-osx-unsigned --destination ../gitian.sigs/ ../runebase/contrib/gitian-descriptors/gitian-osx.yml
 
