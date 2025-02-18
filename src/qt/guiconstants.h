@@ -56,9 +56,9 @@ static constexpr uint64_t GB_BYTES{1000000000};
 static constexpr int DEFAULT_PRUNE_TARGET_GB{2};
 
 /* Mainnet runebase explorer uri */
-#define RUNEBASE_INFO_MAINNET "<a href='https://runebase.info/%1/%2'>%2</a>"
+#define RUNEBASE_INFO_MAINNET "<a href='https://explorer.runebase.io/%1/%2'>%2</a>"
 
 /* Testnet runebase explorer uri */
-#define RUNEBASE_INFO_TESTNET "<a href='https://testnet.runebase.info/%1/%2'>%2</a>"
+#define RUNEBASE_INFO_TESTNET "<a href='https://testnet-explorer.runebase.io/%1/%2'>%2</a>"
 
 #endif // BITCOIN_QT_GUICONSTANTS_H

@@ -122,9 +122,11 @@ double GetPoSKernelPS()
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
     bool dynamicStakeSpacing = true;
+    uint32_t stakeTimestampMask=consensusParams.StakeTimestampMask(0);
     if(pindex)
     {
         dynamicStakeSpacing = pindex->nHeight < consensusParams.QIP9Height;
+        stakeTimestampMask=consensusParams.StakeTimestampMask(pindex->nHeight);
     }
 
     while (pindex && nStakesHandled < nPoSInterval)
@@ -147,7 +149,7 @@ double GetPoSKernelPS()
     if(!dynamicStakeSpacing)
     {
         // Using a fixed denominator reduces the variation spikes
-        nStakesTime = consensusParams.nPowTargetSpacing * nStakesHandled;
+        nStakesTime = consensusParams.TargetSpacing(pindexBestHeader->nHeight) * nStakesHandled;
     }
 
     double result = 0;
@@ -155,7 +157,7 @@ double GetPoSKernelPS()
     if (nStakesTime)
         result = dStakeKernelsTriedAvg / nStakesTime;
     
-    result *= STAKE_TIMESTAMP_MASK + 1;
+    result *= stakeTimestampMask + 1;
 
     return result;
 }
@@ -1347,6 +1349,9 @@ void assignJSON(UniValue& entry, const TransactionReceiptInfo& resExec) {
     ss << resExec.excepted;
     entry.pushKV("excepted",ss.str());
     entry.pushKV("exceptedMessage", resExec.exceptedMessage);
+    entry.pushKV("bloom", resExec.bloom.hex());
+    entry.pushKV("stateRoot", resExec.stateRoot.hex());
+    entry.pushKV("utxoRoot", resExec.utxoRoot.hex());
 }
 
 void assignJSON(UniValue& logEntry, const dev::eth::LogEntry& log,
@@ -1871,6 +1876,7 @@ UniValue gettransactionreceipt(const JSONRPCRequest& request)
                             {RPCResult::Type::NUM, "gasUsed", "The gas used"},
                             {RPCResult::Type::STR_HEX, "contractAddress", "The contract address"},
                             {RPCResult::Type::STR, "excepted", "The thrown exception"},
+                            {RPCResult::Type::STR_HEX, "bloom", "Bloom filter for light clients to quickly retrieve related logs"},
                             {RPCResult::Type::ARR, "log", "The logs from the receipt",
                                 {
                                     {RPCResult::Type::STR, "address", "The contract address"},
@@ -2800,7 +2806,6 @@ static UniValue getchaintxstats(const JSONRPCRequest& request)
             }.Check(request);
 
     const CBlockIndex* pindex;
-    int blockcount = 30 * 24 * 60 * 60 / Params().GetConsensus().nPowTargetSpacing; // By default: 1 month
 
     if (request.params[1].isNull()) {
         LOCK(cs_main);
@@ -2816,6 +2821,7 @@ static UniValue getchaintxstats(const JSONRPCRequest& request)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Block is not in main chain");
         }
     }
+    int blockcount = 30 * 24 * 60 * 60 / Params().GetConsensus().TargetSpacing(pindex->nHeight); // By default: 1 month
 
     CHECK_NONFATAL(pindex != nullptr);
 

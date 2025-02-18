@@ -5,7 +5,7 @@ Setup
 ---------------------
 Runebase Core is the original Runebase client and it builds the backbone of the network. It downloads and, by default, stores the entire history of Runebase transactions (which is currently several GBs); depending on the speed of your computer and network connection, the synchronization process can take anywhere from a few hours to a day or more.
 
-To download Runebase Core, visit [runebasecore.org](https://www.runebasecore.org/).
+To download Runebase Core, visit [runebase.io](https://www.runebase.io/).
 
 Running
 ---------------------

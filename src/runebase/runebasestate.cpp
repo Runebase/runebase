@@ -4,6 +4,7 @@
 #include <chainparams.h>
 #include <script/script.h>
 #include <runebase/runebasestate.h>
+#include <libevm/VMFace.h>
 
 using namespace std;
 using namespace dev;
@@ -291,7 +292,7 @@ void RunebaseState::deployDelegationsContract(){
     dev::Address delegationsAddress = uintToh160(Params().GetConsensus().delegationsAddress);
     if(!RunebaseState::addressInUse(delegationsAddress)){
         RunebaseState::createContract(delegationsAddress);
-        RunebaseState::setCode(delegationsAddress, bytes{fromHex(DELEGATIONS_CONTRACT_CODE)});
+        RunebaseState::setCode(delegationsAddress, bytes{fromHex(DELEGATIONS_CONTRACT_CODE)}, RunebaseState::version(delegationsAddress));
         commit(CommitBehaviour::RemoveEmptyAccounts);
         db().commit();
     }

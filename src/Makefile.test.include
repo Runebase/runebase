@@ -253,7 +253,8 @@ BITCOIN_TESTS =\
   test/runebasetests/dgp_tests.cpp \
   test/runebasetests/constantinoplefork_tests.cpp \
   test/runebasetests/btcecrecoverfork_tests.cpp \
-  test/runebasetests/delegations_tests.cpp
+  test/runebasetests/delegations_tests.cpp \
+  test/runebasetests/istanbulfork_tests.cpp
 
 
 if ENABLE_WALLET
