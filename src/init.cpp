@@ -633,7 +633,7 @@ void SetupServerArgs()
 
 std::string LicenseInfo()
 {
-    const std::string URL_SOURCE_CODE = "<https://github.com/runebaseproject/runebase>";
+    const std::string URL_SOURCE_CODE = "<https://github.com/runebase/runebase>";
 
     return CopyrightHolders(strprintf(_("Copyright (C) %i").translated, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +
