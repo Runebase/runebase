@@ -309,7 +309,7 @@ public:
         consensus.nLastMPoSBlock = 5050;
 
         consensus.nFixUTXOCacheHFHeight = 0;
-        consensus.nEnableHeaderSignatureHeight = 6000;
+        consensus.nEnableHeaderSignatureHeight = 5099;
         consensus.nCheckpointSpan = consensus.nCoinbaseMaturity;
         consensus.nRBTCheckpointSpan = consensus.nRBTCoinbaseMaturity;
         consensus.delegationsAddress = uint160(ParseHex("0000000000000000000000000000000000000086")); // Delegations contract for offline staking
