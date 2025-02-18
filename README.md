@@ -28,7 +28,7 @@ Basic usage resources:
 * [Running Runebase on Amazon AWS using Runebase AMI](https://github.com/runebase/documents/tree/master/en/Runebase-AWS)
 * [Encrypting and unlocking wallet](https://github.com/runebase/documents/tree/master/en/Encrypt-and-Unlock-Runebase-Wallet)
 * [Testnet guide](https://github.com/runebase/documents/blob/master/en/Testnet-User-Guide.md)
-* [Block explorer](https://runebase.info), [Older explorer](https://explorer.runebase.io)
+* [Block explorer](https://explorer.runebase.io), [Older explorer](https://explorer.runebase.org)
 
 
 Development resources:
@@ -72,7 +72,7 @@ Runebase Core is our primary mainnet wallet. It implements a full node and is ca
 Runebase Core currently implements the following:
 
 * Sending/Receiving RUNEBASE coins
-* Sending/Receiving QRC20 tokens on the Runebase network
+* Sending/Receiving RRC20 tokens on the Runebase network
 * Staking and creating blocks for the Runebase network
 * Creating and interacting with smart contracts
 * Running a full node for distributing the blockchain to other users

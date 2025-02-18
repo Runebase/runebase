@@ -60,9 +60,9 @@
      <layout class="QHBoxLayout" name="horizontalLayoutAmount" stretch="0,0,1,0">
       <item>
        <widget class="BitcoinAmountField" name="payAmount">
-         <property name="toolTip">
-          <string>The amount to send in the selected unit</string>
-         </property>
+        <property name="toolTip">
+         <string>The amount to send in the selected unit</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -84,7 +84,7 @@
       <item>
        <widget class="QCheckBox" name="checkboxSubtractFeeFromAmount">
         <property name="toolTip">
-         <string>The fee will be deducted from the amount being sent. The recipient will receive less runebases than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</string>
+         <string>The fee will be deducted from the amount being sent. The recipient will receive less RUNES than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</string>
         </property>
         <property name="text">
          <string>S&amp;ubtract fee from amount</string>
@@ -93,6 +93,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="useAvailableBalanceButton">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
         <property name="text">
          <string>Use available balance</string>
         </property>

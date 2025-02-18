@@ -156,7 +156,7 @@ static UniValue generatetodescriptor(const JSONRPCRequest& request)
         "\nMine blocks immediately to a specified descriptor (before the RPC call returns)\n",
         {
             {"num_blocks", RPCArg::Type::NUM, RPCArg::Optional::NO, "How many blocks are generated immediately."},
-            {"descriptor", RPCArg::Type::STR, RPCArg::Optional::NO, "The descriptor to send the newly generated runebase to."},
+            {"descriptor", RPCArg::Type::STR, RPCArg::Optional::NO, "The descriptor to send the newly generated runes to."},
             {"maxtries", RPCArg::Type::NUM, /* default */ "1000000", "How many iterations to try."},
         },
         RPCResult{
@@ -202,7 +202,7 @@ static UniValue generatetoaddress(const JSONRPCRequest& request)
                 "\nMine blocks immediately to a specified address (before the RPC call returns)\n",
                 {
                     {"nblocks", RPCArg::Type::NUM, RPCArg::Optional::NO, "How many blocks are generated immediately."},
-                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The address to send the newly generated runebase to."},
+                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The address to send the newly generated runes to."},
                     {"maxtries", RPCArg::Type::NUM, /* default */ "1000000", "How many iterations to try."},
                 },
                 RPCResult{
@@ -213,7 +213,7 @@ static UniValue generatetoaddress(const JSONRPCRequest& request)
                 RPCExamples{
             "\nGenerate 11 blocks to myaddress\n"
             + HelpExampleCli("generatetoaddress", "11 \"myaddress\"")
-            + "If you are running the runebase core wallet, you can get a new address to send the newly generated runebase to with:\n"
+            + "If you are running the runebase core wallet, you can get a new address to send the newly generated runes to with:\n"
             + HelpExampleCli("getnewaddress", "")
                 },
             }.Check(request);
@@ -377,7 +377,7 @@ static UniValue getstakinginfo(const JSONRPCRequest& request)
     uint64_t nNetworkWeight = GetPoSKernelPS();
     bool staking = lastCoinStakeSearchInterval && nWeight;
     const Consensus::Params& consensusParams = Params().GetConsensus();
-    int64_t nTargetSpacing = consensusParams.nPowTargetSpacing;
+    int64_t nTargetSpacing = consensusParams.TargetSpacing(pindexBestHeader->nHeight);
     uint64_t nExpectedTime = staking ? (nTargetSpacing * nNetworkWeight / nWeight) : 0;
 
     UniValue obj(UniValue::VOBJ);

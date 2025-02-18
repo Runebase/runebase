@@ -491,4 +491,4 @@ Uploading signatures
 
 After building and signing you can push your signatures (both the `.assert` and `.assert.sig` files) to the
 [runebase/gitian.sigs](https://github.com/runebase/gitian.sigs/) repository, or if that's not possible create a pull
-request. You can also mail the files to Jordan Earls (earlz@runebase.io) and he will commit them.
+request. You can also mail the files to Jordan Earls (earlz@qtum.org) and he will commit them.

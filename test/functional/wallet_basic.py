@@ -17,7 +17,7 @@ from test_framework.util import (
 )
 from test_framework.wallet_util import test_address
 from test_framework.runebaseconfig import *
-from test_framework.runebase import convert_btc_address_to_runebase
+from test_framework.runebase import convert_btc_address_to_runebase, generatesynchronized
 
 
 class WalletTest(BitcoinTestFramework):
@@ -65,7 +65,7 @@ class WalletTest(BitcoinTestFramework):
         assert_equal(walletinfo['balance'], 0)
 
         self.sync_all(self.nodes[0:3])
-        self.nodes[1].generate(COINBASE_MATURITY+1)
+        generatesynchronized(self.nodes[1], COINBASE_MATURITY+1, None, self.nodes[0:3])
         self.sync_all(self.nodes[0:3])
 
         assert_equal(self.nodes[0].getbalance(), INITIAL_BLOCK_REWARD)
@@ -148,7 +148,7 @@ class WalletTest(BitcoinTestFramework):
         assert_equal(len(self.nodes[1].listlockunspent()), 0)
 
         # Have node1 generate 100 blocks (so node0 can recover the fee)
-        self.nodes[1].generate(COINBASE_MATURITY)
+        generatesynchronized(self.nodes[1], COINBASE_MATURITY, None, self.nodes[0:3])
         self.sync_all(self.nodes[0:3])
 
         # node0 should end up with 100 btc in block rewards plus fees, but
