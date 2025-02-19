@@ -1,4 +1,4 @@
 [submodule "src/cpp-ethereum"]
 	path = src/cpp-ethereum
 	url = https://github.com/runebase/cpp-eth-runebase.git
-	branch = develop
+	branch = 0.20.2
