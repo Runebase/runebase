@@ -20,10 +20,8 @@ from .messages import (
     CTxOut,
     FromHex,
     ToHex,
-    bytes_to_hex_str,
     hash256,
     hex_str_to_bytes,
-    ser_string,
     ser_uint256,
     sha256,
     uint256_from_str,
@@ -41,7 +39,7 @@ from .script import (
     hash160,
 )
 from .util import assert_equal
-from .runebaseconfig import INITIAL_BLOCK_REWARD
+from .runebaseconfig import INITIAL_BLOCK_REWARD, INITIAL_BLOCK_REWARD_POS
 from io import BytesIO
 
 MAX_BLOCK_SIGOPS = 20000
@@ -92,20 +90,13 @@ def add_witness_commitment(block, nonce=0, is_pos=False):
     block.hashMerkleRoot = block.calc_merkle_root()
     block.rehash()
 
-def serialize_script_num(value):
-    r = bytearray(0)
-    if value == 0:
-        return r
-    neg = value < 0
-    absvalue = -value if neg else value
-    while (absvalue):
-        r.append(int(absvalue & 0xff))
-        absvalue >>= 8
-    if r[-1] & 0x80:
-        r.append(0x80 if neg else 0)
-    elif neg:
-        r[-1] |= 0x80
-    return r
+
+def script_BIP34_coinbase_height(height):
+    if height <= 16:
+        res = CScriptOp.encode_op_n(height)
+        # Append dummy to increase scriptSig size above 2 (see bad-cb-length consensus rule)
+        return CScript([res, OP_1])
+    return CScript([CScriptNum(height)])
 
 
 def script_BIP34_coinbase_height(height):
@@ -115,15 +106,22 @@ def script_BIP34_coinbase_height(height):
         return CScript([res, OP_1])
     return CScript([CScriptNum(height)])
 
-def create_coinbase(height, pubkey=None):
+def create_coinbase(height, pubkey=None, value=None):
     """Create a coinbase transaction, assuming no miner fees.
 
     If pubkey is passed in, the coinbase output will be a P2PK output;
     otherwise an anyone-can-spend output."""
     coinbase = CTransaction()
-    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), script_BIP34_coinbase_height(height), 0xffffffff)) #Fix for BIP34
+    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), script_BIP34_coinbase_height(height), 0xffffffff))
     coinbaseoutput = CTxOut()
-    coinbaseoutput.nValue = INITIAL_BLOCK_REWARD * COIN
+
+    if value:
+        coinbaseoutput.nValue = value
+    elif height > 5000:
+        coinbaseoutput.nValue = int(INITIAL_BLOCK_REWARD_POS*COIN)
+    else:
+        coinbaseoutput.nValue = INITIAL_BLOCK_REWARD * COIN
+
     #halvings = int(height / 150)  # regtest
     #coinbaseoutput.nValue >>= halvings
     if (pubkey is not None):
@@ -141,7 +139,7 @@ def create_tx_with_script(prevtx, n, script_sig=b"", *, amount, script_pub_key=C
        Can optionally pass scriptPubKey and scriptSig, default is anyone-can-spend output.
     """
     tx = CTransaction()
-    assert(n < len(prevtx.vout))
+    assert n < len(prevtx.vout)
     tx.vin.append(CTxIn(COutPoint(prevtx.sha256, n), script_sig, 0xffffffff))
     tx.vout.append(CTxOut(amount, script_pub_key))
     tx.calc_sha256()
@@ -199,7 +197,7 @@ def witness_script(use_p2wsh, pubkey):
         witness_program = CScript([OP_1, hex_str_to_bytes(pubkey), OP_1, OP_CHECKMULTISIG])
         scripthash = sha256(witness_program)
         pkscript = CScript([OP_0, scripthash])
-    return bytes_to_hex_str(pkscript)
+    return pkscript.hex()
 
 def create_witness_tx(node, use_p2wsh, utxo, pubkey, encode_p2sh, amount):
     """Return a transaction (in hex) that spends the given utxo to a segwit output.
@@ -224,7 +222,7 @@ def send_to_witness(use_p2wsh, node, utxo, pubkey, encode_p2sh, amount, sign=Tru
     tx_to_witness = create_witness_tx(node, use_p2wsh, utxo, pubkey, encode_p2sh, amount)
     if (sign):
         signed = node.signrawtransactionwithwallet(tx_to_witness)
-        assert("errors" not in signed or len(["errors"]) == 0)
+        assert "errors" not in signed or len(["errors"]) == 0
         return node.sendrawtransaction(signed["hex"])
     else:
         if (insert_redeem_script):

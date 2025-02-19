@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 The Bitcoin Core developers
+// Copyright (c) 2016-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,13 +7,14 @@
 
 #include <qt/guiutil.h>
 #include <qt/styleSheet.h>
+#include <qt/platformstyle.h>
 
 #include <chainparams.h>
 
 #include <QResizeEvent>
 #include <QPropertyAnimation>
 
-ModalOverlay::ModalOverlay(QWidget *parent, OverlayType _type) :
+ModalOverlay::ModalOverlay(bool enable_wallet, QWidget *parent, OverlayType _type) :
 QWidget(parent),
 ui(new Ui::ModalOverlay),
 bestHeaderHeight(0),
@@ -27,6 +28,9 @@ type(_type)
     // Set stylesheet
     SetObjectStyleSheet(ui->warningIcon, StyleSheetNames::ButtonTransparent);
     SetObjectStyleSheet(ui->warningIconBackup, StyleSheetNames::ButtonTransparent);
+    QColor warningIconColor = GetStringStyleValue("modaloverlay/warning-icon-color", "#000000");
+    ui->warningIcon->setIcon(PlatformStyle::SingleColorIcon(":/icons/warning", warningIconColor));
+    ui->warningIconBackup->setIcon(PlatformStyle::SingleColorIcon(":/icons/backup_wallet", warningIconColor));
 
     connect(ui->closeButton, &QPushButton::clicked, this, &ModalOverlay::closeClicked);
     connect(ui->walletBackupButton, &QPushButton::clicked, this, &ModalOverlay::backupWalletClicked);
@@ -37,8 +41,14 @@ type(_type)
 
     blockProcessTime.clear();
     setVisible(false);
+    if (!enable_wallet) {
+        ui->infoText->setVisible(false);
+        ui->infoTextStrong->setText(tr("%1 is currently syncing.  It will download headers and blocks from peers and validate them until reaching the tip of the block chain.").arg(PACKAGE_NAME));
+    }
 
     ui->stackedWidget->setCurrentIndex(type);
+    ui->walletBackupButton->setVisible(type == OverlayType::Backup);
+    ui->closeButton->setText(type == OverlayType::Backup ? tr("Maybe later") : tr("Hide"));
 }
 
 ModalOverlay::~ModalOverlay()
@@ -138,9 +148,9 @@ void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVeri
         // not syncing
         return;
 
-    // estimate the number of headers left based on nPowTargetSpacing
+    // estimate the number of headers left based on TargetSpacing
     // and check if the gui is not aware of the best header (happens rarely)
-    int estimateNumHeadersLeft = bestHeaderDate.secsTo(currentDate) / Params().GetConsensus().nPowTargetSpacing;
+    int estimateNumHeadersLeft = bestHeaderDate.secsTo(currentDate) / Params().GetConsensus().TargetSpacing(bestHeaderHeight);
     bool hasBestHeader = bestHeaderHeight >= count;
 
     // show remaining number of blocks
@@ -153,7 +163,7 @@ void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVeri
 }
 
 void ModalOverlay::UpdateHeaderSyncLabel() {
-    int est_headers_left = bestHeaderDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().nPowTargetSpacing;
+    int est_headers_left = bestHeaderDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().TargetSpacing(bestHeaderHeight);
     ui->numberOfBlocksLeft->setText(tr("Unknown. Syncing Headers (%1, %2%)...").arg(bestHeaderHeight).arg(QString::number(100.0 / (bestHeaderHeight + est_headers_left) * bestHeaderHeight, 'f', 1)));
 }
 

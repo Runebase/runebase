@@ -1,7 +1,7 @@
 What is Runebase?
 -------------
 
-Runebase is a decentralized blockchain project built on Bitcoin's UTXO model, with support for Ethereum Virtual Machine based smart contracts, and secured by a proof of stake consensus model. It achieves this through the revolutionary Account Abstraction Layer which allows the EVM to communicate with Runebase's Bitcoin-like UTXO blockchain. For more general information about Runebase as well as links to join our community, go to https://runebase.org
+Runebase is a decentralized blockchain project built on Bitcoin's UTXO model, with support for Ethereum Virtual Machine based smart contracts, and secured by a proof of stake consensus model. It achieves this through the revolutionary Account Abstraction Layer which allows the EVM to communicate with Runebase's Bitcoin-like UTXO blockchain. For more general information about Runebase as well as links to join our community, go to https://runebase.io
 
 Welcome to the Runebase Ignition Main Network. This is the main network where the tokens hold value and should be guarded very carefully. If you are testing the network, or developing unstable software on Runebase, we highly recommend using either testnet or regtest mode. 
 
@@ -28,14 +28,14 @@ Basic usage resources:
 * [Running Runebase on Amazon AWS using Runebase AMI](https://github.com/runebase/documents/tree/master/en/Runebase-AWS)
 * [Encrypting and unlocking wallet](https://github.com/runebase/documents/tree/master/en/Encrypt-and-Unlock-Runebase-Wallet)
 * [Testnet guide](https://github.com/runebase/documents/blob/master/en/Testnet-User-Guide.md)
-* [Block explorer](https://runebase.info), [Older explorer](https://explorer.runebase.org)
+* [Block explorer](https://runebase.info), [Older explorer](https://explorer.runebase.io)
 
 
 Development resources:
 
 * [Runebase Book - A Developer's Guide To RUNEBASE](http://book.runebase.site/en/)
 * [Runebase contract usage](https://docs.runebase.site/en/QRC20-Token-Introduce.html)
-* [Deploying a custom token to Runebase](https://blog.runebase.org/runebase-custom-token-walkthrough-467d725fa27d)
+* [Deploying a custom token to Runebase](https://blog.runebase.io/runebase-custom-token-walkthrough-467d725fa27d)
 * [RunebaseJS document](https://runebase.github.io/runebasejs-doc/)
 * [Smart contract ICO example](http://book.runebase.site/en/part3/ico.htm)
 * [Early example faucet contract](http://earlz.net/view/2017/06/30/2144/the-runebase-sparknet-faucet)
@@ -105,9 +105,9 @@ Download: https://github.com/runebase/runebase-electrum/releases
 
 These wallets run on mobile devices and synchronize quickly. 
 
-Android Download: https://play.google.com/store/apps/details?id=org.runebase.wallet
+Android Download: https://play.google.com/store/apps/details?id=org.runebase.newwallet
 
-iOS Download: https://github.com/runebase/runebase-ios (open source, we are still working with Apple to get approval for their app store)
+iOS Download: https://github.com/runebase/runebase-ios (open source, deprecated)
 
 ### Ledger Chrome Wallet
 
@@ -120,14 +120,14 @@ How to install: https://ledger.zendesk.com/hc/en-us/articles/115003776913-How-to
 
 Make sure to check out these resources as well for more information and to keep up to date with all the latest news about Runebase. At least 1 developer is always around, so if you're developing on Runebase and need help, we'd love to welcome you to our community.
 
-*	@RunebaseOfficial on Twitter https://twitter.com/runebaseofficial
-* Runebase blog https://blog.runebase.org/
+*	@Runebase on Twitter https://twitter.com/runebase
+* Runebase blog https://blog.runebase.io/
 *	Runebase Telegram Group https://t.me/runebaseofficial, other languages available
 * Runebase Discord https://discordapp.com/invite/wRfmkQ9
 *	/r/Runebase on Reddit https://www.reddit.com/r/Runebase/
-*	Runebase.org https://runebase.org
+*	Runebase.org https://runebase.io
 *	Runebase on Facebook https://www.facebook.com/RunebaseOfficial/
-*	Runebase Forum https://forum.runebase.org
+*	Runebase Forum https://forum.runebase.io
 
 ### Runebase Smart Contract Limitations
 
@@ -195,14 +195,14 @@ Here is a brief description for compiling Runebase on CentOS, for more details p
     ./configure
     make -j4
 
-### Build on OSX
+### Build on Mac OS
 
 The commands in this guide should be executed in a Terminal application.
 The built-in one is located in `/Applications/Utilities/Terminal.app`.
 
 #### Preparation
 
-Install the OS X command line tools:
+Install the Mac OS command line tools:
 
 `xcode-select --install`
 
@@ -212,7 +212,7 @@ Then install [Homebrew](https://brew.sh).
 
 #### Dependencies
 
-    brew install cmake automake berkeley-db4 libtool boost --c++11 --without-single --without-static miniupnpc openssl pkg-config protobuf qt5 libevent imagemagick --with-librsvg qrencode gmp
+    brew install cmake automake berkeley-db4 libtool boost miniupnpc openssl pkg-config protobuf qt5 libevent imagemagick librsvg qrencode gmp
 
 NOTE: Building with Qt4 is still supported, however, could result in a broken UI. Building with Qt5 is recommended.
 
@@ -246,7 +246,6 @@ License
 
 Runebase is GPLv3 licensed.
 
-
 Development Process
 -------------------
 
@@ -254,8 +253,8 @@ The `master` branch is regularly built and tested, but is not guaranteed to be
 completely stable. [Tags](https://github.com/runebase/runebase/tags) are created
 regularly to indicate new official, stable release versions of Runebase.
 
-The contribution workflow is described in [CONTRIBUTING.md](https://github.com/runebase/runebase/blob/master/CONTRIBUTING.md).
-
+The contribution workflow is described in [CONTRIBUTING.md](https://github.com/runebase/runebase/blob/master/CONTRIBUTING.md)
+and useful hints for developers can be found in [doc/developer-notes.md](doc/developer-notes.md).
 
 Testing
 -------
@@ -276,9 +275,12 @@ There are also [regression and integration tests](/test), written
 in Python, that are run automatically on the build server.
 These tests can be run (if the [test dependencies](/test) are installed) with: `test/functional/test_runner.py`
 
+The Travis CI system makes sure that every pull request is built for Windows, Linux, and macOS, and that unit/sanity tests are run automatically.
+
 ### Manual Quality Assurance (QA) Testing
 
 Changes should be tested by somebody other than the developer who wrote the
 code. This is especially important for large or high-risk changes. It is useful
 to add a test plan to the pull request description if testing the changes is
 not straightforward.
+

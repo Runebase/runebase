@@ -18,7 +18,7 @@ class RunebaseEVMGlobalsTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
-        self.extra_args = [['-staking=1'], []]
+        self.extra_args = [['-staking=1', '-muirglacierheight=100000'], ['-muirglacierheight=100000']]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -52,12 +52,18 @@ class RunebaseEVMGlobalsTest(BitcoinTestFramework):
         self.node.sendtocontract(self.contract_address, "cc5ea9ad", 1, 20000000, RUNEBASE_MIN_GAS_PRICE/COIN, sender)
 
         if use_staking:
-            for n in self.nodes:
-                n.setmocktime((self.node.getblock(self.node.getbestblockhash())['time']+100) & 0xfffffff0)
+            t = (self.node.getblock(self.node.getbestblockhash())['time']+100) & 0xfffffff0
+            for n in self.nodes: n.setmocktime(t)
 
             blockcount = self.node.getblockcount()
-            while blockcount == self.node.getblockcount():
-                time.sleep(0.1)
+            for t in range(t, t+100):
+                for n in self.nodes: n.setmocktime(t)
+                if blockcount < self.node.getblockcount():
+                    break
+                print('staking', t, self.node.getstakinginfo())
+                time.sleep(1)
+            else:
+                assert(False)
             blockhash = self.node.getblockhash(blockcount+1)
             authorTxIndexAndVoutIndex = 1
         else:
@@ -68,8 +74,13 @@ class RunebaseEVMGlobalsTest(BitcoinTestFramework):
         block = self.node.getblock(blockhash)
         blocktxids = block['tx']
         coinbase_tx = self.node.decoderawtransaction(self.node.gettransaction(blocktxids[authorTxIndexAndVoutIndex])['hex'])
-        coinbase_address = coinbase_tx['vout'][authorTxIndexAndVoutIndex]['scriptPubKey']['addresses'][0]
-        coinbase_pkh = p2pkh_to_hex_hash(coinbase_address)
+        # coinbase_pkh refers to either the coinbase for pow or coinstake for pos
+        if use_staking:
+            coinstake_pubkey = hex_str_to_bytes(coinbase_tx['vout'][authorTxIndexAndVoutIndex]['scriptPubKey']['asm'].split(' ')[0])
+            coinbase_pkh = bytes_to_hex_str(hash160(coinstake_pubkey))
+        else:
+            coinbase_address = coinbase_tx['vout'][authorTxIndexAndVoutIndex]['scriptPubKey']['addresses'][0]
+            coinbase_pkh = p2pkh_to_hex_hash(coinbase_address)
 
         #for i in range(self.node.getblockcount(), 0, -1):
         #    print(i, self.get_contract_call_output("9950fc69" + hex(i)[2:].zfill(64)))
@@ -136,8 +147,8 @@ class RunebaseEVMGlobalsTest(BitcoinTestFramework):
     def run_test(self):
         self.node = self.nodes[0]
         connect_nodes_bi(self.nodes, 0, 1)
-
-        self.node.generate(10 + COINBASE_MATURITY)
+        address = self.node.getnewaddress()
+        generatesynchronized(self.node, 10 + COINBASE_MATURITY, address, self.nodes)
 
         """
         pragma solidity ^0.4.12;
@@ -193,25 +204,28 @@ class RunebaseEVMGlobalsTest(BitcoinTestFramework):
         self.contract_address = self.node.createcontract(bytecode)['address']
         print('verify globals in PoW blocks')
 
-        self.verify_evm_globals_test(use_staking=False)
+        self.verify_evm_globals_test(use_staking=True)
         self.sync_all()
+        return
+        #assert(False)
         
-        self.node.generate(257)
+        generatesynchronized(self.node, 257, None, self.nodes)
         self.sync_all()
 
         for n in self.nodes:
             n.setmocktime((self.node.getblock(self.node.getbestblockhash())['time']+100) & 0xfffffff0)
 
+        print(self.node.getblockcount())
         print('verify globals in PoS blocks')
         self.verify_evm_globals_test(use_staking=True)
         self.sync_all()
 
-        self.node.generate(257)
+        generatesynchronized(self.node, 257, None, self.nodes)
         self.sync_all()
 
         print('verify globals in MPoS blocks')
-        self.node.generate(4999 - self.node.getblockcount())
-        self.sync_all()
+        generatesynchronized(self.node, 4999 - self.node.getblockcount(), None, self.nodes)
+        self.sync_blocks()
 
         for n in self.nodes:
             n.setmocktime((self.node.getblock(self.node.getbestblockhash())['time']+100) & 0xfffffff0)

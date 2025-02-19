@@ -1,11 +1,10 @@
-﻿// Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2010 Satoshi Nakamoto
+// Copyright (c) 2009-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <script/script.h>
 
-#include <tinyformat.h>
 #include <util/strencodings.h>
 
 const char* GetOpName(opcodetype opcode)
@@ -392,7 +391,6 @@ bool CScript::ReplaceParam(opcodetype findOp, int posBefore, const std::vector<u
     return ret;
 }
 
-#ifdef ENABLE_BITCORE_RPC
 bool CScript::IsPayToWitnessPubkeyHash() const
 {
     // Extra-fast test for pay-to-witness-pubkey-hash CScripts:
@@ -400,4 +398,3 @@ bool CScript::IsPayToWitnessPubkeyHash() const
             (*this)[0] == OP_0 &&
             (*this)[1] == 0x14);
 }
-#endif

@@ -2,7 +2,7 @@
 #include <validation.h>
 #include <util/strencodings.h>
 #include <util/convert.h>
-#include <test/test_bitcoin.h>
+#include <test/util/setup_common.h>
 #include <boost/filesystem/operations.hpp>
 #include <fs.h>
 
@@ -63,8 +63,8 @@ inline RunebaseTransaction createRunebaseTransaction(valtype data, dev::u256 val
 inline std::pair<std::vector<ResultExecute>, ByteCodeExecResult> executeBC(std::vector<RunebaseTransaction> txs){
     CBlock block(generateBlock());
     RunebaseDGP runebaseDGP(globalState.get(), fGettingValuesDGP);
-    uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(chainActive.Tip()->nHeight + 1);
-    ByteCodeExec exec(block, txs, blockGasLimit, chainActive.Tip());
+    uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(ChainActive().Tip()->nHeight + 1);
+    ByteCodeExec exec(block, txs, blockGasLimit, ChainActive().Tip());
     exec.performByteCode();
     std::vector<ResultExecute> res = exec.getResult();
     ByteCodeExecResult bceExecRes;

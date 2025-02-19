@@ -1,6 +1,6 @@
 #include <qt/token.h>
 #include <qt/execrpccommand.h>
-#include <qt/contractabi.h>
+#include <qt/contractutil.h>
 #include <validation.h>
 #include <util/moneystr.h>
 #include <key_io.h>
@@ -82,7 +82,7 @@ bool ToHash160(const std::string& strRunebaseAddress, std::string& strHash160)
     CTxDestination runebaseAddress = DecodeDestination(strRunebaseAddress);
     if(!IsValidDestination(runebaseAddress))
         return false;
-    const CKeyID * keyid = boost::get<CKeyID>(&runebaseAddress);
+    const PKHash * keyid = boost::get<PKHash>(&runebaseAddress);
     if(keyid){
         strHash160 = HexStr(valtype(keyid->begin(),keyid->end()));
     }else{
@@ -94,7 +94,7 @@ bool ToHash160(const std::string& strRunebaseAddress, std::string& strHash160)
 bool ToRunebaseAddress(const std::string& strHash160, std::string& strRunebaseAddress)
 {
     uint160 key(ParseHex(strHash160.c_str()));
-    CKeyID keyid(key);
+    PKHash keyid(key);
     CTxDestination runebaseAddress = keyid;
     if(IsValidDestination(runebaseAddress)){
         strRunebaseAddress = EncodeDestination(runebaseAddress);

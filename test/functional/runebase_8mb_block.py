@@ -11,6 +11,8 @@ class Runebase8MBBlock(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
+        self.extra_args = [['-acceptnonstdtxn']]*2
+
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -19,8 +21,9 @@ class Runebase8MBBlock(BitcoinTestFramework):
         self.node = self.nodes[0]
         connect_nodes_bi(self.nodes, 0, 1)
         # Make sure that segwit is activated
-        self.node.generate(10+COINBASE_MATURITY*4)
-        self.sync_all()
+        generatesynchronized(self.node, COINBASE_MATURITY, None, self.nodes)
+        self.node.generate(10)
+        self.sync_blocks()
 
         tx = CTransaction()
         tx.vin = [make_vin(self.node, 2*COIN)]
@@ -33,9 +36,8 @@ class Runebase8MBBlock(BitcoinTestFramework):
 
 
         NUM_DROPS = 200
-
         # To tweak the size of the submitted block, change this value
-        NUM_OUTPUTS = 101
+        NUM_OUTPUTS = 101 // FACTOR_REDUCED_BLOCK_TIME
 
         witness_program = CScript([OP_2DROP]*NUM_DROPS + [OP_TRUE])
         witness_hash = uint256_from_str(sha256(witness_program))

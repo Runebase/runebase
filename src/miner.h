@@ -17,11 +17,14 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 
-#include <validation.h> 
+#include <validation.h>
 
 class CBlockIndex;
 class CChainParams;
 class CScript;
+#ifdef ENABLE_WALLET
+class CWallet;
+#endif
 
 namespace Consensus { struct Params; };
 
@@ -30,6 +33,8 @@ static const bool DEFAULT_PRINTPRIORITY = false;
 static const bool DEFAULT_STAKE = true;
 
 static const bool DEFAULT_STAKE_CACHE = true;
+
+static const bool DEFAULT_SUPER_STAKE = false;
 
 //How many seconds to look ahead and prepare a block for staking
 //Look ahead up to 3 "timeslots" in the future, 48 seconds
@@ -45,8 +50,19 @@ static const int32_t BYTECODE_TIME_BUFFER = 6;
 static const int32_t STAKE_TIME_BUFFER = 2;
 
 //How often to try to stake blocks in milliseconds
-//Note this is overridden for regtest mode
 static const int32_t STAKER_POLLING_PERIOD = 5000;
+
+//How often to try to stake blocks in milliseconds for minimum difficulty
+static const int32_t STAKER_POLLING_PERIOD_MIN_DIFFICULTY = 20000;
+
+//How often to try to check for future walid block
+static const int32_t STAKER_WAIT_FOR_WALID_BLOCK = 3000;
+
+//How much time to wait for best block header to be downloaded to the blockchain
+static const int32_t STAKER_WAIT_FOR_BEST_BLOCK_HEADER = 250;
+
+//How much max time to wait for best block header to be downloaded to the blockchain
+static const int32_t DEFAULT_MAX_STAKER_WAIT_FOR_BEST_BLOCK_HEADER = 4000;
 
 //How much time to spend trying to process transactions when using the generate RPC call
 static const int32_t POW_MINER_MAX_TIME = 60;
@@ -232,6 +248,10 @@ private:
     int nHeight;
     int64_t nLockTimeCutoff;
     const CChainParams& chainparams;
+    const CTxMemPool& m_mempool;
+#ifdef ENABLE_WALLET
+    CWallet *pwallet = 0;
+#endif
 
 public:
     struct Options {
@@ -240,8 +260,11 @@ public:
         CFeeRate blockMinFeeRate;
     };
 
-    explicit BlockAssembler(const CChainParams& params);
-    BlockAssembler(const CChainParams& params, const Options& options);
+    explicit BlockAssembler(const CTxMemPool& mempool, const CChainParams& params);
+    explicit BlockAssembler(const CTxMemPool& mempool, const CChainParams& params, const Options& options);
+#ifdef ENABLE_WALLET
+    explicit BlockAssembler(const CTxMemPool& mempool, const CChainParams& params, CWallet *pwallet);
+#endif
 
 ///////////////////////////////////////////// // runebase
     ByteCodeExecResult bceResult;
@@ -277,7 +300,7 @@ private:
     /** Add transactions based on feerate including unconfirmed ancestors
       * Increments nPackagesSelected / nDescendantsUpdated with corresponding
       * statistics from the package selection (for logging statistics). */
-    void addPackageTxs(int &nPackagesSelected, int &nDescendantsUpdated, uint64_t minGasPrice) EXCLUSIVE_LOCKS_REQUIRED(mempool.cs);
+    void addPackageTxs(int& nPackagesSelected, int& nDescendantsUpdated, uint64_t minGasPrice) EXCLUSIVE_LOCKS_REQUIRED(m_mempool.cs);
 
     /** Rebuild the coinbase/coinstake transaction to account for new gas refunds **/
     void RebuildRefundTransaction();
@@ -293,18 +316,19 @@ private:
     bool TestPackageTransactions(const CTxMemPool::setEntries& package);
     /** Return true if given transaction from mapTx has already been evaluated,
       * or if the transaction's cached data in mapTx is incorrect. */
-    bool SkipMapTxEntry(CTxMemPool::txiter it, indexed_modified_transaction_set &mapModifiedTx, CTxMemPool::setEntries &failedTx) EXCLUSIVE_LOCKS_REQUIRED(mempool.cs);
+    bool SkipMapTxEntry(CTxMemPool::txiter it, indexed_modified_transaction_set& mapModifiedTx, CTxMemPool::setEntries& failedTx) EXCLUSIVE_LOCKS_REQUIRED(m_mempool.cs);
     /** Sort the package in an order that is valid to appear in a block */
     void SortForBlock(const CTxMemPool::setEntries& package, std::vector<CTxMemPool::txiter>& sortedEntries);
     /** Add descendants of given transactions to mapModifiedTx with ancestor
       * state updated assuming given transactions are inBlock. Returns number
       * of updated descendants. */
-    int UpdatePackagesForAdded(const CTxMemPool::setEntries& alreadyAdded, indexed_modified_transaction_set &mapModifiedTx) EXCLUSIVE_LOCKS_REQUIRED(mempool.cs);
+    int UpdatePackagesForAdded(const CTxMemPool::setEntries& alreadyAdded, indexed_modified_transaction_set& mapModifiedTx) EXCLUSIVE_LOCKS_REQUIRED(m_mempool.cs);
 };
 
 #ifdef ENABLE_WALLET
 /** Generate a new block, without valid proof-of-work */
 void StakeRunebases(bool fStake, CWallet *pwallet, CConnman* connman, boost::thread_group*& stakeThread);
+void RefreshDelegates(CWallet *pwallet, bool myDelegates, bool stakerDelegates);
 #endif
 
 /** Modify the extranonce in a block */

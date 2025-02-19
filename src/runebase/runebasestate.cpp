@@ -2,7 +2,9 @@
 #include <util/system.h>
 #include <validation.h>
 #include <chainparams.h>
+#include <script/script.h>
 #include <runebase/runebasestate.h>
+#include <libevm/VMFace.h>
 
 using namespace std;
 using namespace dev;
@@ -29,6 +31,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
     _sealEngine.deleteAddresses.insert({_t.sender(), _envInfo.author()});
 
     h256 oldStateRoot = rootHash();
+    h256 oldUTXORoot = rootHashUTXO();
     bool voutLimit = false;
 
 	auto onOp = _onOp;
@@ -54,7 +57,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
         startGasUsed = _envInfo.gasUsed();
         if (!e.execute()){
             e.go(onOp);
-            if(chainActive.Height() >= consensusParams.QIP7Height){
+            if(ChainActive().Height() >= consensusParams.QIP7Height){
             	validateTransfersWithChangeLog();
             }
         } else {
@@ -91,7 +94,7 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
         printfErrorLog(dev::eth::toTransactionException(_e));
         res.excepted = dev::eth::toTransactionException(_e);
         res.gasUsed = _t.gas();
-        if(chainActive.Height() < consensusParams.nFixUTXOCacheHFHeight  && _p != Permanence::Reverted){
+        if(ChainActive().Height() < consensusParams.nFixUTXOCacheHFHeight  && _p != Permanence::Reverted){
             deleteAccounts(_sealEngine.deleteAddresses);
             commit(CommitBehaviour::RemoveEmptyAccounts);
         } else {
@@ -121,9 +124,9 @@ ResultExecute RunebaseState::execute(EnvInfo const& _envInfo, SealEngineFace con
             refund.vout.push_back(CTxOut(CAmount(_t.value().convert_to<uint64_t>()), script));
         }
         //make sure to use empty transaction if no vouts made
-        return ResultExecute{ex, dev::eth::TransactionReceipt(oldStateRoot, gas, e.logs()), refund.vout.empty() ? CTransaction() : CTransaction(refund)};
+        return ResultExecute{ex, RunebaseTransactionReceipt(oldStateRoot, oldUTXORoot, gas, e.logs()), refund.vout.empty() ? CTransaction() : CTransaction(refund)};
     }else{
-        return ResultExecute{res, dev::eth::TransactionReceipt(rootHash(), startGasUsed + e.gasUsed(), e.logs()), tx ? *tx : CTransaction()};
+        return ResultExecute{res, RunebaseTransactionReceipt(rootHash(), rootHashUTXO(), startGasUsed + e.gasUsed(), e.logs()), tx ? *tx : CTransaction()};
     }
 }
 
@@ -283,6 +286,16 @@ void RunebaseState::validateTransfersWithChangeLog(){
 	}
 
 	transfers=validatedTransfers;
+}
+
+void RunebaseState::deployDelegationsContract(){
+    dev::Address delegationsAddress = uintToh160(Params().GetConsensus().delegationsAddress);
+    if(!RunebaseState::addressInUse(delegationsAddress)){
+        RunebaseState::createContract(delegationsAddress);
+        RunebaseState::setCode(delegationsAddress, bytes{fromHex(DELEGATIONS_CONTRACT_CODE)}, RunebaseState::version(delegationsAddress));
+        commit(CommitBehaviour::RemoveEmptyAccounts);
+        db().commit();
+    }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////
 CTransaction CondensingTX::createCondensingTX(){

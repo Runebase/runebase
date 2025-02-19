@@ -114,13 +114,13 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
 
         # Send <alt_block> to alt_node
         self.p2p_alt_node.send_message(msg_block(alt_block))
-        time.sleep(2)
-        self.alt_node.generate(500)
-        time.sleep(2)
+        time.sleep(5)
+        generatesynchronized(self.alt_node, COINBASE_MATURITY, None, self.nodes)
+        time.sleep(5)
         
         # Send <block> to node
         self.p2p_node.send_message(msg_block(block))
-        time.sleep(2)
+        time.sleep(5)
         assert_raises_rpc_error(-5, "Block not found", self.node.getblockheader, block.hash)
 
         time.sleep(2)
@@ -137,14 +137,14 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         self.alt_node = self.nodes[1]
         self.node.setmocktime(int(time.time() - 100*24*60*60))
         self.alt_node.setmocktime(int(time.time() - 100*24*60*60))
-        self.alt_node.generatetoaddress(50, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        generatesynchronized(self.alt_node, 50, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq", self.nodes)
         self.sync_all()
 
-        self.node.generatetoaddress(500, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        generatesynchronized(self.node, COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq", self.nodes)
         self.sync_all()
         self.alt_staking_prevouts = collect_prevouts(self.alt_node)
 
-        self.node.generatetoaddress(50, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        generatesynchronized(self.node, 50, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq", self.nodes)
         self.sync_all()
         self.staking_prevouts = collect_prevouts(self.node)
 

@@ -1,10 +1,8 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <qt/bitcoinunits.h>
-
-#include <primitives/transaction.h>
 
 #include <QStringList>
 
@@ -301,6 +299,28 @@ QString BitcoinUnits::formatToken(int decimal_units, const int256_t& nIn, bool f
 QString BitcoinUnits::formatTokenWithUnit(const QString unit, int decimals, const int256_t &amount, bool plussign, BitcoinUnits::SeparatorStyle separators)
 {
     return formatToken(decimals, amount, plussign, separators) + " " + unit;
+}
+
+QString BitcoinUnits::formatInt(const int64_t &nIn, bool fPlus, BitcoinUnits::SeparatorStyle separators)
+{
+    qint64 n = (qint64)nIn;
+    qint64 quotient = (n > 0 ? n : -n);
+    QString quotient_str = QString::number(quotient);
+
+    // Use SI-style thin space separators as these are locale independent and can't be
+    // confused with the decimal marker.
+    QChar thin_sp(THIN_SP_CP);
+    int q_size = quotient_str.size();
+    if (separators == separatorAlways || (separators == separatorStandard && q_size > 4))
+        for (int i = 3; i < q_size; i += 3)
+            quotient_str.insert(q_size - i, thin_sp);
+
+    if (n < 0)
+        quotient_str.insert(0, '-');
+    else if (fPlus && n > 0)
+        quotient_str.insert(0, '+');
+
+    return quotient_str;
 }
 
 QString BitcoinUnits::getAmountColumnTitle(int unit)

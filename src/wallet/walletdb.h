@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,15 +7,12 @@
 #define BITCOIN_WALLET_WALLETDB_H
 
 #include <amount.h>
-#include <primitives/transaction.h>
 #include <script/sign.h>
 #include <wallet/db.h>
 #include <key.h>
 
-#include <list>
 #include <stdint.h>
 #include <string>
-#include <utility>
 #include <vector>
 
 /**
@@ -40,6 +37,8 @@ class CWallet;
 class CWalletTx;
 class CTokenInfo;
 class CTokenTx;
+class CDelegationInfo;
+class CSuperStakerInfo;
 class uint160;
 class uint256;
 
@@ -56,6 +55,35 @@ enum class DBErrors
     LOAD_FAIL,
     NEED_REWRITE
 };
+
+namespace DBKeys {
+extern const std::string ACENTRY;
+extern const std::string BESTBLOCK;
+extern const std::string BESTBLOCK_NOMERKLE;
+extern const std::string CRYPTED_KEY;
+extern const std::string CSCRIPT;
+extern const std::string DEFAULTKEY;
+extern const std::string DESTDATA;
+extern const std::string FLAGS;
+extern const std::string HDCHAIN;
+extern const std::string KEY;
+extern const std::string KEYMETA;
+extern const std::string MASTER_KEY;
+extern const std::string MINVERSION;
+extern const std::string NAME;
+extern const std::string OLD_KEY;
+extern const std::string ORDERPOSNEXT;
+extern const std::string POOL;
+extern const std::string PURPOSE;
+extern const std::string SETTINGS;
+extern const std::string TX;
+extern const std::string VERSION;
+extern const std::string WATCHMETA;
+extern const std::string WATCHS;
+extern const std::string TOKEN;
+extern const std::string TOKENTX;
+extern const std::string CONTRACTDATA;
+} // namespace DBKeys
 
 /* simple HD chain data model */
 class CHDChain
@@ -103,7 +131,7 @@ public:
     std::string hdKeypath; //optional HD/bip32 keypath. Still used to determine whether a key is a seed. Also kept for backwards compatibility
     CKeyID hd_seed_id; //id of the HD seed used to derive this key
     KeyOriginInfo key_origin; // Key origin info with path and fingerprint
-    bool has_key_origin = false; //< Whether the key_origin is useful
+    bool has_key_origin = false; //!< Whether the key_origin is useful
 
     CKeyMetadata()
     {
@@ -145,9 +173,11 @@ public:
 };
 
 /** Access to the wallet database.
- * This represents a single transaction at the
- * database. It will be committed when the object goes out of scope.
- * Optionally (on by default) it will flush to disk as well.
+ * Opens the database and provides read and write access to it. Each read and write is its own transaction.
+ * Multiple operation transactions can be started using TxnBegin() and committed using TxnCommit()
+ * Otherwise the transaction will be committed when the object goes out of scope.
+ * Optionally (on by default) it will flush to disk on close.
+ * Every 1000 writes will automatically trigger a flush to disk.
  */
 class WalletBatch
 {
@@ -159,6 +189,9 @@ private:
             return false;
         }
         m_database.IncrementUpdateCounter();
+        if (m_database.nUpdateCounter % 1000 == 0) {
+            m_batch.Flush();
+        }
         return true;
     }
 
@@ -169,6 +202,9 @@ private:
             return false;
         }
         m_database.IncrementUpdateCounter();
+        if (m_database.nUpdateCounter % 1000 == 0) {
+            m_batch.Flush();
+        }
         return true;
     }
 
@@ -195,6 +231,12 @@ public:
 
     bool WriteTokenTx(const CTokenTx& wTokenTx);
     bool EraseTokenTx(uint256 hash);
+
+    bool WriteDelegation(const CDelegationInfo& wdelegation);
+    bool EraseDelegation(uint256 hash);
+
+    bool WriteSuperStaker(const CSuperStakerInfo& wsuperStaker);
+    bool EraseSuperStaker(uint256 hash);
 
     bool WriteKeyMetadata(const CKeyMetadata& meta, const CPubKey& pubkey, const bool overwrite);
     bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata &keyMeta);
@@ -226,6 +268,7 @@ public:
     bool WriteContractData(const std::string &address, const std::string &key, const std::string &value);
     /// Erase contract data tuple from wallet database
     bool EraseContractData(const std::string &address, const std::string &key);
+
     DBErrors LoadWallet(CWallet* pwallet);
     DBErrors FindWalletTx(std::vector<uint256>& vTxHash, std::vector<CWalletTx>& vWtx);
     DBErrors ZapWalletTx(std::vector<CWalletTx>& vWtx);
@@ -241,7 +284,7 @@ public:
     /* verifies the database environment */
     static bool VerifyEnvironment(const fs::path& wallet_path, std::string& errorStr);
     /* verifies the database file */
-    static bool VerifyDatabaseFile(const fs::path& wallet_path, std::string& warningStr, std::string& errorStr);
+    static bool VerifyDatabaseFile(const fs::path& wallet_path, std::vector<std::string>& warnings, std::string& errorStr);
 
     //! write the hdchain model (external chain child index counter)
     bool WriteHDChain(const CHDChain& chain);
@@ -253,10 +296,6 @@ public:
     bool TxnCommit();
     //! Abort current transaction
     bool TxnAbort();
-    //! Read wallet version
-    bool ReadVersion(int& nVersion);
-    //! Write wallet version
-    bool WriteVersion(int nVersion);
 private:
     BerkeleyBatch m_batch;
     WalletDatabase& m_database;

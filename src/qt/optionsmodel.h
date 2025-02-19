@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2018 The Bitcoin Core developers
+// Copyright (c) 2011-2020 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,6 +6,7 @@
 #define BITCOIN_QT_OPTIONSMODEL_H
 
 #include <amount.h>
+#include <qt/guiconstants.h>
 
 #include <QAbstractListModel>
 
@@ -13,13 +14,19 @@ namespace interfaces {
 class Node;
 }
 
-QT_BEGIN_NAMESPACE
-class QNetworkProxy;
-QT_END_NAMESPACE
-
 extern const char *DEFAULT_GUI_PROXY_HOST;
 static constexpr unsigned short DEFAULT_GUI_PROXY_PORT = 9050;
 static const bool DEFAULT_CHECK_FOR_UPDATES = true;
+
+/**
+ * Convert configured prune target MiB to displayed GB. Round up to avoid underestimating max disk usage.
+ */
+static inline int PruneMiBtoGB(int64_t mib) { return (mib * 1024 * 1024 + GB_BYTES - 1) / GB_BYTES; }
+
+/**
+ * Convert displayed prune target GB to configured MiB. Round down so roundtrip GB -> MiB -> GB conversion is stable.
+ */
+static inline int64_t PruneGBtoMiB(int gb) { return gb * GB_BYTES / 1024 / 1024; }
 
 /** Interface from Qt to configuration data structure for Bitcoin client.
    To Qt, the options are presented as a list with the different options
@@ -55,12 +62,14 @@ public:
         PruneSize,              // int
         DatabaseCache,          // int
         LogEvents,              // bool
+        SuperStaking,           // bool
         SpendZeroConfChange,    // bool
         ZeroBalanceAddressToken,// bool
         Listen,                 // bool
         UseChangeAddress,       // bool
         CheckForUpdates,        // bool
         ReserveBalance,         // CAmount
+        Theme,                  // QString
         OptionIDRowCount,
     };
 
@@ -79,10 +88,13 @@ public:
     bool getMinimizeOnClose() const { return fMinimizeOnClose; }
     int getDisplayUnit() const { return nDisplayUnit; }
     QString getThirdPartyTxUrls() const { return strThirdPartyTxUrls; }
-    bool getProxySettings(QNetworkProxy& proxy) const;
     bool getCoinControlFeatures() const { return fCoinControlFeatures; }
     const QString& getOverriddenByCommandLine() { return strOverriddenByCommandLine; }
     bool getCheckForUpdates() const { return fCheckForUpdates; }
+
+    /* Explicit setters */
+    void SetPruneEnabled(bool prune, bool force = false);
+    void SetPruneTargetGB(int prune_target_gb, bool force = false);
     bool getZeroBalanceAddressToken() const { return bZeroBalanceAddressToken; }
 
     /* Restart flag helper */
@@ -90,6 +102,9 @@ public:
     bool isRestartRequired() const;
 
     interfaces::Node& node() const { return m_node; }
+
+    bool getRestartApp() const;
+    void setRestartApp(bool value);
 
 private:
     interfaces::Node& m_node;
@@ -105,6 +120,8 @@ private:
     QString strOverriddenByCommandLine;
     bool fCheckForUpdates;
     bool bZeroBalanceAddressToken;
+    QString theme;
+    bool restartApp;
 
     // Add option to list of GUI options overridden through command line/config file
     void addOverriddenOption(const std::string &option);

@@ -5,11 +5,11 @@
 
 namespace ConstantinopleTest{
 
-dev::u256 GASLIMIT = dev::u256(500000);
-dev::h256 HASHTX = dev::h256(ParseHex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+const dev::u256 GASLIMIT = dev::u256(500000);
+const dev::h256 HASHTX = dev::h256(ParseHex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
 
 // Codes used to check that the newer forks up to constantinople are present
-std::vector<valtype> CODE = {
+const std::vector<valtype> CODE = {
     /*
     // Contract for Byzantium check
     contract Proxy {
@@ -103,7 +103,8 @@ std::vector<valtype> CODE = {
 
 void genesisLoading(){
     const CChainParams& chainparams = Params();
-    dev::eth::ChainParams cp((chainparams.EVMGenesisInfo(dev::eth::Network::runebaseMainNetwork, 999)));
+    int forkHeight = Params().GetConsensus().CoinbaseMaturity(0) + 499;
+    dev::eth::ChainParams cp(chainparams.EVMGenesisInfo(forkHeight));
     globalState->populateFrom(cp.genesisState);
     globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
     globalState->db().commit();
@@ -126,94 +127,98 @@ BOOST_FIXTURE_TEST_SUITE(constantinoplefork_tests, TestChain100Setup)
 
 BOOST_AUTO_TEST_CASE(checking_returndata_opcode_after_fork){
     // Initialize
-    initState();
+//    initState();
     genesisLoading();
-    createNewBlocks(this,999 - COINBASE_MATURITY);
+    createNewBlocks(this, 499);
+    dev::h256 hashTx(HASHTX);
 
     // Create contracts
     std::vector<RunebaseTransaction> txs;
-    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address()));
-    txs.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++HASHTX, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), hashTx, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++hashTx, dev::Address()));
     executeBC(txs);
 
     // Call upgrade to
     dev::Address proxy = createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout());
     std::vector<RunebaseTransaction> txsCall;
-    txsCall.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txsCall.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
     executeBC(txsCall);
 
     // Call mint
     std::vector<RunebaseTransaction> txsMint;
-    txsMint.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txsMint.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
     auto result = executeBC(txsMint);
     BOOST_CHECK(result.first[0].execRes.excepted == dev::eth::TransactionException::None);
 
     // Call balance of
     std::vector<RunebaseTransaction> txsbalance;
-    txsbalance.push_back(createRunebaseTransaction(ParseHex("70a082310000000000000000000000000101010101010101010101010101010101010101"), 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txsbalance.push_back(createRunebaseTransaction(ParseHex("70a082310000000000000000000000000101010101010101010101010101010101010101"), 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
     result = executeBC(txsbalance);
     BOOST_CHECK(dev::h256(result.first[0].execRes.output) == dev::h256(0x0000000000000000000000000000000000000000000000000000000000000020));
 }
 
 BOOST_AUTO_TEST_CASE(checking_returndata_opcode_before_fork){
     // Initialize
-    initState();
+//    initState();
     genesisLoading();
-    createNewBlocks(this,998 - COINBASE_MATURITY);
+    createNewBlocks(this, 498);
+    dev::h256 hashTx(HASHTX);
 
     // Create contracts
     std::vector<RunebaseTransaction> txs;
-    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address()));
-    txs.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++HASHTX, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), hashTx, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++hashTx, dev::Address()));
     executeBC(txs);
 
     // Call upgrade to
     dev::Address proxy = createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout());
     std::vector<RunebaseTransaction> txsCall;
-    txsCall.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txsCall.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
     executeBC(txsCall);
 
     // Call mint
     std::vector<RunebaseTransaction> txsMint;
-    txsMint.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txsMint.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
     auto result = executeBC(txsMint);
     BOOST_CHECK(result.first[0].execRes.excepted == dev::eth::TransactionException::BadInstruction);
 }
 
 BOOST_AUTO_TEST_CASE(checking_constantinople_after_fork){
     // Initialize
-    initState();
+//    initState();
     genesisLoading();
-    createNewBlocks(this,999 - COINBASE_MATURITY);
+    createNewBlocks(this, 499);
+    dev::h256 hashTx(HASHTX);
 
     // Create contract
     std::vector<RunebaseTransaction> txs;
-    txs.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), hashTx, dev::Address()));
     executeBC(txs);
 
     // Call is it constantinople
     dev::Address proxy = createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout());
     std::vector<RunebaseTransaction> txIsItConstantinople;
-    txIsItConstantinople.push_back(createRunebaseTransaction(CODE[5], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txIsItConstantinople.push_back(createRunebaseTransaction(CODE[5], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
     auto result = executeBC(txIsItConstantinople);
     BOOST_CHECK(dev::h256(result.first[0].execRes.output) == dev::h256(0x0000000000000000000000000000000000000000000000000000000000000001));
 }
 
 BOOST_AUTO_TEST_CASE(checking_constantinople_before_fork){
     // Initialize
-    initState();
+//    initState();
     genesisLoading();
-    createNewBlocks(this,998 - COINBASE_MATURITY);
+    createNewBlocks(this, 498);
+    dev::h256 hashTx(HASHTX);
 
     // Create contract
     std::vector<RunebaseTransaction> txs;
-    txs.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), hashTx, dev::Address()));
     executeBC(txs);
 
     // Call is it constantinople
     dev::Address proxy = createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout());
     std::vector<RunebaseTransaction> txIsItConstantinople;
-    txIsItConstantinople.push_back(createRunebaseTransaction(CODE[5], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txIsItConstantinople.push_back(createRunebaseTransaction(CODE[5], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
     auto result = executeBC(txIsItConstantinople);
     BOOST_CHECK(dev::h256(result.first[0].execRes.output) == dev::h256(0x0000000000000000000000000000000000000000000000000000000000000000));
 }

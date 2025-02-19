@@ -12,7 +12,7 @@
 #include <util/moneystr.h>
 #include <qt/addressfield.h>
 #include <qt/abifunctionfield.h>
-#include <qt/contractabi.h>
+#include <qt/contractutil.h>
 #include <qt/tabbarinfo.h>
 #include <qt/contractresult.h>
 #include <qt/sendcoinsdialog.h>
@@ -51,13 +51,12 @@ CreateContract::CreateContract(const PlatformStyle *platformStyle, QWidget *pare
     ui->setupUi(this);
 
     // Set stylesheet
-    SetObjectStyleSheet(ui->pushButtonClearAll, StyleSheetNames::ButtonBlack);
+    SetObjectStyleSheet(ui->pushButtonClearAll, StyleSheetNames::ButtonDark);
 
-    setLinkLabels();
     m_ABIFunctionField = new ABIFunctionField(platformStyle, ABIFunctionField::Create, ui->scrollAreaConstructor);
     ui->scrollAreaConstructor->setWidget(m_ABIFunctionField);
     ui->labelBytecode->setToolTip(tr("The bytecode of the contract"));
-    ui->labelSenderAddress->setToolTip(tr("The quantum address that will be used to create the contract."));
+    ui->labelSenderAddress->setToolTip(tr("The runebase address that will be used to create the contract."));
 
     m_tabInfo = new TabBarInfo(ui->stackedWidget);
     m_tabInfo->addTab(0, tr("Create Contract"));
@@ -105,12 +104,6 @@ CreateContract::~CreateContract()
 {
     delete m_contractABI;
     delete ui;
-}
-
-void CreateContract::setLinkLabels()
-{
-    ui->labelSolidity->setOpenExternalLinks(true);
-    ui->labelSolidity->setText("<a href=\"https://qmix.qtum.org/\">Solidity compiler</a>");
 }
 
 void CreateContract::setModel(WalletModel *_model)
@@ -210,7 +203,7 @@ void CreateContract::on_createContractClicked()
 
         QString questionString = tr("Are you sure you want to create contract? <br />");
 
-        SendConfirmationDialog confirmationDialog(tr("Confirm contract creation."), questionString, 3, this);
+        SendConfirmationDialog confirmationDialog(tr("Confirm contract creation."), questionString, "", "", SEND_CONFIRM_DELAY, tr("Send"), this);
         confirmationDialog.exec();
         QMessageBox::StandardButton retval = (QMessageBox::StandardButton)confirmationDialog.result();
         if(retval == QMessageBox::Yes)
@@ -299,7 +292,7 @@ QString CreateContract::toDataHex(int func, QString& errorMessage)
     }
     else
     {
-        errorMessage = function.errorMessage(errors, true);
+        errorMessage = ContractUtil::errorMessage(function, errors, true);
     }
     return "";
 }

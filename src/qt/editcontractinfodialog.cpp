@@ -2,7 +2,7 @@
 #include <qt/forms/ui_editcontractinfodialog.h>
 
 #include <qt/contracttablemodel.h>
-#include <qt/contractabi.h>
+#include <qt/contractutil.h>
 #include <qt/styleSheet.h>
 
 #include <QDataWidgetMapper>
@@ -22,8 +22,8 @@ EditContractInfoDialog::EditContractInfoDialog(Mode _mode, QWidget *parent) :
 
     ui->setupUi(this);
 
-    SetObjectStyleSheet(ui->buttonBox->button(QDialogButtonBox::Cancel), StyleSheetNames::ButtonWhite);
-    SetObjectStyleSheet(ui->buttonBox->button(QDialogButtonBox::Ok), StyleSheetNames::ButtonBlue);
+    SetObjectStyleSheet(ui->buttonBox->button(QDialogButtonBox::Cancel), StyleSheetNames::ButtonLight);
+    SetObjectStyleSheet(ui->buttonBox->button(QDialogButtonBox::Ok), StyleSheetNames::ButtonGray);
 
     switch(mode)
     {

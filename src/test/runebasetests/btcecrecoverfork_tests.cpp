@@ -5,11 +5,11 @@
 
 namespace BtcEcrecoverTest{
 
-dev::u256 GASLIMIT = dev::u256(500000);
-dev::h256 HASHTX = dev::h256(ParseHex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+const dev::u256 GASLIMIT = dev::u256(500000);
+const dev::h256 HASHTX = dev::h256(ParseHex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
 
 // Contract for btc_ecrecover check
-std::vector<valtype> CODE = {
+const std::vector<valtype> CODE = {
     /*
     pragma solidity ^0.4.0;
     library Crypto
@@ -78,7 +78,7 @@ dev::bytes parseOutput(const dev::bytes& output)
 
 void genesisLoading(){
     const CChainParams& chainparams = Params();
-    dev::eth::ChainParams cp((chainparams.EVMGenesisInfo(dev::eth::Network::runebaseMainNetwork)));
+    dev::eth::ChainParams cp(chainparams.EVMGenesisInfo());
     globalState->populateFrom(cp.genesisState);
     globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
     globalState->db().commit();
@@ -101,22 +101,23 @@ BOOST_FIXTURE_TEST_SUITE(btcecrecoverfork_tests, TestChain100Setup)
 
 BOOST_AUTO_TEST_CASE(checking_btcecrecover_after_fork){
     // Initialize
-    initState();
+//    initState();
     genesisLoading();
-    createNewBlocks(this,999 - COINBASE_MATURITY);
+    createNewBlocks(this, 499);
+    dev::h256 hashTx(HASHTX);
 
     // Create contract
     std::vector<RunebaseTransaction> txs;
-    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), hashTx, dev::Address()));
     executeBC(txs);
 
     // Call btc_ecrecover
     dev::Address proxy = createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout());
     std::vector<RunebaseTransaction> txBtcEcrecover;
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
 
     // Execute contracts
     auto result = executeBC(txBtcEcrecover);
@@ -134,22 +135,23 @@ BOOST_AUTO_TEST_CASE(checking_btcecrecover_after_fork){
 
 BOOST_AUTO_TEST_CASE(checking_btcecrecover_before_fork){
     // Initialize
-    initState();
+//    initState();
     genesisLoading();
-    createNewBlocks(this,998 - COINBASE_MATURITY);
+    createNewBlocks(this, 498);
+    dev::h256 hashTx(HASHTX);
 
     // Create contract
     std::vector<RunebaseTransaction> txs;
-    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), HASHTX, dev::Address()));
+    txs.push_back(createRunebaseTransaction(CODE[0], 0, GASLIMIT, dev::u256(1), hashTx, dev::Address()));
     executeBC(txs);
 
     // Call btc_ecrecover
     dev::Address proxy = createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout());
     std::vector<RunebaseTransaction> txBtcEcrecover;
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
-    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), ++HASHTX, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[1], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[2], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[3], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
+    txBtcEcrecover.push_back(createRunebaseTransaction(CODE[4], 0, GASLIMIT, dev::u256(1), ++hashTx, proxy));
 
      // Execute contracts
     auto result = executeBC(txBtcEcrecover);
