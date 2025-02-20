@@ -124,7 +124,7 @@ public:
         pchMessageStart[3] = 0xa6;
         nDefaultPort = 9947;
         nPruneAfterHeight = 100000;
-        m_assumed_blockchain_size = 8;
+        m_assumed_blockchain_size = 14;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1572854661, 355217, 0x1f00ffff, 1, 50 * COIN);
@@ -154,6 +154,7 @@ public:
         fMineBlocksOnDemand = false;
         m_is_test_chain = false;
         m_is_mockable_chain = false;
+        fHasHardwareWalletSupport = true;
 
         checkpointData = {
             {
@@ -252,7 +253,7 @@ public:
         pchMessageStart[3] = 0x2d;
         nDefaultPort = 19947;
         nPruneAfterHeight = 1000;
-        m_assumed_blockchain_size = 4;
+        m_assumed_blockchain_size = 6;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1578091191, 111552, 0x1f00ffff, 1, 50 * COIN);
@@ -280,6 +281,7 @@ public:
         fMineBlocksOnDemand = false;
         m_is_test_chain = true;
         m_is_mockable_chain = false;
+        fHasHardwareWalletSupport = true;
 
         checkpointData = {
             {
@@ -389,6 +391,7 @@ public:
         fMineBlocksOnDemand = true;
         m_is_test_chain = true;
         m_is_mockable_chain = true;
+        fHasHardwareWalletSupport = true;
 
         checkpointData = {
             {
@@ -503,7 +506,7 @@ public:
         consensus.QIP6Height = consensus.nBlocktimeDownscaleFactor*500 + 500;
         consensus.QIP7Height = 0; // QIP7 activated on regtest
 
-        // QTUM have 500 blocks of maturity, increased values for regtest in unit tests in order to correspond with it
+        // RUNEBASE have 500 blocks of maturity, increased values for regtest in unit tests in order to correspond with it
         consensus.nSubsidyHalvingInterval = 750;
         consensus.nSubsidyHalvingIntervalV2 = consensus.nBlocktimeDownscaleFactor*750;
         consensus.nRuleChangeActivationThreshold = consensus.nBlocktimeDownscaleFactor*558; // 75% for testchains

@@ -287,7 +287,8 @@ BASE_SCRIPTS = [
     'runebase_block_index_cleanup.py',
     'runebase_pod.py',
     'runebase_simple_delegation_contract.py',
-    'runebase_delegation_contract.py'
+    'runebase_delegation_contract.py',
+    'runebase_qrc20.py'
 ]
 
 # Place EXTENDED_SCRIPTS first since it has the 3 longest running tests
