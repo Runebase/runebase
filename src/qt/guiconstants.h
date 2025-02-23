@@ -10,6 +10,9 @@
 /* Milliseconds between model updates */
 static const int MODEL_UPDATE_DELAY = 2000;
 
+/* Milliseconds between device updates */
+static const int DEVICE_UPDATE_DELAY = 10000;
+
 /* AskPassphraseDialog -- Maximum passphrase length */
 static const int MAX_PASSPHRASE_SIZE = 1024;
 
@@ -60,5 +63,8 @@ static constexpr int DEFAULT_PRUNE_TARGET_GB{2};
 
 /* Testnet runebase explorer uri */
 #define RUNEBASE_INFO_TESTNET "<a href='https://testnet-explorer.runebase.io/%1/%2'>%2</a>"
+
+/* Hardware wallet interface uri */
+#define RUNEBASE_HWI_TOOL "<a href='https://github.com/runebase/HWI/tags'>HWI Tool</a>"
 
 #endif // BITCOIN_QT_GUICONSTANTS_H
