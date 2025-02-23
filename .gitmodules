@@ -2,3 +2,6 @@
 	path = src/cpp-ethereum
 	url = https://github.com/runebase/cpp-eth-runebase.git
 	branch = 0.20.2
+[submodule "src/evmone"]
+	path = src/evmone
+	url = https://github.com/Runebase/runebase-evmone
