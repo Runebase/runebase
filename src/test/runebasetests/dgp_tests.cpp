@@ -318,7 +318,7 @@ bool compareUint64(const uint64_t& value1, const uint64_t& value2){
     return false;
 }
 
-void createTestContractsAndBlocks(TestChain100Setup* testChain100Setup, const valtype& code1, const valtype& code2, const valtype& code3, dev::Address addr){
+void createTestContractsAndBlocks(TestChain100Setup* testChain100Setup, const valtype& code1, const valtype& code2, const valtype& code3, dev::Address addr, ChainstateManager& chainman){
     std::function<void(size_t n)> generateBlocks = [&](size_t n){
         dev::h256 oldHashStateRoot = globalState->rootHash();
         dev::h256 oldHashUTXORoot = globalState->rootHashUTXO();
@@ -333,19 +333,19 @@ void createTestContractsAndBlocks(TestChain100Setup* testChain100Setup, const va
     txs.push_back(createRunebaseTransaction(code[0], 0, dev::u256(500000), dev::u256(1), hashTemp, addr, 0));
     txs.push_back(createRunebaseTransaction(code1, 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[2], 0, dev::u256(500000), dev::u256(1), ++hashTemp, addr, 0));
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, chainman);
 
     generateBlocks(50);
     txs.clear();
     txs.push_back(createRunebaseTransaction(code2, 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[4], 0, dev::u256(500000), dev::u256(1), ++hashTemp, addr, 0));
-    result = executeBC(txs);
+    result = executeBC(txs, chainman);
 
     generateBlocks(50);
     txs.clear();
     txs.push_back(createRunebaseTransaction(code3, 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[6], 0, dev::u256(500000), dev::u256(1), ++hashTemp, addr, 0));
-    result = executeBC(txs);
+    result = executeBC(txs, chainman);
 }
 
 template <typename T>
@@ -366,7 +366,7 @@ BOOST_FIXTURE_TEST_SUITE(dgp_tests, TestChain100Setup)
 BOOST_AUTO_TEST_CASE(gas_schedule_default_state_test1){
     initState();
     contractLoading();
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     dev::eth::EVMSchedule schedule = runebaseDGP.getGasSchedule(100);
     BOOST_CHECK(compareEVMSchedule(schedule, dev::eth::EIP158Schedule));
 }
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(gas_schedule_default_state_test1){
 BOOST_AUTO_TEST_CASE(gas_schedule_default_state_test2){
     initState();
     contractLoading();
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     dev::eth::EVMSchedule schedule = runebaseDGP.getGasSchedule(0);
     BOOST_CHECK(compareEVMSchedule(schedule, dev::eth::EIP158Schedule));
 }
@@ -382,10 +382,10 @@ BOOST_AUTO_TEST_CASE(gas_schedule_default_state_test2){
 BOOST_AUTO_TEST_CASE(gas_schedule_default_state_test3){
     initState();
     contractLoading();
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     int coinbaseMaturity = Params().GetConsensus().CoinbaseMaturity(0);
     dev::eth::EVMSchedule schedule = runebaseDGP.getGasSchedule(coinbaseMaturity + 900);
-    BOOST_CHECK(compareEVMSchedule(schedule, dev::eth::IstanbulSchedule));
+    BOOST_CHECK(compareEVMSchedule(schedule, dev::eth::LondonSchedule));
 }
 
 BOOST_AUTO_TEST_CASE(gas_schedule_one_paramsInstance_introductory_block_1_test1){
@@ -397,9 +397,9 @@ BOOST_AUTO_TEST_CASE(gas_schedule_one_paramsInstance_introductory_block_1_test1)
     txs.push_back(createRunebaseTransaction(code[0], 0, dev::u256(500000), dev::u256(1), hashTemp, GasScheduleDGP, 0));
     txs.push_back(createRunebaseTransaction(code[1], 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[2], 0, dev::u256(500000), dev::u256(1), ++hashTemp, GasScheduleDGP, 0));
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     dev::eth::EVMSchedule schedule = runebaseDGP.getGasSchedule(0);
     BOOST_CHECK(compareEVMSchedule(schedule, dev::eth::EIP158Schedule));
 }
@@ -413,9 +413,9 @@ BOOST_AUTO_TEST_CASE(gas_schedule_one_paramsInstance_introductory_block_1_test2)
     txs.push_back(createRunebaseTransaction(code[0], 0, dev::u256(500000), dev::u256(1), hashTemp, GasScheduleDGP, 0));
     txs.push_back(createRunebaseTransaction(code[1], 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[2], 0, dev::u256(500000), dev::u256(1), ++hashTemp, GasScheduleDGP, 0));
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     int coinbaseMaturity = Params().GetConsensus().CoinbaseMaturity(0);
     dev::eth::EVMSchedule schedule = runebaseDGP.getGasSchedule(coinbaseMaturity + 2); // After initializing the tests, the height of the chain 502
     BOOST_CHECK(compareEVMSchedule(schedule, EVMScheduleContractGasSchedule));
@@ -424,8 +424,8 @@ BOOST_AUTO_TEST_CASE(gas_schedule_one_paramsInstance_introductory_block_1_test2)
 BOOST_AUTO_TEST_CASE(gas_schedule_passage_from_0_to_130_three_paramsInstance_test){
 //    initState();
     contractLoading();    
-    createTestContractsAndBlocks(this, code[1], code[3], code[5], GasScheduleDGP);
-    RunebaseDGP runebaseDGP(globalState.get());
+    createTestContractsAndBlocks(this, code[1], code[3], code[5], GasScheduleDGP, *m_node.chainman);
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     size_t sizeList = Params().GetConsensus().CoinbaseMaturity(0) + 800;
     for(size_t i = 0; i < sizeList; i++){
         dev::eth::EVMSchedule schedule = runebaseDGP.getGasSchedule(i);
@@ -439,8 +439,8 @@ BOOST_AUTO_TEST_CASE(gas_schedule_passage_from_130_to_0_three_paramsInstance_tes
 //    initState();
     contractLoading();
     
-    createTestContractsAndBlocks(this, code[1], code[3], code[5], GasScheduleDGP);
-    RunebaseDGP runebaseDGP(globalState.get());
+    createTestContractsAndBlocks(this, code[1], code[3], code[5], GasScheduleDGP, *m_node.chainman);
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     size_t sizeList = Params().GetConsensus().CoinbaseMaturity(0) + 800;
     for(size_t i = sizeList; i > 0; i--){
         dev::eth::EVMSchedule schedule = runebaseDGP.getGasSchedule(i);
@@ -453,7 +453,7 @@ BOOST_AUTO_TEST_CASE(gas_schedule_passage_from_130_to_0_three_paramsInstance_tes
 BOOST_AUTO_TEST_CASE(block_size_default_state_test1){
     initState();
     contractLoading();
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     uint32_t nHeight = 100;
     uint32_t blocktimeDownscaleFactor = Params().GetConsensus().BlocktimeDownscaleFactor(nHeight);
     uint32_t blockSize = runebaseDGP.getBlockSize(nHeight);
@@ -463,7 +463,7 @@ BOOST_AUTO_TEST_CASE(block_size_default_state_test1){
 BOOST_AUTO_TEST_CASE(block_size_default_state_test2){
     initState();
     contractLoading();
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     uint32_t nHeight = 0;
     uint32_t blocktimeDownscaleFactor = Params().GetConsensus().BlocktimeDownscaleFactor(nHeight);
     uint32_t blockSize = runebaseDGP.getBlockSize(0);
@@ -479,9 +479,9 @@ BOOST_AUTO_TEST_CASE(block_size_one_paramsInstance_introductory_block_1_test1){
     txs.push_back(createRunebaseTransaction(code[0], 0, dev::u256(500000), dev::u256(1), hashTemp, BlockSizeDGP, 0));
     txs.push_back(createRunebaseTransaction(code[7], 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[2], 0, dev::u256(500000), dev::u256(1), ++hashTemp, BlockSizeDGP, 0));
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     uint32_t nHeight = 0;
     uint32_t blocktimeDownscaleFactor = Params().GetConsensus().BlocktimeDownscaleFactor(nHeight);
     uint32_t blockSize = runebaseDGP.getBlockSize(nHeight);
@@ -497,9 +497,9 @@ BOOST_AUTO_TEST_CASE(block_size_one_paramsInstance_introductory_block_1_test2){
     txs.push_back(createRunebaseTransaction(code[0], 0, dev::u256(500000), dev::u256(1), hashTemp, BlockSizeDGP, 0));
     txs.push_back(createRunebaseTransaction(code[7], 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[2], 0, dev::u256(500000), dev::u256(1), ++hashTemp, BlockSizeDGP, 0));
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     int coinbaseMaturity = Params().GetConsensus().CoinbaseMaturity(0);
     uint32_t blockSize = runebaseDGP.getBlockSize(coinbaseMaturity + 2);
     BOOST_CHECK(blockSize == 1000000);
@@ -509,8 +509,8 @@ BOOST_AUTO_TEST_CASE(block_size_passage_from_0_to_130_three_paramsInstance_test)
 //    initState();
     contractLoading();
     
-    createTestContractsAndBlocks(this, code[7], code[8], code[9], BlockSizeDGP);
-    RunebaseDGP runebaseDGP(globalState.get());
+    createTestContractsAndBlocks(this, code[7], code[8], code[9], BlockSizeDGP, *m_node.chainman);
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     size_t sizeList = Params().GetConsensus().CoinbaseMaturity(0) + 800;
     for(size_t i = 0; i < sizeList; i++){
         uint32_t blocktimeDownscaleFactor = Params().GetConsensus().BlocktimeDownscaleFactor(i);
@@ -524,8 +524,8 @@ BOOST_AUTO_TEST_CASE(block_size_passage_from_130_to_0_three_paramsInstance_test)
 //    initState();
     contractLoading();
     
-    createTestContractsAndBlocks(this, code[7], code[8], code[9], BlockSizeDGP);
-    RunebaseDGP runebaseDGP(globalState.get());
+    createTestContractsAndBlocks(this, code[7], code[8], code[9], BlockSizeDGP, *m_node.chainman);
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     size_t sizeList = Params().GetConsensus().CoinbaseMaturity(0) + 800;
     for(size_t i = sizeList; i > 0; i--){
         uint32_t blocktimeDownscaleFactor = Params().GetConsensus().BlocktimeDownscaleFactor(i);
@@ -538,7 +538,7 @@ BOOST_AUTO_TEST_CASE(block_size_passage_from_130_to_0_three_paramsInstance_test)
 BOOST_AUTO_TEST_CASE(min_gas_price_default_state_test1){
     initState();
     contractLoading();
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     uint64_t minGasPrice = runebaseDGP.getMinGasPrice(100);
     BOOST_CHECK(minGasPrice == DEFAULT_MIN_GAS_PRICE_DGP);
 }
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_CASE(min_gas_price_default_state_test1){
 BOOST_AUTO_TEST_CASE(min_gas_price_default_state_test2){
     initState();
     contractLoading();
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     uint64_t minGasPrice = runebaseDGP.getMinGasPrice(0);
     BOOST_CHECK(minGasPrice == DEFAULT_MIN_GAS_PRICE_DGP);
 }
@@ -560,9 +560,9 @@ BOOST_AUTO_TEST_CASE(min_gas_price_one_paramsInstance_introductory_block_1_test1
     txs.push_back(createRunebaseTransaction(code[0], 0, dev::u256(500000), dev::u256(1), hashTemp, GasPriceDGP, 0));
     txs.push_back(createRunebaseTransaction(code[10], 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[2], 0, dev::u256(500000), dev::u256(1), ++hashTemp, GasPriceDGP, 0));
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     uint64_t minGasPrice = runebaseDGP.getMinGasPrice(0);
     BOOST_CHECK(minGasPrice == DEFAULT_MIN_GAS_PRICE_DGP);
 }
@@ -576,9 +576,9 @@ BOOST_AUTO_TEST_CASE(min_gas_price_one_paramsInstance_introductory_block_1_test2
     txs.push_back(createRunebaseTransaction(code[0], 0, dev::u256(500000), dev::u256(1), hashTemp, GasPriceDGP, 0));
     txs.push_back(createRunebaseTransaction(code[10], 0, dev::u256(500000), dev::u256(1), ++hashTemp, dev::Address(), 0));
     txs.push_back(createRunebaseTransaction(code[2], 0, dev::u256(500000), dev::u256(1), ++hashTemp, GasPriceDGP, 0));
-    auto result = executeBC(txs);
+    auto result = executeBC(txs, *m_node.chainman);
 
-    RunebaseDGP runebaseDGP(globalState.get());
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     int coinbaseMaturity = Params().GetConsensus().CoinbaseMaturity(0);
     uint64_t minGasPrice = runebaseDGP.getMinGasPrice(coinbaseMaturity + 2);
     BOOST_CHECK(minGasPrice == 13);
@@ -588,8 +588,8 @@ BOOST_AUTO_TEST_CASE(min_gas_price_passage_from_0_to_130_three_paramsInstance_te
 //    initState();
     contractLoading();
     
-    createTestContractsAndBlocks(this, code[10], code[11], code[12], GasPriceDGP);
-    RunebaseDGP runebaseDGP(globalState.get());
+    createTestContractsAndBlocks(this, code[10], code[11], code[12], GasPriceDGP, *m_node.chainman);
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     size_t sizeList = Params().GetConsensus().CoinbaseMaturity(0) + 800;
     for(size_t i = 0; i < sizeList; i++){
         uint64_t minGasPrice = runebaseDGP.getMinGasPrice(i);
@@ -602,8 +602,8 @@ BOOST_AUTO_TEST_CASE(min_gas_price_passage_from_130_to_0_three_paramsInstance_te
 //    initState();
     contractLoading();
     
-    createTestContractsAndBlocks(this, code[10], code[11], code[12], GasPriceDGP);
-    RunebaseDGP runebaseDGP(globalState.get());
+    createTestContractsAndBlocks(this, code[10], code[11], code[12], GasPriceDGP, *m_node.chainman);
+    RunebaseDGP runebaseDGP(globalState.get(), m_node.chainman->ActiveChainstate());
     size_t sizeList = Params().GetConsensus().CoinbaseMaturity(0) + 800;
     for(size_t i = sizeList; i > 0; i--){
         uint64_t minGasPrice = runebaseDGP.getMinGasPrice(i);

@@ -99,9 +99,9 @@ bool RunebaseToken::ToHash160(const std::string& strRunebaseAddress, std::string
     CTxDestination runebaseAddress = DecodeDestination(strRunebaseAddress);
     if(!IsValidDestination(runebaseAddress))
         return false;
-    const PKHash * keyid = boost::get<PKHash>(&runebaseAddress);
-    if(keyid){
-        strHash160 = HexStr(valtype(keyid->begin(),keyid->end()));
+    if(std::holds_alternative<PKHash>(runebaseAddress)){
+        PKHash keyid = std::get<PKHash>(runebaseAddress);
+        strHash160 = HexStr(valtype(keyid.begin(),keyid.end()));
     }else{
         return false;
     }
