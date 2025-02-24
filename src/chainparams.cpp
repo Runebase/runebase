@@ -90,7 +90,7 @@ public:
         consensus.nOfflineStakeHeight = 900000;
         consensus.nReduceBlocktimeHeight = 1310000;
         consensus.nMuirGlacierHeight = 1310000;
-        consensus.nLondonHeight = 2080512; // number for activation, the number must be divisible by 2016 (same as taproot)
+        consensus.nLondonHeight = 1324512; // number for activation, the number must be divisible by 2016 (same as taproot)
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -116,7 +116,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
         // Min block number for activation, the number must be divisible by 2016
         // Replace 0xffffc0 with the activation block number
-        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 2080512;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 1324512;
 
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000008d4ab21b8ea83d2592e"); // 1883974
         consensus.defaultAssumeValid = uint256S("0xb916180ee7360ea84ab593ea879f68dd37ae19309f185fe2235d354113b4d96f"); // 1883974
