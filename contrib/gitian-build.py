@@ -61,20 +61,20 @@ def build():
 
     if args.linux:
         print('\nCompiling ' + args.version + ' Linux')
-        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=master', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
+        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=21.1', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
         # subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-linux', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
         # subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
 
     if args.windows:
         print('\nCompiling ' + args.version + ' Windows')
-        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=master', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
+        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=21.1', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
         # subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-win-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
         # subprocess.check_call('mv build/out/runebase-*-win-unsigned.tar.gz inputs/', shell=True)
         # subprocess.check_call('mv build/out/runebase-*.zip build/out/runebase-*.exe build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
 
     if args.macos:
         print('\nCompiling ' + args.version + ' MacOS')
-        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=master', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
+        subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=21.1', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
         # subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-osx-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
         # subprocess.check_call('mv build/out/runebase-*-osx-unsigned.tar.gz inputs/', shell=True)
         # subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/runebase-*.dmg build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
