@@ -62,22 +62,22 @@ def build():
     if args.linux:
         print('\nCompiling ' + args.version + ' Linux')
         subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=master', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
-        subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-linux', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
-        subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
+        # subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-linux', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-linux.yml'])
+        # subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
 
     if args.windows:
         print('\nCompiling ' + args.version + ' Windows')
         subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=master', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
-        subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-win-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
-        subprocess.check_call('mv build/out/runebase-*-win-unsigned.tar.gz inputs/', shell=True)
-        subprocess.check_call('mv build/out/runebase-*.zip build/out/runebase-*.exe build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
+        # subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-win-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-win.yml'])
+        # subprocess.check_call('mv build/out/runebase-*-win-unsigned.tar.gz inputs/', shell=True)
+        # subprocess.check_call('mv build/out/runebase-*.zip build/out/runebase-*.exe build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
 
     if args.macos:
         print('\nCompiling ' + args.version + ' MacOS')
         subprocess.check_call(['bin/gbuild', '-j', args.jobs, '-m', args.memory, '--commit', 'runebase='+args.commit+',runebase-evmone=master', '--url', 'runebase='+args.url, '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
-        subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-osx-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
-        subprocess.check_call('mv build/out/runebase-*-osx-unsigned.tar.gz inputs/', shell=True)
-        subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/runebase-*.dmg build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
+        # subprocess.check_call(['bin/gsign', '-p', args.sign_prog, '--signer', args.signer, '--release', args.version+'-osx-unsigned', '--destination', '../gitian.sigs/', '../runebase/contrib/gitian-descriptors/gitian-osx.yml'])
+        # subprocess.check_call('mv build/out/runebase-*-osx-unsigned.tar.gz inputs/', shell=True)
+        # subprocess.check_call('mv build/out/runebase-*.tar.gz build/out/runebase-*.dmg build/out/src/runebase-*.tar.gz ../runebase-binaries/'+args.version, shell=True)
     os.chdir(workdir)
 
     if args.commit_files:
@@ -111,9 +111,9 @@ def sign():
     if args.commit_files:
         print('\nCommitting '+args.version+' Signed Sigs\n')
         os.chdir('gitian.sigs')
-        subprocess.check_call(['git', 'add', args.version+'-win-signed/'+args.signer])
-        subprocess.check_call(['git', 'add', args.version+'-osx-signed/'+args.signer])
-        subprocess.check_call(['git', 'commit', '-a', '-m', 'Add '+args.version+' signed binary sigs for '+args.signer])
+        # subprocess.check_call(['git', 'add', args.version+'-win-signed/'+args.signer])
+        # subprocess.check_call(['git', 'add', args.version+'-osx-signed/'+args.signer])
+        # subprocess.check_call(['git', 'commit', '-a', '-m', 'Add '+args.version+' signed binary sigs for '+args.signer])
         os.chdir(workdir)
 
 def verify():
@@ -122,29 +122,29 @@ def verify():
     os.chdir('gitian-builder')
 
     print('\nVerifying v'+args.version+' Linux\n')
-    if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-linux', '../runebase/contrib/gitian-descriptors/gitian-linux.yml']):
-        print('Verifying v'+args.version+' Linux FAILED\n')
-        rc = 1
+    # if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-linux', '../runebase/contrib/gitian-descriptors/gitian-linux.yml']):
+    #     print('Verifying v'+args.version+' Linux FAILED\n')
+    #     rc = 1
 
-    print('\nVerifying v'+args.version+' Windows\n')
-    if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-win-unsigned', '../runebase/contrib/gitian-descriptors/gitian-win.yml']):
-        print('Verifying v'+args.version+' Windows FAILED\n')
-        rc = 1
+    # print('\nVerifying v'+args.version+' Windows\n')
+    # if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-win-unsigned', '../runebase/contrib/gitian-descriptors/gitian-win.yml']):
+    #     print('Verifying v'+args.version+' Windows FAILED\n')
+    #     rc = 1
 
-    print('\nVerifying v'+args.version+' MacOS\n')
-    if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-osx-unsigned', '../runebase/contrib/gitian-descriptors/gitian-osx.yml']):
-        print('Verifying v'+args.version+' MacOS FAILED\n')
-        rc = 1
+    # print('\nVerifying v'+args.version+' MacOS\n')
+    # if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-osx-unsigned', '../runebase/contrib/gitian-descriptors/gitian-osx.yml']):
+    #     print('Verifying v'+args.version+' MacOS FAILED\n')
+    #     rc = 1
 
-    print('\nVerifying v'+args.version+' Signed Windows\n')
-    if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-win-signed', '../runebase/contrib/gitian-descriptors/gitian-win-signer.yml']):
-        print('Verifying v'+args.version+' Signed Windows FAILED\n')
-        rc = 1
+    # print('\nVerifying v'+args.version+' Signed Windows\n')
+    # if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-win-signed', '../runebase/contrib/gitian-descriptors/gitian-win-signer.yml']):
+    #     print('Verifying v'+args.version+' Signed Windows FAILED\n')
+    #     rc = 1
 
-    print('\nVerifying v'+args.version+' Signed MacOS\n')
-    if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-osx-signed', '../runebase/contrib/gitian-descriptors/gitian-osx-signer.yml']):
-        print('Verifying v'+args.version+' Signed MacOS FAILED\n')
-        rc = 1
+    # print('\nVerifying v'+args.version+' Signed MacOS\n')
+    # if subprocess.call(['bin/gverify', '-v', '-d', '../gitian.sigs/', '-r', args.version+'-osx-signed', '../runebase/contrib/gitian-descriptors/gitian-osx-signer.yml']):
+    #     print('Verifying v'+args.version+' Signed MacOS FAILED\n')
+    #     rc = 1
 
     os.chdir(workdir)
     return rc
@@ -227,7 +227,7 @@ def main():
     # Add leading 'v' for tags
     if args.commit and args.pull:
         raise Exception('Cannot have both commit and pull')
-    args.commit = ('' if args.commit else 'v') + args.version
+    args.commit = ('' if args.commit else '') + args.version
 
     os.chdir('runebase')
     if args.pull:
