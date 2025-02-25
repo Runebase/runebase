@@ -13,11 +13,12 @@
 #include <qt/guiutil.h>
 
 #include <interfaces/node.h>
-#include <validation.h> // For DEFAULT_SCRIPTCHECK_THREADS
+#include <mapport.h>
 #include <net.h>
 #include <netbase.h>
-#include <txdb.h> // for -dbcache defaults
+#include <txdb.h>       // for -dbcache defaults
 #include <util/string.h>
+#include <validation.h> // For DEFAULT_SCRIPTCHECK_THREADS
 
 #ifdef ENABLE_WALLET
 #include <wallet/wallet.h>
@@ -25,6 +26,7 @@
 #endif
 
 #include <QDebug>
+#include <QLatin1Char>
 #include <QSettings>
 #include <QStringList>
 #include <util/moneystr.h>
@@ -33,8 +35,8 @@ const char *DEFAULT_GUI_PROXY_HOST = "127.0.0.1";
 
 static const QString GetDefaultProxyAddress();
 
-OptionsModel::OptionsModel(interfaces::Node& node, QObject *parent, bool resetSettings) :
-    QAbstractListModel(parent), m_node(node), restartApp(false)
+OptionsModel::OptionsModel(QObject *parent, bool resetSettings) :
+    QAbstractListModel(parent), restartApp(false)
 {
     Init(resetSettings);
 }
@@ -60,14 +62,15 @@ void OptionsModel::Init(bool resetSettings)
     // These are Qt-only settings:
 
     // Window
-    if (!settings.contains("fHideTrayIcon"))
+    if (!settings.contains("fHideTrayIcon")) {
         settings.setValue("fHideTrayIcon", false);
-    fHideTrayIcon = settings.value("fHideTrayIcon").toBool();
-    Q_EMIT hideTrayIconChanged(fHideTrayIcon);
+    }
+    m_show_tray_icon = !settings.value("fHideTrayIcon").toBool();
+    Q_EMIT showTrayIconChanged(m_show_tray_icon);
 
     if (!settings.contains("fMinimizeToTray"))
         settings.setValue("fMinimizeToTray", false);
-    fMinimizeToTray = settings.value("fMinimizeToTray").toBool() && !fHideTrayIcon;
+    fMinimizeToTray = settings.value("fMinimizeToTray").toBool() && m_show_tray_icon;
 
     if (!settings.contains("fMinimizeOnClose"))
         settings.setValue("fMinimizeOnClose", false);
@@ -103,41 +106,41 @@ void OptionsModel::Init(bool resetSettings)
 
     if (!settings.contains("nDatabaseCache"))
         settings.setValue("nDatabaseCache", (qint64)nDefaultDbCache);
-    if (!m_node.softSetArg("-dbcache", settings.value("nDatabaseCache").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-dbcache", settings.value("nDatabaseCache").toString().toStdString()))
         addOverriddenOption("-dbcache");
 
 #ifdef ENABLE_WALLET
     if (!settings.contains("fSuperStaking"))
         settings.setValue("fSuperStaking", false);
     bool fSuperStaking = settings.value("fSuperStaking").toBool();
-    if (!m_node.softSetBoolArg("-superstaking", fSuperStaking))
+    if (!gArgs.SoftSetBoolArg("-superstaking", fSuperStaking))
         addOverriddenOption("-superstaking");
     if(fSuperStaking)
     {
-        if (!m_node.softSetBoolArg("-staking", true))
+        if (!gArgs.SoftSetBoolArg("-staking", true))
             addOverriddenOption("-staking");
-        if (!m_node.softSetBoolArg("-logevents", true))
+        if (!gArgs.SoftSetBoolArg("-logevents", true))
             addOverriddenOption("-logevents");
-        if (!m_node.softSetBoolArg("-addrindex", true))
+        if (!gArgs.SoftSetBoolArg("-addrindex", true))
             addOverriddenOption("-addrindex");
     }
 #endif
 
     if (!settings.contains("fLogEvents"))
         settings.setValue("fLogEvents", fLogEvents);
-    if (!m_node.softSetBoolArg("-logevents", settings.value("fLogEvents").toBool()))
+    if (!gArgs.SoftSetBoolArg("-logevents", settings.value("fLogEvents").toBool()))
         addOverriddenOption("-logevents");
 
 #ifdef ENABLE_WALLET
     if (!settings.contains("nReserveBalance"))
         settings.setValue("nReserveBalance", (long long)DEFAULT_RESERVE_BALANCE);
-    if (!m_node.softSetArg("-reservebalance", FormatMoney(settings.value("nReserveBalance").toLongLong())))
+    if (!gArgs.SoftSetArg("-reservebalance", FormatMoney(settings.value("nReserveBalance").toLongLong())))
         addOverriddenOption("-reservebalance");
 #endif
 
     if (!settings.contains("nThreadsScriptVerif"))
         settings.setValue("nThreadsScriptVerif", DEFAULT_SCRIPTCHECK_THREADS);
-    if (!m_node.softSetArg("-par", settings.value("nThreadsScriptVerif").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-par", settings.value("nThreadsScriptVerif").toString().toStdString()))
         addOverriddenOption("-par");
 
     if (!settings.contains("strDataDir"))
@@ -147,12 +150,24 @@ void OptionsModel::Init(bool resetSettings)
 #ifdef ENABLE_WALLET
     if (!settings.contains("bSpendZeroConfChange"))
         settings.setValue("bSpendZeroConfChange", true);
-    if (!m_node.softSetBoolArg("-spendzeroconfchange", settings.value("bSpendZeroConfChange").toBool()))
+    if (!gArgs.SoftSetBoolArg("-spendzeroconfchange", settings.value("bSpendZeroConfChange").toBool()))
         addOverriddenOption("-spendzeroconfchange");
+
+    if (!settings.contains("external_signer_path"))
+        settings.setValue("external_signer_path", "");
+
+    if (!gArgs.SoftSetArg("-signer", settings.value("external_signer_path").toString().toStdString())) {
+        addOverriddenOption("-signer");
+    }
 
     if (!settings.contains("bZeroBalanceAddressToken"))
         settings.setValue("bZeroBalanceAddressToken", DEFAULT_ZERO_BALANCE_ADDRESS_TOKEN);
     bZeroBalanceAddressToken = settings.value("bZeroBalanceAddressToken").toBool();
+
+    if (!settings.contains("signPSBTWithHWITool"))
+        settings.setValue("signPSBTWithHWITool", DEFAULT_SIGN_PSBT_WITH_HWI_TOOL);
+    if (!gArgs.SoftSetBoolArg("-signpsbtwithhwitool", settings.value("signPSBTWithHWITool").toBool()))
+        addOverriddenOption("-signpsbtwithhwitool");
 #endif
 
     if (!settings.contains("fCheckForUpdates"))
@@ -162,12 +177,19 @@ void OptionsModel::Init(bool resetSettings)
     // Network
     if (!settings.contains("fUseUPnP"))
         settings.setValue("fUseUPnP", DEFAULT_UPNP);
-    if (!m_node.softSetBoolArg("-upnp", settings.value("fUseUPnP").toBool()))
+    if (!gArgs.SoftSetBoolArg("-upnp", settings.value("fUseUPnP").toBool()))
         addOverriddenOption("-upnp");
+
+    if (!settings.contains("fUseNatpmp")) {
+        settings.setValue("fUseNatpmp", DEFAULT_NATPMP);
+    }
+    if (!gArgs.SoftSetBoolArg("-natpmp", settings.value("fUseNatpmp").toBool())) {
+        addOverriddenOption("-natpmp");
+    }
 
     if (!settings.contains("fListen"))
         settings.setValue("fListen", DEFAULT_LISTEN);
-    if (!m_node.softSetBoolArg("-listen", settings.value("fListen").toBool()))
+    if (!gArgs.SoftSetBoolArg("-listen", settings.value("fListen").toBool()))
         addOverriddenOption("-listen");
 
 #ifdef ENABLE_WALLET
@@ -183,7 +205,7 @@ void OptionsModel::Init(bool resetSettings)
         // Set the parameter value
         settings.setValue("fUseChangeAddress", useChangeAddress);
     }
-    if (!m_node.softSetBoolArg("-usechangeaddress", settings.value("fUseChangeAddress").toBool()))
+    if (!gArgs.SoftSetBoolArg("-usechangeaddress", settings.value("fUseChangeAddress").toBool()))
         addOverriddenOption("-usechangeaddress");
 #endif
 
@@ -192,7 +214,7 @@ void OptionsModel::Init(bool resetSettings)
     if (!settings.contains("addrProxy"))
         settings.setValue("addrProxy", GetDefaultProxyAddress());
     // Only try to set -proxy, if user has enabled fUseProxy
-    if (settings.value("fUseProxy").toBool() && !m_node.softSetArg("-proxy", settings.value("addrProxy").toString().toStdString()))
+    if ((settings.value("fUseProxy").toBool() && !gArgs.SoftSetArg("-proxy", settings.value("addrProxy").toString().toStdString())))
         addOverriddenOption("-proxy");
     else if(!settings.value("fUseProxy").toBool() && !gArgs.GetArg("-proxy", "").empty())
         addOverriddenOption("-proxy");
@@ -202,7 +224,7 @@ void OptionsModel::Init(bool resetSettings)
     if (!settings.contains("addrSeparateProxyTor"))
         settings.setValue("addrSeparateProxyTor", GetDefaultProxyAddress());
     // Only try to set -onion, if user has enabled fUseSeparateProxyTor
-    if (settings.value("fUseSeparateProxyTor").toBool() && !m_node.softSetArg("-onion", settings.value("addrSeparateProxyTor").toString().toStdString()))
+    if ((settings.value("fUseSeparateProxyTor").toBool() && !gArgs.SoftSetArg("-onion", settings.value("addrSeparateProxyTor").toString().toStdString())))
         addOverriddenOption("-onion");
     else if(!settings.value("fUseSeparateProxyTor").toBool() && !gArgs.GetArg("-onion", "").empty())
         addOverriddenOption("-onion");
@@ -210,15 +232,35 @@ void OptionsModel::Init(bool resetSettings)
     // Display
     if (!settings.contains("language"))
         settings.setValue("language", "");
-    if (!m_node.softSetArg("-lang", settings.value("language").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-lang", settings.value("language").toString().toStdString()))
         addOverriddenOption("-lang");
 
     language = settings.value("language").toString();
+
+    if (!settings.contains("UseEmbeddedMonospacedFont")) {
+        settings.setValue("UseEmbeddedMonospacedFont", "true");
+    }
+    m_use_embedded_monospaced_font = settings.value("UseEmbeddedMonospacedFont").toBool();
+    Q_EMIT useEmbeddedMonospacedFontChanged(m_use_embedded_monospaced_font);
 
     if (!settings.contains("Theme"))
         settings.setValue("Theme", "");
 
     theme = settings.value("Theme").toString();
+
+#ifdef ENABLE_WALLET
+    if (!settings.contains("HWIToolPath"))
+        settings.setValue("HWIToolPath", "");
+
+    if (!gArgs.SoftSetArg("-hwitoolpath", settings.value("HWIToolPath").toString().toStdString()))
+        addOverriddenOption("-hwitoolpath");
+
+    if (!settings.contains("StakeLedgerId"))
+        settings.setValue("StakeLedgerId", "");
+
+    if (!gArgs.SoftSetArg("-stakerledgerid", settings.value("StakeLedgerId").toString().toStdString()))
+        addOverriddenOption("-stakerledgerid");
+#endif
 }
 
 /** Helper function to copy contents from one QSettings to another.
@@ -245,7 +287,7 @@ void OptionsModel::Reset()
     QSettings settings;
 
     // Backup old settings to chain-specific datadir for troubleshooting
-    BackupSettings(GetDataDir(true) / "guisettings.ini.bak", settings);
+    BackupSettings(gArgs.GetDataDirNet() / "guisettings.ini.bak", settings);
 
     // Save the strDataDir setting
     QString dataDir = GUIUtil::getDefaultDataDirectory();
@@ -284,7 +326,7 @@ static ProxySetting GetProxySetting(QSettings &settings, const QString &name)
         return default_val;
     }
     // contains IP at index 0 and port at index 1
-    QStringList ip_port = settings.value(name).toString().split(":", QString::SkipEmptyParts);
+    QStringList ip_port = GUIUtil::SplitSkipEmptyParts(settings.value(name).toString(), ":");
     if (ip_port.size() == 2) {
         return {true, ip_port.at(0), ip_port.at(1)};
     } else { // Invalid: return default
@@ -294,7 +336,7 @@ static ProxySetting GetProxySetting(QSettings &settings, const QString &name)
 
 static void SetProxySetting(QSettings &settings, const QString &name, const ProxySetting &ip_port)
 {
-    settings.setValue(name, ip_port.ip + ":" + ip_port.port);
+    settings.setValue(name, QString{ip_port.ip + QLatin1Char(':') + ip_port.port});
 }
 
 static const QString GetDefaultProxyAddress()
@@ -309,10 +351,10 @@ void OptionsModel::SetPruneEnabled(bool prune, bool force)
     const int64_t prune_target_mib = PruneGBtoMiB(settings.value("nPruneSize").toInt());
     std::string prune_val = prune ? ToString(prune_target_mib) : "0";
     if (force) {
-        m_node.forceSetArg("-prune", prune_val);
+        gArgs.ForceSetArg("-prune", prune_val);
         return;
     }
-    if (!m_node.softSetArg("-prune", prune_val)) {
+    if (!gArgs.SoftSetArg("-prune", prune_val)) {
         addOverriddenOption("-prune");
     }
 }
@@ -337,8 +379,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
         {
         case StartAtStartup:
             return GUIUtil::GetStartOnSystemStartup();
-        case HideTrayIcon:
-            return fHideTrayIcon;
+        case ShowTrayIcon:
+            return m_show_tray_icon;
         case MinimizeToTray:
             return fMinimizeToTray;
         case MapPortUPnP:
@@ -346,7 +388,13 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("fUseUPnP");
 #else
             return false;
-#endif
+#endif // USE_UPNP
+        case MapPortNatpmp:
+#ifdef USE_NATPMP
+            return settings.value("fUseNatpmp");
+#else
+            return false;
+#endif // USE_NATPMP
         case MinimizeOnClose:
             return fMinimizeOnClose;
 
@@ -369,10 +417,14 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
 #ifdef ENABLE_WALLET
         case SpendZeroConfChange:
             return settings.value("bSpendZeroConfChange");
+        case ExternalSignerPath:
+            return settings.value("external_signer_path");
         case ZeroBalanceAddressToken:
             return settings.value("bZeroBalanceAddressToken");
         case ReserveBalance:
             return settings.value("nReserveBalance");
+        case SignPSBTWithHWITool:
+            return settings.value("signPSBTWithHWITool");
 #endif
         case DisplayUnit:
             return nDisplayUnit;
@@ -380,6 +432,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return strThirdPartyTxUrls;
         case Language:
             return settings.value("language");
+        case UseEmbeddedMonospacedFont:
+            return m_use_embedded_monospaced_font;
         case CoinControlFeatures:
             return fCoinControlFeatures;
         case Prune:
@@ -406,6 +460,12 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("fCheckForUpdates");
         case Theme:
             return settings.value("Theme");
+#ifdef ENABLE_WALLET
+        case HWIToolPath:
+            return settings.value("HWIToolPath");
+        case StakeLedgerId:
+            return settings.value("StakeLedgerId");
+#endif
         default:
             return QVariant();
         }
@@ -425,10 +485,10 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case StartAtStartup:
             successful = GUIUtil::SetStartOnSystemStartup(value.toBool());
             break;
-        case HideTrayIcon:
-            fHideTrayIcon = value.toBool();
-            settings.setValue("fHideTrayIcon", fHideTrayIcon);
-    		Q_EMIT hideTrayIconChanged(fHideTrayIcon);
+        case ShowTrayIcon:
+            m_show_tray_icon = value.toBool();
+            settings.setValue("fHideTrayIcon", !m_show_tray_icon);
+            Q_EMIT showTrayIconChanged(m_show_tray_icon);
             break;
         case MinimizeToTray:
             fMinimizeToTray = value.toBool();
@@ -436,7 +496,9 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case MapPortUPnP: // core option - can be changed on-the-fly
             settings.setValue("fUseUPnP", value.toBool());
-            m_node.mapPort(value.toBool());
+            break;
+        case MapPortNatpmp: // core option - can be changed on-the-fly
+            settings.setValue("fUseNatpmp", value.toBool());
             break;
         case MinimizeOnClose:
             fMinimizeOnClose = value.toBool();
@@ -502,11 +564,24 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 setRestartRequired(true);
             }
             break;
+        case ExternalSignerPath:
+            if (settings.value("external_signer_path") != value.toString()) {
+                settings.setValue("external_signer_path", value.toString());
+                setRestartRequired(true);
+            }
+            break;
         case ZeroBalanceAddressToken:
             bZeroBalanceAddressToken = value.toBool();
             settings.setValue("bZeroBalanceAddressToken", bZeroBalanceAddressToken);
             Q_EMIT zeroBalanceAddressTokenChanged(bZeroBalanceAddressToken);
             break;
+        case SignPSBTWithHWITool:
+            if (settings.value("signPSBTWithHWITool") != value) {
+                settings.setValue("signPSBTWithHWITool", value);
+                setRestartRequired(true);
+            }
+            break;
+
 #endif
         case DisplayUnit:
             setDisplayUnit(value);
@@ -523,6 +598,11 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 settings.setValue("language", value);
                 setRestartRequired(true);
             }
+            break;
+        case UseEmbeddedMonospacedFont:
+            m_use_embedded_monospaced_font = value.toBool();
+            settings.setValue("UseEmbeddedMonospacedFont", m_use_embedded_monospaced_font);
+            Q_EMIT useEmbeddedMonospacedFontChanged(m_use_embedded_monospaced_font);
             break;
         case CoinControlFeatures:
             fCoinControlFeatures = value.toBool();
@@ -601,6 +681,20 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 setRestartRequired(true);
             }
             break;
+#ifdef ENABLE_WALLET
+        case HWIToolPath:
+            if (settings.value("HWIToolPath") != value) {
+                settings.setValue("HWIToolPath", value);
+                setRestartRequired(true);
+            }
+            break;
+        case StakeLedgerId:
+            if (settings.value("StakeLedgerId") != value) {
+                settings.setValue("StakeLedgerId", value);
+                setRestartRequired(true);
+            }
+            break;
+#endif
         default:
             break;
         }

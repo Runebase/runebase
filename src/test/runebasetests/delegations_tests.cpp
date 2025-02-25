@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(checking_delegations_contract){
     // Create contracts
     std::vector<RunebaseTransaction> txs;
     txs.push_back(createRunebaseTransaction(DELEGATION_CODE, 0, GASLIMIT, dev::u256(1), hashTx, dev::Address()));
-    executeBC(txs);
+    executeBC(txs, *m_node.chainman);
 
     // Set delegation contract address
     dev::Address contractAddress = createRunebaseAddress(txs[0].getHashWith(), txs[0].getNVout());
@@ -123,12 +123,12 @@ BOOST_AUTO_TEST_CASE(checking_delegations_contract){
     RunebaseTransaction txAdd = createRunebaseTransaction(ParseHex(ADD_BYTECODE_HEX), 0, GASLIMIT, dev::u256(1), ++hashTx, contractAddress);
     txAdd.forceSender(dev::Address(DELEGATE_ADDRESS_HEX));
     txsAdd.push_back(txAdd);
-    executeBC(txsAdd);
+    executeBC(txsAdd, *m_node.chainman);
 
     // Get delegation for address
     Delegation delegation;
     uint160 address(ParseHex(DELEGATE_ADDRESS_HEX));
-    bool contractRet = runebaseDelegation.GetDelegation(address, delegation);
+    bool contractRet = runebaseDelegation.GetDelegation(address, delegation, m_node.chainman->ActiveChainstate());
     BOOST_CHECK(contractRet == true);
 
     // Verify delegation is valid
@@ -142,11 +142,11 @@ BOOST_AUTO_TEST_CASE(checking_delegations_contract){
     RunebaseTransaction txRemove = createRunebaseTransaction(ParseHex(REMOVE_BYTECODE_HEX), 0, GASLIMIT, dev::u256(1), ++hashTx, contractAddress);
     txRemove.forceSender(dev::Address(DELEGATE_ADDRESS_HEX));
     txsRemove.push_back(txRemove);
-    executeBC(txsRemove);
+    executeBC(txsRemove, *m_node.chainman);
 
     // Get delegation for address
     delegation = Delegation();
-    contractRet = runebaseDelegation.GetDelegation(address, delegation);
+    contractRet = runebaseDelegation.GetDelegation(address, delegation, m_node.chainman->ActiveChainstate());
     BOOST_CHECK(contractRet == true);
 
     // Verify delegation is valid

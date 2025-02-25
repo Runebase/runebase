@@ -180,7 +180,7 @@ void SuperStakerItemWidget::updateLogo()
     }
     else
     {
-        if (m_model->node().getNodeCount(CConnman::CONNECTIONS_ALL) == 0)
+        if (m_model->node().getNodeCount(ConnectionDirection::Both) == 0)
             ui->superStakerLogo->setToolTip(tr("Not staking because wallet is offline"));
         else if (m_model->node().isInitialBlockDownload())
             ui->superStakerLogo->setToolTip(tr("Not staking because wallet is syncing"));
@@ -192,6 +192,8 @@ void SuperStakerItemWidget::updateLogo()
             ui->superStakerLogo->setToolTip(tr("Not staking because you don't have mature delegated coins"));
         else if (m_model->wallet().isLocked())
             ui->superStakerLogo->setToolTip(tr("Not staking because wallet is locked"));
+        else if(m_model->hasLedgerProblem())
+            ui->superStakerLogo->setToolTip(tr("Not staking because the ledger device failed to connect"));
         else
             ui->superStakerLogo->setToolTip(tr("Not staking"));
     }
@@ -222,8 +224,8 @@ void SuperStakerItemWidget::updateBalance()
     int unit = BitcoinUnits::BTC;
     if(m_model && m_model->getOptionsModel())
         unit = m_model->getOptionsModel()->getDisplayUnit();
-    ui->labelAssets->setText(BitcoinUnits::formatWithUnit(unit, d->balance, false, BitcoinUnits::separatorAlways));
-    ui->labelStake->setText(BitcoinUnits::formatWithUnit(unit, d->stake, false, BitcoinUnits::separatorAlways));
+    ui->labelAssets->setText(BitcoinUnits::formatWithUnit(unit, d->balance, false, BitcoinUnits::SeparatorStyle::ALWAYS));
+    ui->labelStake->setText(BitcoinUnits::formatWithUnit(unit, d->stake, false, BitcoinUnits::SeparatorStyle::ALWAYS));
 }
 
 void SuperStakerItemWidget::updateLabelStaker()

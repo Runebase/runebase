@@ -10,6 +10,7 @@
 #include <util/strencodings.h>
 #include <crypto/common.h>
 #include <pubkey.h>
+#include <streams.h>
 
 // Used to serialize the header without signature
 // Workaround due to removing serialization templates in Bitcoin Core 0.18
@@ -31,22 +32,11 @@ public:
         vchBlockDlgt = header.GetProofOfDelegation();
     }
 
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(this->nVersion);
-        READWRITE(hashPrevBlock);
-        READWRITE(hashMerkleRoot);
-        READWRITE(nTime);
-        READWRITE(nBits);
-        READWRITE(nNonce);
-        READWRITE(hashStateRoot);
-        READWRITE(hashUTXORoot);
-        READWRITE(prevoutStake);
-        if(fHasProofOfDelegation)
+    SERIALIZE_METHODS(CBlockHeaderSign, obj) { 
+        READWRITE(obj.nVersion, obj.hashPrevBlock, obj.hashMerkleRoot, obj.nTime, obj.nBits, obj.nNonce, obj.hashStateRoot, obj.hashUTXORoot, obj.prevoutStake);
+        if(obj.fHasProofOfDelegation)
         {
-            READWRITE(vchBlockDlgt);
+            READWRITE(obj.vchBlockDlgt);
         }
     }
 
@@ -74,6 +64,13 @@ uint256 CBlockHeader::GetHash() const
 uint256 CBlockHeader::GetHashWithoutSign() const
 {
     return SerializeHash(CBlockHeaderSign(*this), SER_GETHASH);
+}
+
+std::string CBlockHeader::GetWithoutSign() const
+{
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << CBlockHeaderSign(*this);
+    return EncodeBase64(ss.str());
 }
 
 std::string CBlock::ToString() const

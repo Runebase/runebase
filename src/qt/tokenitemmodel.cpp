@@ -126,6 +126,7 @@ private Q_SLOTS:
             tokenAbi.setAddress(tokenInfo.contract_address);
             tokenAbi.setSender(tokenInfo.sender_address);
             tokenAbi.transferEvents(tokenEvents, fromBlock, toBlock);
+            tokenAbi.burnEvents(tokenEvents, fromBlock, toBlock);
             for(size_t i = 0; i < tokenEvents.size(); i++)
             {
                 TokenEvent event = tokenEvents[i];
@@ -331,8 +332,7 @@ TokenItemModel::~TokenItemModel()
 {
     unsubscribeFromCoreSignals();
 
-    t.quit();
-    t.wait();
+    join();
 
     if(priv)
     {
@@ -386,7 +386,7 @@ QVariant TokenItemModel::data(const QModelIndex &index, int role) const
         case Symbol:
             return rec->tokenSymbol;
         case Balance:
-            return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::separatorAlways);
+            return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::SeparatorStyle::ALWAYS);
         default:
             break;
         }
@@ -410,7 +410,7 @@ QVariant TokenItemModel::data(const QModelIndex &index, int role) const
         return rec->senderAddress;
         break;
     case TokenItemModel::BalanceRole:
-        return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::separatorAlways);
+        return BitcoinUnits::formatToken(rec->decimals, rec->balance, false, BitcoinUnits::SeparatorStyle::ALWAYS);
         break;
     case TokenItemModel::RawBalanceRole:
         return QString::fromStdString(rec->balance.str());
@@ -536,4 +536,15 @@ void TokenItemModel::updateBalance(const TokenItemEntry &entry)
     QString hash = QString::fromStdString(entry.hash.ToString());
     QMetaObject::invokeMethod(worker, "updateBalance", Qt::QueuedConnection,
                               Q_ARG(QString, hash), Q_ARG(QString, entry.contractAddress), Q_ARG(QString, entry.senderAddress));
+}
+
+void TokenItemModel::join()
+{
+    if(t.isRunning())
+    {
+        if(worker)
+            worker->disconnect(this);
+        t.quit();
+        t.wait();
+    }
 }
