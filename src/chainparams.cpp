@@ -118,8 +118,8 @@ public:
         // Replace 0xffffc0 with the activation block number
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 1324512;
 
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000008d4ab21b8ea83d2592e"); // 1883974
-        consensus.defaultAssumeValid = uint256S("0xb916180ee7360ea84ab593ea879f68dd37ae19309f185fe2235d354113b4d96f"); // 1883974
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000008f368d7c786ca0f6855"); // 1324600
+        consensus.defaultAssumeValid = uint256S("0x556a47a2f6a2ad230eb9276595303475c8319757508b7c813130dbe65bf8b914"); // 1324600
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -174,6 +174,7 @@ public:
                 { 862906, uint256S("d281ea716a2202e876f94b2a3a32c3f79c4a2f7f8c542c764cab5fee605ed28c")},
                 { 1306824, uint256S("a3de7dba1aaa9c132b2fa2b9fdf55c0c59757f002761d10de01d19af38fcd10e")},
                 { 1310070, uint256S("e337e6fe9f0e5558015f9ed423e06b762cf2177e14d13ff1576ce3d4f619cf13")},
+                { 1324600, uint256S("556a47a2f6a2ad230eb9276595303475c8319757508b7c813130dbe65bf8b914")},
             }
         };
 
@@ -182,9 +183,9 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data as of block 1f3f34f1f0fafc603ac413006e082f96670b55f0cc7f1f34062d8c02c95b95c4 (height 1310085)
-        	1740316492, // * UNIX timestamp of last known number of transactions
-			2634207, // * total number of transactions between genesis and that timestamp
+            // Data as of block e6c3e2a1286b35544bedacb0dcd882049e8947db9aeb7e3cbb8fbc0b6b6353d3 (height 1324607)
+        	1740781328, // * UNIX timestamp of last known number of transactions
+			2663280, // * total number of transactions between genesis and that timestamp
             //   (the tx=... number in the SetBestChain debug.log lines)
 			0.03358921219453481 // * estimated number of transactions per second after that timestamp
         };
