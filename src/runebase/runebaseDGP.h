@@ -16,9 +16,9 @@ static const uint32_t MIN_BLOCK_SIZE_DGP = 500000;
 static const uint32_t MAX_BLOCK_SIZE_DGP = 32000000;
 static const uint32_t DEFAULT_BLOCK_SIZE_DGP = 2000000;
 
-static const uint64_t MIN_MIN_GAS_PRICE_DGP = 1;
-static const uint64_t MAX_MIN_GAS_PRICE_DGP = 10000;
-static const uint64_t DEFAULT_MIN_GAS_PRICE_DGP = 40;
+static const uint64_t MIN_MIN_GAS_PRICE_DGP = 100;
+static const uint64_t MAX_MIN_GAS_PRICE_DGP = 1000000;
+static const uint64_t DEFAULT_MIN_GAS_PRICE_DGP = 4000;
 
 static const uint64_t MIN_BLOCK_GAS_LIMIT_DGP = 1000000;
 static const uint64_t MAX_BLOCK_GAS_LIMIT_DGP = 1000000000;
@@ -28,7 +28,7 @@ class RunebaseDGP {
     
 public:
 
-    RunebaseDGP(RunebaseState* _state, CChainState& _chainstate, bool _dgpevm = true) : dgpevm(_dgpevm), state(_state), chainstate(_chainstate) { initDataSchedule(); }
+    RunebaseDGP(RunebaseState* _state, Chainstate& _chainstate, bool _dgpevm = true) : dgpevm(_dgpevm), state(_state), chainstate(_chainstate) { initDataSchedule(); }
 
     dev::eth::EVMSchedule getGasSchedule(int blockHeight);
 
@@ -76,7 +76,7 @@ private:
 
     const RunebaseState* state;
 
-    CChainState& chainstate;
+    Chainstate& chainstate;
 
     dev::Address templateContract;
 

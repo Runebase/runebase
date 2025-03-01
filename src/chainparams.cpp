@@ -10,13 +10,12 @@
 #include <deploymentinfo.h>
 #include <consensus/consensus.h>
 #include <hash.h> // for signet block challenge hash
+#include <script/interpreter.h>
+#include <util/string.h>
 #include <util/system.h>
 #include <util/convert.h>
 
 #include <assert.h>
-
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 ///////////////////////////////////////////// // runebase
 #include <libdevcore/SHA3.h>
@@ -75,7 +74,8 @@ public:
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
-        consensus.BIP16Exception = uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a");
+        consensus.script_flag_exceptions.emplace( // BIP16 exception
+            uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a"), SCRIPT_VERIFY_NONE);
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000208ee7a300f2baaf39f8524bf1bd6ed90db885d97b26e1a229f44ff73b9a");
         consensus.BIP65Height = 0; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
@@ -91,6 +91,7 @@ public:
         consensus.nReduceBlocktimeHeight = 1310000;
         consensus.nMuirGlacierHeight = 1310000;
         consensus.nLondonHeight = 1324512;
+        consensus.nShanghaiHeight = 3385122;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -132,7 +133,7 @@ public:
         pchMessageStart[3] = 0xa6;
         nDefaultPort = 9947;
         nPruneAfterHeight = 100000;
-        m_assumed_blockchain_size = 18;
+        m_assumed_blockchain_size = 21;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1572854661, 355217, 0x1f00ffff, 1, 50 * COIN);
@@ -184,10 +185,9 @@ public:
 
         chainTxData = ChainTxData{
             // Data as of block e6c3e2a1286b35544bedacb0dcd882049e8947db9aeb7e3cbb8fbc0b6b6353d3 (height 1324607)
-        	1740781328, // * UNIX timestamp of last known number of transactions
-			2663280, // * total number of transactions between genesis and that timestamp
-            //   (the tx=... number in the SetBestChain debug.log lines)
-			0.03358921219453481 // * estimated number of transactions per second after that timestamp
+            .nTime    = 1740781328, // * UNIX timestamp of last known number of transactions
+            .nTxCount = 2663280, // * total number of transactions between genesis and that timestamp
+            .dTxRate  = 0.07664262206369668, // * estimated number of transactions per second after that timestamp
         };
 
         consensus.nBlocktimeDownscaleFactor = 4;
@@ -224,7 +224,8 @@ public:
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
-        consensus.BIP16Exception = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46");
+        consensus.script_flag_exceptions.emplace( // BIP16 exception
+            uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46"), SCRIPT_VERIFY_NONE);
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000019d9d91d1c7fd440938747eed3ca13a2d2c0533054115f147ab0da69d46");
         consensus.BIP65Height = 0; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
@@ -240,6 +241,7 @@ public:
         consensus.nReduceBlocktimeHeight = 5200;
         consensus.nMuirGlacierHeight = 5200;
         consensus.nLondonHeight = 20160;
+        consensus.nShanghaiHeight = 3298892;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -267,7 +269,7 @@ public:
         // Replace 0xffffc0 with the activation block number
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 20160;
 
-        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000008a0a89c23f0475"); // runebase
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000008a0a89c23f0475"); // 5000
         consensus.defaultAssumeValid = uint256S("0x00006a309efe08b9cf65916f1b6f5cd1e1a3dacb10457710099903007a37c678"); // 5000
 
         pchMessageStart[0] = 0xac;
@@ -276,7 +278,7 @@ public:
         pchMessageStart[3] = 0x2d;
         nDefaultPort = 19947;
         nPruneAfterHeight = 1000;
-        m_assumed_blockchain_size = 8;
+        m_assumed_blockchain_size = 10;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1578091191, 111552, 0x1f00ffff, 1, 50 * COIN);
@@ -319,9 +321,9 @@ public:
 
         chainTxData = ChainTxData{
             // Data as of block a1974289488ffe064cacff6b60b08c4ff83b1236d95481a11abad30588629abc (height 5000)
-        	1739905863,
-			6703,
-			0.01624824080589608
+            .nTime    = 1739905863,
+            .nTxCount = 6703,
+            .dTxRate  = 0.06299127541669518,
         };
 
         consensus.nBlocktimeDownscaleFactor = 4;
@@ -364,10 +366,10 @@ public:
             m_assumed_blockchain_size = 1;
             m_assumed_chain_state_size = 0;
             chainTxData = ChainTxData{
-                // Data from RPC: getchaintxstats 4096 0000003d9144c56ac110ae04a0c271a0acce2f14f426b39fdf0d938c96d2eb09
-                /* nTime    */ 0,
-                /* nTxCount */ 0,
-                /* dTxRate  */ 0,
+                // Data from RPC: getchaintxstats 4096 000000d1a0e224fa4679d2fb2187ba55431c284fa1b74cbc8cfda866fd4d2c09
+                .nTime    = 0,
+                .nTxCount = 0,
+                .dTxRate  = 0,
             };
         } else {
             const auto signet_challenge = args.GetArgs("-signetchallenge");
@@ -395,8 +397,7 @@ public:
         strNetworkID = CBaseChainParams::SIGNET;
         consensus.signet_blocks = true;
         consensus.signet_challenge.assign(bin.begin(), bin.end());
-        consensus.nSubsidyHalvingInterval = 985500;
-        consensus.BIP16Exception = uint256{};
+        consensus.nSubsidyHalvingInterval = 525960000;
         consensus.BIP34Height = 1;
         consensus.BIP34Hash = uint256{};
         consensus.BIP65Height = 1;
@@ -411,6 +412,7 @@ public:
         consensus.nReduceBlocktimeHeight = 0;
         consensus.nMuirGlacierHeight = 0;
         consensus.nLondonHeight = 0;
+        consensus.nShanghaiHeight = 0;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -438,7 +440,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
 
         // message start is defined as the first 4 bytes of the sha256d of the block script
-        CHashWriter h(SER_DISK, 0);
+        HashWriter h{};
         h << consensus.signet_challenge;
         uint256 hash = h.GetHash();
         memcpy(pchMessageStart, hash.begin(), 4);
@@ -470,7 +472,7 @@ public:
         consensus.nBlocktimeDownscaleFactor = 4;
         consensus.nCoinbaseMaturity = 500;
         consensus.nRBTCoinbaseMaturity = consensus.nBlocktimeDownscaleFactor*500;
-        consensus.nSubsidyHalvingIntervalV2 = consensus.nBlocktimeDownscaleFactor*985500; // runebase halving every 4 years (nSubsidyHalvingInterval * nBlocktimeDownscaleFactor)
+        consensus.nSubsidyHalvingIntervalV2 = consensus.nBlocktimeDownscaleFactor*525960000; // runebase halving every 4 years (nSubsidyHalvingInterval * nBlocktimeDownscaleFactor)
 
         consensus.nLastPOWBlock = 0x7fffffff;
         consensus.nLastBigReward = 5000;
@@ -499,7 +501,6 @@ public:
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 525960000;
-        consensus.BIP16Exception = uint256();
         consensus.BIP34Height = 1; // Always active unless overridden
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = 1;  // Always active unless overridden
@@ -515,6 +516,7 @@ public:
         consensus.nReduceBlocktimeHeight = 0;
         consensus.nMuirGlacierHeight = 0;
         consensus.nLondonHeight = 0;
+        consensus.nShanghaiHeight = 0;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -663,8 +665,7 @@ void CRegTestParams::UpdateActivationParametersFromArgs(const ArgsManager& args)
     if (!args.IsArgSet("-vbparams")) return;
 
     for (const std::string& strDeployment : args.GetArgs("-vbparams")) {
-        std::vector<std::string> vDeploymentParams;
-        boost::split(vDeploymentParams, strDeployment, boost::is_any_of(":"));
+        std::vector<std::string> vDeploymentParams = SplitString(strDeployment, ':');
         if (vDeploymentParams.size() < 3 || 4 < vDeploymentParams.size()) {
             throw std::runtime_error("Version bits parameters malformed, expecting deployment:start:end[:min_activation_height]");
         }
@@ -704,7 +705,6 @@ public:
     : CRegTestParams(args)
     {
         // Activate the the BIPs for regtest as in Bitcoin
-        consensus.BIP16Exception = uint256();
         consensus.BIP34Height = 100000000; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests)
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = consensus.nBlocktimeDownscaleFactor*500 + 851; // BIP65 activated on regtest (Used in rpc activation tests)
@@ -779,6 +779,7 @@ std::string CChainParams::EVMGenesisInfo() const
     evmConsensus.QIP7Height = consensus.QIP7Height;
     evmConsensus.nMuirGlacierHeight = consensus.nMuirGlacierHeight;
     evmConsensus.nLondonHeight = consensus.nLondonHeight;
+    evmConsensus.nShanghaiHeight = consensus.nShanghaiHeight;
     return dev::eth::genesisInfoRunebase(GetEVMNetwork(), evmConsensus);
 }
 
@@ -960,4 +961,14 @@ void CChainParams::UpdateTaprootHeight(int nHeight)
 void UpdateTaprootHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateTaprootHeight(nHeight);
+}
+
+void CChainParams::UpdateShanghaiHeight(int nHeight)
+{
+    consensus.nShanghaiHeight = nHeight;
+}
+
+void UpdateShanghaiHeight(int nHeight)
+{
+    const_cast<CChainParams*>(globalChainParams.get())->UpdateShanghaiHeight(nHeight);
 }

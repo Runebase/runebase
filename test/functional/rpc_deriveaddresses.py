@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.descriptors import descsum_create
 from test_framework.util import assert_equal, assert_raises_rpc_error
-from test_framework.runebase import convert_btc_bech32_address_to_runebase, convert_btc_address_to_runebase
+from test_framework.runebase import convert_btc_bech32_address_to_runebase, convert_btc_address_to_runebase 
 
 class DeriveaddressesTest(BitcoinTestFramework):
     def set_test_params(self):

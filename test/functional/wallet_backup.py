@@ -41,7 +41,6 @@ from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
 )
-
 from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD
 from test_framework.runebase import generatesynchronized
 
