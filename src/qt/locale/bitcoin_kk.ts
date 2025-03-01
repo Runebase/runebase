@@ -67,8 +67,8 @@
     </message>
     <message>
         <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation type="unfinished">Бұл сіздің төлем жіберетін Runebase мекенжайларыңыз. Тиын жібермес бұрын, әрқашан сома мен алушы мекенжайды тексеріңіз.</translation>
-    </message>
+        <translation type="unfinished">Бұл сіздің төлем жіберетін Runebase мекенжайларыңыз. Тиын жібермес бұрын, әрқашан сома мен алушы мекенжайды тексеріңіз.</translation> 
+   </message>
     <message>
         <source>&amp;Copy Address</source>
         <translation type="unfinished">&amp;Мекенжайды көшіру</translation>
@@ -160,7 +160,7 @@
     <message>
         <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR RUNEBASES&lt;/b&gt;!</source>
         <translation type="unfinished">Ескерту: әмияныңызды шифрлап, құпиясөйлеміңізден айырылып қалсаңыз, &lt;b&gt;БАРЛЫҚ RUNEBASE-ІҢІЗДЕН ДЕ АЙЫРЫЛАСЫЗ&lt;/b&gt;!</translation>
-    </message>
+   </message>
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">Әмияныңызды шифрлағыңыз келе ме?</translation>
@@ -178,7 +178,7 @@
         <translation type="unfinished">Әмияныңыздың ескі құпиясөйлемі мен жаңа құпиясөйлемін енгізіңіз.</translation>
     </message>
     <message>
-        <source>Remember that encrypting your wallet cannot fully protect your runebases from being stolen by malware infecting your computer.</source>
+        <source>Remember that encrypting your wallet cannot fully protect your runebases from being stolen by malware infecting your computer.</source> 
         <translation type="unfinished">Шифрлау биткоиніңізді компьютер жұқтырған зиянды БЖ-дан толығымен қорғай алмайтынын есіңізде сақтаңыз.</translation>
     </message>
     <message>
@@ -394,7 +394,7 @@
     <message>
         <source>Send coins to a Runebase address</source>
         <translation type="unfinished">Runebase мекенжайына тиын жіберу</translation>
-    </message>
+   </message>
     <message>
         <source>Backup wallet to another location</source>
         <translation type="unfinished">Басқа локацияға әмиянның резервтік көшірмесін жасау</translation>
@@ -438,15 +438,15 @@
     <message>
         <source>Sign messages with your Runebase addresses to prove you own them</source>
         <translation type="unfinished">Хатқа Runebase мекенжайларын қосып, олар сізге тиесілі екенін дәлелдеу</translation>
-    </message>
+   </message>
     <message>
         <source>&amp;Verify message…</source>
         <translation type="unfinished">&amp;Хат тексеру…</translation>
     </message>
     <message>
         <source>Verify messages to ensure they were signed with specified Runebase addresses</source>
-        <translation type="unfinished">Хат тексеріп, берілген Runebase мекенжайлары қосылғанына көз жеткізу</translation>
-    </message>
+        <translation type="unfinished">Хат тексеріп, берілген Runebase мекенжайлары қосылғанына көз жеткізу</translation> 
+   </message>
     <message>
         <source>&amp;Load PSBT from file…</source>
         <translation type="unfinished">&amp;Файлдан PSBT жүктеу…</translation>
@@ -500,7 +500,7 @@
         <translation type="unfinished">Дискідегі блоктар қайта индекстелуде…</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and runebase: URIs)</source>
+        <source>Request payments (generates QR codes and runebase: URIs)</source> 
         <translation type="unfinished">Төлем талап ету (QR кодтары мен биткоин құрады: URI)</translation>
     </message>
     <message>
@@ -559,7 +559,7 @@
         <translation type="unfinished">&amp;Терезе</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Runebase network.</source>
+        <source>%n active connection(s) to Runebase network.</source> 
         <extracomment>A substring of the tooltip.</extracomment>
         <translation type="unfinished">
             <numerusform />
@@ -606,6 +606,10 @@
         <translation type="unfinished">Растық</translation>
     </message>
     <message>
+        <source>yes</source>
+        <translation type="unfinished">Иа</translation>
+    </message>
+    <message>
         <source>(no label)</source>
         <translation type="unfinished">(белгі жоқ)</translation>
     </message>
@@ -642,8 +646,29 @@
 <context>
     <name>Intro</name>
     <message>
-        <source>Runebase</source>
+        <source>Runebase</source> 
         <translation type="unfinished">Биткоин</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n GB of space available</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>(of %n GB needed)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>(%n GB needed for full chain)</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
     <message numerus="yes">
         <source>(sufficient to restore backups %n day(s) old)</source>
@@ -659,7 +684,7 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">Қате</translation>
+        <translation type="unfinished">қате</translation>
     </message>
     <message>
         <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
@@ -690,7 +715,7 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">Қате</translation>
+        <translation type="unfinished">қате</translation>
     </message>
     </context>
 <context>
@@ -815,10 +840,6 @@
 <context>
     <name>TransactionDesc</name>
     <message>
-        <source>0/unconfirmed, %1</source>
-        <translation type="unfinished">0/расталмаған, %1</translation>
-    </message>
-    <message>
         <source>Date</source>
         <translation type="unfinished">Күні</translation>
     </message>
@@ -889,7 +910,7 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">Қате</translation>
+        <translation type="unfinished">қате</translation>
     </message>
     </context>
 <context>
