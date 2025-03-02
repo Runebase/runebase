@@ -91,7 +91,7 @@ public:
         consensus.nReduceBlocktimeHeight = 1310000;
         consensus.nMuirGlacierHeight = 1310000;
         consensus.nLondonHeight = 1324512;
-        consensus.nShanghaiHeight = 3385122;
+        consensus.nShanghaiHeight = 1340000;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
