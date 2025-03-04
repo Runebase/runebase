@@ -20,9 +20,9 @@ bool btc_ecrecover(dev::h256 const& hash, dev::u256 const& v, dev::h256 const& r
  */
 enum ChainIdType
 {
-    MAIN = 531800, // 0x81D58
-    TESTNET = 531801, // 0x81D59
-    REGTEST = 531802, // 0x81D5A
+    MAIN = 531800,
+    TESTNET = 531801,
+    REGTEST = 531802,
 };
 
 /**
