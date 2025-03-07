@@ -1,9 +1,9 @@
-24.1 Release Notes
-==================
+27.1 Release Notes
+=====================
 
-Bitcoin Core version 24.1 is now available from:
+Bitcoin Core version 27.1 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoin-core-24.1/>
+  <https://bitcoincore.org/bin/bitcoin-core-27.1/>
 
 This release includes various bug fixes and performance
 improvements, as well as updated translations.
@@ -32,68 +32,83 @@ Compatibility
 ==============
 
 Bitcoin Core is supported and extensively tested on operating systems
-using the Linux kernel, macOS 10.15+, and Windows 7 and newer.  Bitcoin
+using the Linux Kernel 3.17+, macOS 11.0+, and Windows 7 and newer. Bitcoin
 Core should also work on most other Unix-like systems but is not as
-frequently tested on them.  It is not recommended to use Bitcoin Core on
+frequently tested on them. It is not recommended to use Bitcoin Core on
 unsupported systems.
+
+Notable changes
+===============
+
+### Miniscript
+
+- #29853 sign: don't assume we are parsing a sane TapMiniscript
+
+### RPC
+
+- #29869 rpc, bugfix: Enforce maximum value for setmocktime
+- #29870 rpc: Reword SighashFromStr error message
+- #30094 rpc: move UniValue in blockToJSON
+
+### Index
+
+- #29776 Fix #29767, set m_synced = true after Commit()
+
+### Gui
+
+- #gui812 Fix create unsigned transaction fee bump
+- #gui813 Don't permit port in proxy IP option
+
+### Test
+
+- #29892 test: Fix failing univalue float test
 
 ### P2P
 
-- #26878 I2P network optimizations
-- #26909 net: prevent peers.dat corruptions by only serializing once
-- #27608 p2p: Avoid prematurely clearing download state for other peers
-- #27610 Improve performance of p2p inv to send queues
+- #30085 p2p: detect addnode cjdns peers in GetAddedNodeInfo()
 
-### RPC and other APIs
+### Build
 
-- #26515 rpc: Require NodeStateStats object in getpeerinfo
-- #27279 doc: fix/improve warning helps in {create,load,unload,restore}wallet
-- #27468 rest: avoid segfault for invalid URI
+- #29747 depends: fix mingw-w64 Qt DEBUG=1 build
+- #29859 build: Fix false positive CHECK_ATOMIC test
+- #29985 depends: Fix build of Qt for 32-bit platforms with recent glibc
+- #30097 crypto: disable asan for sha256_sse4 with clang and -O0
+- #30151 depends: Fetch miniupnpc sources from an alternative website
+- #30216 build: Fix building fuzz binary on on SunOS / illumos
+- #30217 depends: Update Boost download link
 
-### Build System
+### Doc
 
-- #26944 depends: fix systemtap download URL
-- #27462 depends: fix compiling bdb with clang-16 on aarch64
+- #29934 doc: add LLVM instruction for macOS < 13
 
-### Wallet
+### CI
 
-- #26595 wallet: be able to specify a wallet name and passphrase to migratewallet
-- #26675 wallet: For feebump, ignore abandoned descendant spends
-- #26679 wallet: Skip rescanning if wallet is more recent than tip
-- #26761 wallet: fully migrate address book entries for watchonly/solvable wallets
-- #27053 wallet: reuse change dest when re-creating TX with avoidpartialspends
-- #27080 wallet: Zero out wallet master key upon locking so it doesn't persist in memory
-- #27473 wallet: Properly handle "unknown" Address Type
+- #29856 ci: Bump s390x to ubuntu:24.04
 
-### GUI changes
+### Misc
 
-- gui#687 Load PSBTs using istreambuf_iterator rather than istream_iterator
-- gui#704 Correctly limit overview transaction list
-
-### Miscellaneous
-
-- #26880 ci: replace Intel macOS CI job
-- #26924 refactor: Add missing includes to fix gcc-13 compile error
+- #29691 Change Luke Dashjr seed to dashjr-list-of-p2p-nodes.us
+- #30149 contrib: Renew Windows code signing certificate
 
 Credits
 =======
 
 Thanks to everyone who directly contributed to this release:
 
-- Andrew Chow
-- Anthony Towns
+- Antoine Poinsot
+- Ava Chow
+- Cory Fields
+- dergoegge
+- fanquake
+- furszy
 - Hennadii Stepanov
-- John Moffett
 - Jon Atack
-- Marco Falke
-- Martin Zumsande
-- Matthew Zipkin
-- Michael Ford
-- pablomartin4btc
-- Sebastian Falbesoner
-- Suhas Daftuar
-- Thomas Nguyen
-- Vasil Dimov
+- laanwj
+- Luke Dashjr
+- MarcoFalke
+- nanlour
+- Sjors Provoost
+- willcl-ark
 
 As well as to everyone that helped with translations on
 [Transifex](https://www.transifex.com/bitcoin/bitcoin/).

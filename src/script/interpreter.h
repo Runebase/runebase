@@ -1,26 +1,28 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_SCRIPT_INTERPRETER_H
 #define BITCOIN_SCRIPT_INTERPRETER_H
 
+#include <consensus/amount.h>
 #include <hash.h>
-#include <script/script_error.h>
-#include <span.h>
 #include <primitives/transaction.h>
+#include <script/script_error.h> // IWYU pragma: export
+#include <span.h>
+#include <uint256.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <vector>
-#include <stdint.h>
 
 class CPubKey;
-class XOnlyPubKey;
 class CScript;
-class CTransaction;
-class CTxOut;
-class uint256;
+class CScriptNum;
+class XOnlyPubKey;
+struct CScriptWitness;
 
 typedef std::vector<unsigned char> valtype;
 
@@ -368,7 +370,10 @@ using TransactionSignatureOutputChecker = GenericTransactionSignatureOutputCheck
 using MutableTransactionSignatureOutputChecker = GenericTransactionSignatureOutputChecker<CMutableTransaction>;
 
 /** Compute the BIP341 tapleaf hash from leaf version & script. */
-uint256 ComputeTapleafHash(uint8_t leaf_version, const CScript& script);
+uint256 ComputeTapleafHash(uint8_t leaf_version, Span<const unsigned char> script);
+/** Compute the BIP341 tapbranch hash from two branches.
+  * Spans must be 32 bytes each. */
+uint256 ComputeTapbranchHash(Span<const unsigned char> a, Span<const unsigned char> b);
 /** Compute the BIP341 taproot script tree Merkle root from control block and leaf hash.
  *  Requires control block to have valid length (33 + k*32, with k in {0,1,..,128}). */
 uint256 ComputeTaprootMerkleRoot(Span<const unsigned char> control, const uint256& tapleaf_hash);

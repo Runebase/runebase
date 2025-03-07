@@ -1,7 +1,11 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
 
 #include <chainparams.h>
 #include <httpserver.h>
@@ -12,18 +16,21 @@
 #include <interfaces/echo.h>
 #include <interfaces/init.h>
 #include <interfaces/ipc.h>
+#include <kernel/cs_main.h>
+#include <logging.h>
 #include <node/context.h>
 #include <rpc/server.h>
 #include <rpc/server_util.h>
 #include <rpc/util.h>
 #include <scheduler.h>
 #include <univalue.h>
+#include <util/any.h>
 #include <util/check.h>
-#include <util/syscall_sandbox.h>
-#include <util/system.h>
 #include <txmempool.h>
 #include <validation.h>
 #include <key_io.h>
+#include <common/args.h>
+#include <util/time.h>
 
 #include <stdint.h>
 #ifdef HAVE_MALLOC_INFO
@@ -55,44 +62,22 @@ static RPCHelpMan setmocktime()
     // ensure all call sites of GetTime() are accessing this safely.
     LOCK(cs_main);
 
-    RPCTypeCheck(request.params, {UniValue::VNUM});
     const int64_t time{request.params[0].getInt<int64_t>()};
-    if (time < 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Mocktime cannot be negative: %s.", time));
+    constexpr int64_t max_time{Ticks<std::chrono::seconds>(std::chrono::nanoseconds::max())};
+    if (time < 0 || time > max_time) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Mocktime must be in the range [0, %s], not %s.", max_time, time));
     }
+
     SetMockTime(time);
-    auto node_context = util::AnyPtr<NodeContext>(request.context);
-    if (node_context) {
-        for (const auto& chain_client : node_context->chain_clients) {
-            chain_client->setMockTime(time);
-        }
+    const NodeContext& node_context{EnsureAnyNodeContext(request.context)};
+    for (const auto& chain_client : node_context.chain_clients) {
+        chain_client->setMockTime(time);
     }
 
     return UniValue::VNULL;
 },
     };
 }
-
-#if defined(USE_SYSCALL_SANDBOX)
-static RPCHelpMan invokedisallowedsyscall()
-{
-    return RPCHelpMan{
-        "invokedisallowedsyscall",
-        "\nInvoke a disallowed syscall to trigger a syscall sandbox violation. Used for testing purposes.\n",
-        {},
-        RPCResult{RPCResult::Type::NONE, "", ""},
-        RPCExamples{
-            HelpExampleCli("invokedisallowedsyscall", "") + HelpExampleRpc("invokedisallowedsyscall", "")},
-        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue {
-            if (!Params().IsTestChain()) {
-                throw std::runtime_error("invokedisallowedsyscall is used for testing only.");
-            }
-            TestDisallowedSandboxCall();
-            return UniValue::VNULL;
-        },
-    };
-}
-#endif // USE_SYSCALL_SANDBOX
 
 static RPCHelpMan mockscheduler()
 {
@@ -109,17 +94,17 @@ static RPCHelpMan mockscheduler()
         throw std::runtime_error("mockscheduler is for regression testing (-regtest mode) only");
     }
 
-    // check params are valid values
-    RPCTypeCheck(request.params, {UniValue::VNUM});
     int64_t delta_seconds = request.params[0].getInt<int64_t>();
     if (delta_seconds <= 0 || delta_seconds > 3600) {
         throw std::runtime_error("delta_time must be between 1 and 3600 seconds (1 hr)");
     }
 
-    auto node_context = CHECK_NONFATAL(util::AnyPtr<NodeContext>(request.context));
-    // protect against null pointer dereference
-    CHECK_NONFATAL(node_context->scheduler);
-    node_context->scheduler->MockForward(std::chrono::seconds(delta_seconds));
+    const NodeContext& node_context{EnsureAnyNodeContext(request.context)};
+    CHECK_NONFATAL(node_context.scheduler)->MockForward(std::chrono::seconds{delta_seconds});
+    SyncWithValidationInterfaceQueue();
+    for (const auto& chain_client : node_context.chain_clients) {
+        chain_client->schedulerMockForward(std::chrono::seconds(delta_seconds));
+    }
 
     return UniValue::VNULL;
 },
@@ -168,7 +153,7 @@ static RPCHelpMan getmemoryinfo()
                 {
                     {"mode", RPCArg::Type::STR, RPCArg::Default{"stats"}, "determines what kind of information is returned.\n"
             "  - \"stats\" returns general statistics about memory usage in the daemon.\n"
-            "  - \"mallocinfo\" returns an XML string describing low-level heap state (only available if compiled with glibc 2.10+)."},
+            "  - \"mallocinfo\" returns an XML string describing low-level heap state (only available if compiled with glibc)."},
                 },
                 {
                     RPCResult{"mode \"stats\"",
@@ -245,11 +230,11 @@ static RPCHelpMan logging()
             "  - \"none\", \"0\" : even if other logging categories are specified, ignore all of them.\n"
             ,
                 {
-                    {"include", RPCArg::Type::ARR, RPCArg::Optional::OMITTED_NAMED_ARG, "The categories to add to debug logging",
+                    {"include", RPCArg::Type::ARR, RPCArg::Optional::OMITTED, "The categories to add to debug logging",
                         {
                             {"include_category", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "the valid logging category"},
                         }},
-                    {"exclude", RPCArg::Type::ARR, RPCArg::Optional::OMITTED_NAMED_ARG, "The categories to remove from debug logging",
+                    {"exclude", RPCArg::Type::ARR, RPCArg::Optional::OMITTED, "The categories to remove from debug logging",
                         {
                             {"exclude_category", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "the valid logging category"},
                         }},
@@ -266,15 +251,15 @@ static RPCHelpMan logging()
                 },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    uint32_t original_log_categories = LogInstance().GetCategoryMask();
+    uint64_t original_log_categories = LogInstance().GetCategoryMask();
     if (request.params[0].isArray()) {
         EnableOrDisableLogCategories(request.params[0], true);
     }
     if (request.params[1].isArray()) {
         EnableOrDisableLogCategories(request.params[1], false);
     }
-    uint32_t updated_log_categories = LogInstance().GetCategoryMask();
-    uint32_t changed_log_categories = original_log_categories ^ updated_log_categories;
+    uint64_t updated_log_categories = LogInstance().GetCategoryMask();
+    uint64_t changed_log_categories = original_log_categories ^ updated_log_categories;
 
     // Update libevent logging if BCLog::LIBEVENT has changed.
     if (changed_log_categories & BCLog::LIBEVENT) {
@@ -298,18 +283,18 @@ static RPCHelpMan echo(const std::string& name)
                 "\nIt will return an internal bug report when arg9='trigger_internal_bug' is passed.\n"
                 "\nThe difference between echo and echojson is that echojson has argument conversion enabled in the client-side table in "
                 "runebase-cli and the GUI. There is no server-side difference.",
-                {
-                    {"arg0", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg1", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg2", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg3", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg4", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg5", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg6", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg7", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg8", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                    {"arg9", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, ""},
-                },
+        {
+            {"arg0", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg1", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg2", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg3", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg4", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg5", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg6", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg7", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg8", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+            {"arg9", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "", RPCArgOptions{.skip_type_check = true}},
+        },
                 RPCResult{RPCResult::Type::ANY, "", "Returns whatever was passed in"},
                 RPCExamples{""},
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
@@ -381,7 +366,7 @@ static RPCHelpMan getindexinfo()
     return RPCHelpMan{"getindexinfo",
                 "\nReturns the status of one or all available indices currently running in the node.\n",
                 {
-                    {"index_name", RPCArg::Type::STR, RPCArg::Optional::OMITTED_NAMED_ARG, "Filter results for an index with a specific name."},
+                    {"index_name", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "Filter results for an index with a specific name."},
                 },
                 RPCResult{
                     RPCResult::Type::OBJ_DYN, "", "", {
@@ -465,7 +450,7 @@ static RPCHelpMan getblockhashes()
                 {
                     {"high", RPCArg::Type::NUM, RPCArg::Optional::NO, "The newer block timestamp"},
                     {"low", RPCArg::Type::NUM, RPCArg::Optional::NO, "The older block timestamp"},
-                    {"options", RPCArg::Type::OBJ, RPCArg::Optional::OMITTED_NAMED_ARG, "An object with options",
+                    {"options", RPCArg::Type::OBJ, RPCArg::Optional::OMITTED, "An object with options",
                         {
                             {"noOrphans", RPCArg::Type::BOOL, RPCArg::Default{"false"}, "Will only include blocks on the main chain"},
                             {"logicalTimes", RPCArg::Type::BOOL, RPCArg::Default{"false"}, "Will include logical timestamps with hashes"},
@@ -507,8 +492,8 @@ static RPCHelpMan getblockhashes()
 
     if (!request.params[2].isNull()) {
         if (request.params[2].isObject()) {
-            UniValue noOrphans = find_value(request.params[2].get_obj(), "noOrphans");
-            UniValue returnLogical = find_value(request.params[2].get_obj(), "logicalTimes");
+            UniValue noOrphans = request.params[2].get_obj().find_value("noOrphans");
+            UniValue returnLogical = request.params[2].get_obj().find_value("logicalTimes");
 
             if (noOrphans.isBool())
                 fActiveOnly = noOrphans.get_bool();
@@ -556,7 +541,7 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint25
         addresses.push_back(std::make_pair(hashBytes, type));
     } else if (params[0].isObject()) {
 
-        UniValue addressValues = find_value(params[0].get_obj(), "addresses");
+        UniValue addressValues = params[0].get_obj().find_value("addresses");
         if (!addressValues.isArray()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Addresses is expected to be an array");
         }
@@ -602,6 +587,10 @@ bool getAddressFromIndex(const int &type, const uint256 &hash, std::string &addr
     } else if (type == 4) {
         std::vector<unsigned char> addressBytes(hash.begin(), hash.begin() + 20);
         address = EncodeDestination(WitnessV0KeyHash(uint160(addressBytes)));
+    } else if (type == 5) {
+        WitnessV1Taproot tap;
+        std::copy(hash.begin(), hash.end(), tap.begin());
+        address = EncodeDestination(tap);
     } else {
         return false;
     }
@@ -679,10 +668,10 @@ static RPCHelpMan getaddressdeltas()
 {
     ChainstateManager& chainman = EnsureAnyChainman(request.context);
 
-    UniValue startValue = find_value(request.params[0].get_obj(), "start");
-    UniValue endValue = find_value(request.params[0].get_obj(), "end");
+    UniValue startValue = request.params[0].get_obj().find_value("start");
+    UniValue endValue = request.params[0].get_obj().find_value("end");
 
-    UniValue chainInfo = find_value(request.params[0].get_obj(), "chainInfo");
+    UniValue chainInfo = request.params[0].get_obj().find_value("chainInfo");
     bool includeChainInfo = false;
     if (chainInfo.isBool()) {
         includeChainInfo = chainInfo.get_bool();
@@ -911,7 +900,7 @@ static RPCHelpMan getaddressutxos()
 
     bool includeChainInfo = false;
     if (request.params[0].isObject()) {
-        UniValue chainInfo = find_value(request.params[0].get_obj(), "chainInfo");
+        UniValue chainInfo = request.params[0].get_obj().find_value("chainInfo");
         if (chainInfo.isBool()) {
             includeChainInfo = chainInfo.get_bool();
         }
@@ -1079,8 +1068,8 @@ static RPCHelpMan getspentinfo()
     const CTxMemPool& mempool = EnsureMemPool(node);
     ChainstateManager& chainman = EnsureAnyChainman(request.context);
 
-    UniValue txidValue = find_value(request.params[0].get_obj(), "txid");
-    UniValue indexValue = find_value(request.params[0].get_obj(), "index");
+    UniValue txidValue = request.params[0].get_obj().find_value("txid");
+    UniValue indexValue = request.params[0].get_obj().find_value("index");
 
     if (!txidValue.isStr() || !indexValue.isNum()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid txid or index");
@@ -1118,8 +1107,8 @@ static RPCHelpMan getaddresstxids()
                                     {"address", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "The runebase address"},
                                 }
                             },
-                            {"start", RPCArg::Type::NUM, RPCArg::Optional::OMITTED_NAMED_ARG, "The start block height"},
-                            {"end", RPCArg::Type::NUM, RPCArg::Optional::OMITTED_NAMED_ARG, "The end block height"},
+                            {"start", RPCArg::Type::NUM, RPCArg::Optional::OMITTED, "The start block height"},
+                            {"end", RPCArg::Type::NUM, RPCArg::Optional::OMITTED, "The end block height"},
                         }
                     }
                 },
@@ -1148,8 +1137,8 @@ static RPCHelpMan getaddresstxids()
     int start = 0;
     int end = 0;
     if (request.params[0].isObject()) {
-        UniValue startValue = find_value(request.params[0].get_obj(), "start");
-        UniValue endValue = find_value(request.params[0].get_obj(), "end");
+        UniValue startValue = request.params[0].get_obj().find_value("start");
+        UniValue endValue = request.params[0].get_obj().find_value("end");
         if (startValue.isNum() && endValue.isNum()) {
             start = startValue.getInt<int>();
             end = endValue.getInt<int>();
@@ -1286,9 +1275,6 @@ void RegisterNodeRPCCommands(CRPCTable& t)
         {"hidden", &echo},
         {"hidden", &echojson},
         {"hidden", &echoipc},
-#if defined(USE_SYSCALL_SANDBOX)
-        {"hidden", &invokedisallowedsyscall},
-#endif // USE_SYSCALL_SANDBOX
     };
     for (const auto& c : commands) {
         t.appendCommand(c.name, &c);

@@ -58,14 +58,6 @@
         <translation type="unfinished">&amp;निवडा</translation>
     </message>
     <message>
-        <source>Sending addresses</source>
-        <translation type="unfinished">प्रेषक पत्ते</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation type="unfinished">स्वीकृती पत्ते</translation>
-    </message>
-    <message>
         <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation type="unfinished">पैसे पाठविण्यासाठीचे हे तुमचे बिटकॉईन पत्त्ते आहेत. नाणी पाठविण्यापूर्वी नेहमी रक्कम आणि प्राप्त होणारा पत्ता तपासून पहा.</translation>
     </message>
@@ -220,17 +212,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
-    <message>
-        <source>Settings file could not be read</source>
-        <translation type="unfinished">सेटिंग्ज फाइल वाचता आली नाही</translation>
-    </message>
-    <message>
-        <source>Settings file could not be written</source>
-        <translation type="unfinished">सेटिंग्ज फाइल लिहिता आली नाही</translation>
-    </message>
-    </context>
-<context>
     <name>BitcoinGUI</name>
     <message>
         <source>&amp;Minimize</source>
@@ -246,8 +227,7 @@
     </message>
     <message>
         <source>&amp;Backup Wallet…</source>
-        <translation type="unfinished">&amp;बॅकअप वॉलेट…
- </translation>
+        <translation type="unfinished">&amp;बॅकअप वॉलेट...</translation>
     </message>
     <message>
         <source>&amp;Change Passphrase…</source>
@@ -433,4 +413,15 @@
         <translation type="unfinished">सध्याच्या टॅबमधील डेटा एका फाईलमध्ये एक्स्पोर्ट करा</translation>
     </message>
     </context>
+<context>
+    <name>bitcoin-core</name>
+    <message>
+        <source>Settings file could not be read</source>
+        <translation type="unfinished">सेटिंग्ज फाइल वाचता आली नाही</translation>
+    </message>
+    <message>
+        <source>Settings file could not be written</source>
+        <translation type="unfinished">सेटिंग्ज फाइल लिहिता आली नाही</translation>
+    </message>
+</context>
 </TS>

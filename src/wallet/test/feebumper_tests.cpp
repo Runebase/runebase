@@ -2,6 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
+#include <consensus/validation.h>
+#include <policy/policy.h>
 #include <primitives/transaction.h>
 #include <script/script.h>
 #include <util/strencodings.h>
@@ -19,7 +21,7 @@ static void CheckMaxWeightComputation(const std::string& script_str, const std::
 {
     std::vector script_data(ParseHex(script_str));
     CScript script(script_data.begin(), script_data.end());
-    CTxIn input(uint256(), 0, script);
+    CTxIn input(Txid{}, 0, script);
 
     for (const auto& s : witness_str_stack) {
         input.scriptWitness.stack.push_back(ParseHex(s));

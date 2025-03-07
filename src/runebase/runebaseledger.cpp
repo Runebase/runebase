@@ -1,5 +1,5 @@
 #include <runebase/runebaseledger.h>
-#include <util/system.h>
+#include <common/system.h>
 #include <chainparams.h>
 #include <univalue.h>
 #include <util/strencodings.h>
@@ -18,6 +18,8 @@
 #ifdef WIN32
 #include <boost/process/windows.hpp>
 #endif
+#include <univalue.h>
+#include <common/args.h>
 
 RecursiveMutex cs_ledger;
 
@@ -74,6 +76,30 @@ int json_get_key_int(const UniValue& jsondata, std::string key)
     }
 
     return v.getInt<int>();
+}
+
+// Get address type
+std::string get_address_type(int type)
+{
+    std::string descType;
+    switch (type) {
+    case (int)OutputType::P2SH_SEGWIT:
+        descType = "sh_wit";
+        break;
+    case (int)OutputType::BECH32:
+        descType = "wit";
+        break;
+    case (int)OutputType::BECH32M:
+        descType = "tap";
+        break;
+    case (int)OutputType::P2PK:
+    case (int)OutputType::LEGACY:
+        descType = "legacy";
+        break;
+    default:
+        break;
+    }
+    return descType;
 }
 
 // Append data to vector
@@ -189,12 +215,12 @@ public:
         toolExists = boost::filesystem::exists(toolPath);
         initToolPath();
 
-        if(gArgs.GetChainName() != CBaseChainParams::MAIN)
+        if(gArgs.GetChainType() != ChainType::MAIN)
         {
             ledgerMainPath = false;
         }
 
-        arguments << "--chain" << gArgs.GetChainName();
+        arguments << "--chain" << gArgs.GetChainTypeString();
 
         if(!toolExists)
         {
@@ -379,7 +405,7 @@ bool RunebaseLedger::signMessage(const std::string &fingerprint, const std::stri
     return endSignMessage(fingerprint, message, path, signature);
 }
 
-bool RunebaseLedger::getKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, std::string &desc)
+bool RunebaseLedger::getKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, bool descriptorwallet, std::string &desc)
 {
     LOCK(cs_ledger);
     // Check if tool exists
@@ -390,12 +416,50 @@ bool RunebaseLedger::getKeyPool(const std::string &fingerprint, int type, const 
     if(isStarted())
         return false;
 
-    if(!beginGetKeyPool(fingerprint, type, path, internal, from, to, desc))
+    if(!beginGetKeyPool(fingerprint, type, path, internal, from, to, descriptorwallet, desc))
         return false;
 
     wait();
 
-    return endGetKeyPool(fingerprint, type, path, internal, from, to, desc);
+    return endGetKeyPool(fingerprint, type, path, internal, from, to, descriptorwallet, desc);
+}
+
+bool RunebaseLedger::displayAddress(const std::string &fingerprint, const std::string &desc, std::string &address)
+{
+    LOCK(cs_ledger);
+    // Check if tool exists
+    if(!toolExists())
+        return false;
+
+    // Display address on device
+    if(isStarted())
+        return false;
+
+    if(!beginDisplayAddress(fingerprint, desc))
+        return false;
+
+    wait();
+
+    return endDisplayAddress(address);
+}
+
+bool RunebaseLedger::displayAddress(const std::string &fingerprint, int type, const std::string &path, std::string &address)
+{
+    LOCK(cs_ledger);
+    // Check if tool exists
+    if(!toolExists())
+        return false;
+
+    // Display address on device
+    if(isStarted())
+        return false;
+
+    if(!beginDisplayAddress(fingerprint, type, path))
+        return false;
+
+    wait();
+
+    return endDisplayAddress(address);
 }
 
 std::string RunebaseLedger::errorMessage()
@@ -564,23 +628,10 @@ bool RunebaseLedger::endSignMessage(const std::string &, const std::string &, co
     return false;
 }
 
-bool RunebaseLedger::beginGetKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, std::string &)
+bool RunebaseLedger::beginGetKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, bool, std::string &)
 {
     // Get the output type
-    std::string descType;
-    switch (type) {
-    case (int)OutputType::P2SH_SEGWIT:
-        descType = "sh_wit";
-        break;
-    case (int)OutputType::BECH32:
-        descType = "wit";
-        break;
-    case (int)OutputType::LEGACY:
-        descType = "legacy";
-        break;
-    default:
-        break;
-    }
+    std::string descType = get_address_type(type);
 
     // Execute command line
     std::vector<std::string> arguments = d->arguments;
@@ -602,14 +653,68 @@ bool RunebaseLedger::beginGetKeyPool(const std::string &fingerprint, int type, c
     return d->fStarted;
 }
 
-bool RunebaseLedger::endGetKeyPool(const std::string &, int, const std::string& , bool, int, int, std::string &desc)
+bool RunebaseLedger::endGetKeyPool(const std::string &, int type, const std::string& , bool, int, int, bool descriptorwallet, std::string &desc)
 {
     // Decode command line results
     bool ret = d->strStdout.find("desc")!=std::string::npos;
     desc = d->strStdout;
+
+    // Import both PK and PKH descriptors for legacy address in descriptor wallet
+    if(descriptorwallet && (type == (int)OutputType::P2PK || type == (int)OutputType::LEGACY)) {
+        UniValue items;
+        if(items.read(desc)) {
+            if(items.isArray()) {
+                for(size_t i = 0; i < items.size(); i++) {
+                    UniValue& item = (UniValue&) items[i];
+                    if(item.isObject()) item.pushKV("importforstaking", true);
+                }
+                desc = items.write();
+            }
+        }
+    }
+
     return ret;
 }
 
+bool RunebaseLedger::beginDisplayAddress(const std::string &fingerprint, int type, const std::string& path)
+{
+    // Get the output type
+    std::string descType = get_address_type(type);
+
+    // Execute command line
+    std::vector<std::string> arguments = d->arguments;
+    arguments << "-f" << fingerprint << "displayaddress" << "--addr-type" << descType << "--path" << path;
+    d->process.start(d->toolPath, arguments);
+    d->fStarted = true;
+
+    return d->fStarted;
+}
+
+bool RunebaseLedger::beginDisplayAddress(const std::string &fingerprint, const std::string &desc)
+{
+    // Execute command line
+    std::vector<std::string> arguments = d->arguments;
+    arguments << "-f" << fingerprint << "displayaddress" << "--desc" << desc;
+    d->process.start(d->toolPath, arguments);
+    d->fStarted = true;
+
+    return d->fStarted;
+}
+
+bool RunebaseLedger::endDisplayAddress(std::string &address)
+{
+    // Decode command line results
+    UniValue jsonDocument = json_read_doc(d->strStdout);
+    UniValue data = json_get_object(jsonDocument);
+    std::string strAddress = json_get_key_string(data, "address");
+    if(!strAddress.empty())
+    {
+        address = strAddress;
+        return true;
+    }
+
+    return false;
+}
 
 std::string RunebaseLedger::derivationPath(int type)
 {
@@ -623,6 +728,10 @@ std::string RunebaseLedger::derivationPath(int type)
         case (int)OutputType::BECH32:
             derivPath = "m/84'/88'/0'";
             break;
+        case (int)OutputType::BECH32M:
+            derivPath = "m/86'/88'/0'";
+            break;
+        case (int)OutputType::P2PK:
         case (int)OutputType::LEGACY:
             derivPath = "m/44'/88'/0'";
             break;
@@ -639,6 +748,10 @@ std::string RunebaseLedger::derivationPath(int type)
         case (int)OutputType::BECH32:
             derivPath = "m/84'/1'/0'";
             break;
+        case (int)OutputType::BECH32M:
+            derivPath = "m/86'/1'/0'";
+            break;
+        case (int)OutputType::P2PK:
         case (int)OutputType::LEGACY:
             derivPath = "m/44'/1'/0'";
             break;

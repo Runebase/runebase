@@ -15,6 +15,9 @@ pp = pprint.PrettyPrinter()
 OFFLINE_STAKING_ACTIVATION_HEIGHT = 3*COINBASE_MATURITY+101
 
 class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 6
@@ -548,9 +551,9 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         self.staker_privkey = self.staker.dumpprivkey(self.staker_address)
         self.staker_eckey = wif_to_ECKey(self.staker_privkey)
 
-        self.wallet_clean_path = os.path.join(self.nodes[5].datadir, 'regtest', 'wallets')
-        self.wallet_path = os.path.join(self.staker.datadir, 'regtest', 'wallets')
-        self.wallet_backup_path = os.path.join(self.staker.datadir, 'regtest', 'backup_wallets')
+        self.wallet_clean_path = self.nodes[5].datadir_path / "regtest" / "wallets"
+        self.wallet_path = self.staker.datadir_path / "regtest" / "wallets"
+        self.wallet_backup_path = self.staker.datadir_path / "regtest" / "backup_wallets"
         shutil.copytree(self.wallet_clean_path, self.wallet_backup_path)
 
         self.staker.generatetoaddress(1, self.staker_address)

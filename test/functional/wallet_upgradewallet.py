@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2021 The Bitcoin Core developers
+# Copyright (c) 2018-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """upgradewallet RPC functional test
@@ -45,6 +45,9 @@ def deser_keymeta(f):
     return ver, create_time, kp_str, seed_id, fpr, path_len, path, has_key_orig
 
 class UpgradeWalletTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser, descriptors=False)
+
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
@@ -135,11 +138,11 @@ class UpgradeWalletTest(BitcoinTestFramework):
 
         self.log.info("Test upgradewallet RPC...")
         # Prepare for copying of the older wallet
-        node_master_wallet_dir = os.path.join(node_master.datadir, "regtest/wallets", self.default_wallet_name)
-        node_master_wallet = os.path.join(node_master_wallet_dir, self.default_wallet_name, self.wallet_data_filename)
-        v16_3_wallet       = os.path.join(v16_3_node.datadir, "regtest/wallets/wallet.dat")
-        v15_2_wallet       = os.path.join(v15_2_node.datadir, "regtest/wallet.dat")
-        split_hd_wallet    = os.path.join(v15_2_node.datadir, "regtest/splithd")
+        node_master_wallet_dir = node_master.wallets_path / self.default_wallet_name
+        node_master_wallet = node_master_wallet_dir / self.default_wallet_name / self.wallet_data_filename
+        v16_3_wallet = v16_3_node.wallets_path / "wallet.dat"
+        v15_2_wallet = v15_2_node.chain_path / "wallet.dat"
+        split_hd_wallet = v15_2_node.chain_path / "splithd"
         self.stop_nodes()
 
         # Make split hd wallet

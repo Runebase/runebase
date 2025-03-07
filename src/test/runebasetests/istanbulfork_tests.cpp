@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 #include <runebasetests/test_utils.h>
-#include <script/standard.h>
+#include <script/solver.h>
 #include <chainparams.h>
 
 namespace IstanbulTest{

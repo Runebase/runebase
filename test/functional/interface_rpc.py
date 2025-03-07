@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2021 The Bitcoin Core developers
+# Copyright (c) 2018-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Tests some generic aspects of the RPC interface."""
@@ -25,7 +25,7 @@ def expect_http_status(expected_http_status, expected_rpc_code,
 def test_work_queue_getblock(node, got_exceeded_error):
     while not got_exceeded_error:
         try:
-            node.cli('getrpcinfo').send_cli()
+            node.cli("waitfornewblock", "500").send_cli()
         except subprocess.CalledProcessError as e:
             assert_equal(e.output, 'error: Server response: Work queue depth exceeded\n')
             got_exceeded_error.append(True)
@@ -46,7 +46,7 @@ class RPCInterfaceTest(BitcoinTestFramework):
         command = info['active_commands'][0]
         assert_equal(command['method'], 'getrpcinfo')
         assert_greater_than_or_equal(command['duration'], 0)
-        assert_equal(info['logpath'], os.path.join(self.nodes[0].datadir, self.chain, 'debug.log'))
+        assert_equal(info['logpath'], os.path.join(self.nodes[0].chain_path, 'debug.log'))
 
     def test_batch_request(self):
         self.log.info("Testing basic JSON-RPC batch request...")

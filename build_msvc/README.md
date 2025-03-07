@@ -7,7 +7,9 @@ Visual Studio 2022 is minimum required to build Bitcoin Core.
 
 Solution and project files to build with `msbuild` or Visual Studio can be found in the `build_msvc` directory.
 
-To build Bitcoin Core from the command-line, it is sufficient to only install the Visual Studio Build Tools component.
+To build Bitcoin Core from the command-line, it is sufficient to only install the [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) component.
+
+The "Desktop development with C++" workload must be installed as well.
 
 Building with Visual Studio is an alternative to the Linux based [cross-compiler build](../doc/build-windows.md).
 
@@ -15,7 +17,7 @@ Building with Visual Studio is an alternative to the Linux based [cross-compiler
 Prerequisites
 ---------------------
 To build [dependencies](../doc/dependencies.md) (except for [Qt](#qt)),
-the default approach is to use the [vcpkg](https://docs.microsoft.com/en-us/cpp/vcpkg) package manager from Microsoft:
+the default approach is to use the [vcpkg](https://vcpkg.io) package manager from Microsoft:
 
 1. [Install](https://vcpkg.io/en/getting-started.html) vcpkg.
 
@@ -30,7 +32,9 @@ Qt
 ---------------------
 To build Bitcoin Core with the GUI, a static build of Qt is required.
 
-1. Download a single ZIP archive of Qt source code from https://download.qt.io/official_releases/qt/ (e.g., [`qt-everywhere-opensource-src-5.15.5.zip`](https://download.qt.io/official_releases/qt/5.15/5.15.5/single/qt-everywhere-opensource-src-5.15.5.zip)), and expand it into a dedicated folder. The following instructions assume that this folder is `C:\dev\qt-source`.
+1. Download a single ZIP archive of Qt source code from https://download.qt.io/official_releases/qt/ (e.g., [`qt-everywhere-opensource-src-5.15.11.zip`](https://download.qt.io/official_releases/qt/5.15/5.15.11/single/qt-everywhere-opensource-src-5.15.11.zip)), and expand it into a dedicated folder. The following instructions assume that this folder is `C:\dev\qt-source`.
+
+> 💡 **Tip:** If you use the default path with "Extract All" for the Qt source code zip file, and end up with something like `C:\dev\qt-everywhere-opensource-src-5.15.11\qt-everywhere-src-5.15.11`, you are likely to encounter a "path too long" error when building. To fix the problem move the source files to a shorter path such as the recommended `C:\dev\qt-source`.
 
 2. Open "x64 Native Tools Command Prompt for VS 2022", and input the following commands:
 ```cmd
@@ -67,7 +71,7 @@ Alternatively, open the `build_msvc/bitcoin.sln` file in Visual Studio.
 
 Security
 ---------------------
-[Base address randomization](https://docs.microsoft.com/en-us/cpp/build/reference/dynamicbase-use-address-space-layout-randomization?view=msvc-160) is used to make Bitcoin Core more secure. When building Bitcoin using the `build_msvc` process base address randomization can be disabled by editing `common.init.vcproj` to change `RandomizedBaseAddress` from `true` to `false` and then rebuilding the project.
+[Base address randomization](https://learn.microsoft.com/en-us/cpp/build/reference/dynamicbase-use-address-space-layout-randomization) is used to make Bitcoin Core more secure. When building Bitcoin using the `build_msvc` process base address randomization can be disabled by editing `common.init.vcproj` to change `RandomizedBaseAddress` from `true` to `false` and then rebuilding the project.
 
 To check if `bitcoind` has `RandomizedBaseAddress` enabled or disabled run
 

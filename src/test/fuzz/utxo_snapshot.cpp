@@ -1,16 +1,17 @@
-// Copyright (c) 2021 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <chainparams.h>
 #include <consensus/validation.h>
-#include <fs.h>
 #include <node/utxo_snapshot.h>
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
 #include <test/fuzz/util.h>
 #include <test/util/mining.h>
 #include <test/util/setup_common.h>
+#include <util/chaintype.h>
+#include <util/fs.h>
 #include <validation.h>
 #include <validationinterface.h>
 
@@ -22,13 +23,13 @@ const std::vector<std::shared_ptr<CBlock>>* g_chain;
 
 void initialize_chain()
 {
-    const auto params{CreateChainParams(ArgsManager{}, CBaseChainParams::UNITTEST)};
+    const auto params{CreateChainParams(ArgsManager{}, ChainType::UNITTEST)};
     int coinbaseMaturity = params->GetConsensus().CoinbaseMaturity(0);
     static const auto chain{CreateBlockChain(2 * coinbaseMaturity, *params)};
     g_chain = &chain;
 }
 
-FUZZ_TARGET_INIT(utxo_snapshot, initialize_chain)
+FUZZ_TARGET(utxo_snapshot, .init = initialize_chain)
 {
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
     std::unique_ptr<const TestingSetup> setup{MakeNoLogFileContext<const TestingSetup>()};

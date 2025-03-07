@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2019 The Bitcoin Core developers
+# Copyright (c) 2018-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the deriveaddresses rpc call."""
@@ -44,6 +44,9 @@ class DeriveaddressesTest(BitcoinTestFramework):
 
         combo_descriptor = descsum_create("combo(tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK/1/1/0)")
         assert_equal(self.nodes[0].deriveaddresses(combo_descriptor), [convert_btc_address_to_runebase("mtfUoUax9L4tzXARpw1oTGxWyoogp52KhJ"), convert_btc_address_to_runebase("mtfUoUax9L4tzXARpw1oTGxWyoogp52KhJ"), address, convert_btc_address_to_runebase("2NDvEwGfpEqJWfybzpKPHF2XH3jwoQV3D7x")])
+
+        # P2PK does not have a valid address
+        # assert_raises_rpc_error(-5, "Descriptor does not have a corresponding address", self.nodes[0].deriveaddresses, descsum_create("pk(tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK)"))
 
         # Before #26275, bitcoind would crash when deriveaddresses was
         # called with derivation index 2147483647, which is the maximum

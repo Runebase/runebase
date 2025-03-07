@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2016-2020 The Bitcoin Core developers
+# Copyright (c) 2016-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test Wallet encryption"""
@@ -11,9 +11,13 @@ from test_framework.util import (
     assert_raises_rpc_error,
     assert_equal,
 )
+from test_framework.wallet_util import WalletUnlock
 
 
 class WalletEncryptionTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -56,19 +60,17 @@ class WalletEncryptionTest(BitcoinTestFramework):
         assert_raises_rpc_error(-14, "wallet passphrase entered was incorrect", self.nodes[0].walletpassphrase, passphrase + "wrong", 10)
 
         # Test walletlock
-        self.nodes[0].walletpassphrase(passphrase, 84600)
-        sig = self.nodes[0].signmessage(address, msg)
-        assert self.nodes[0].verifymessage(address, sig, msg)
-        self.nodes[0].walletlock()
+        with WalletUnlock(self.nodes[0], passphrase):
+            sig = self.nodes[0].signmessage(address, msg)
+            assert self.nodes[0].verifymessage(address, sig, msg)
         assert_raises_rpc_error(-13, "Please enter the wallet passphrase with walletpassphrase first", self.nodes[0].signmessage, address, msg)
 
         # Test passphrase changes
         self.nodes[0].walletpassphrasechange(passphrase, passphrase2)
         assert_raises_rpc_error(-14, "wallet passphrase entered was incorrect", self.nodes[0].walletpassphrase, passphrase, 10)
-        self.nodes[0].walletpassphrase(passphrase2, 10)
-        sig = self.nodes[0].signmessage(address, msg)
-        assert self.nodes[0].verifymessage(address, sig, msg)
-        self.nodes[0].walletlock()
+        with WalletUnlock(self.nodes[0], passphrase2):
+            sig = self.nodes[0].signmessage(address, msg)
+            assert self.nodes[0].verifymessage(address, sig, msg)
 
         # Test timeout bounds
         assert_raises_rpc_error(-8, "Timeout cannot be negative.", self.nodes[0].walletpassphrase, passphrase2, -10)
@@ -87,6 +89,16 @@ class WalletEncryptionTest(BitcoinTestFramework):
         self.nodes[0].walletpassphrase(passphrase2, MAX_VALUE + 1000)
         actual_time = self.nodes[0].getwalletinfo()['unlocked_until']
         assert_equal(actual_time, expected_time)
+        self.nodes[0].walletlock()
+
+        # Test passphrase with null characters
+        passphrase_with_nulls = "Phrase\0With\0Nulls"
+        self.nodes[0].walletpassphrasechange(passphrase2, passphrase_with_nulls)
+        # walletpassphrasechange should not stop at null characters
+        assert_raises_rpc_error(-14, "wallet passphrase entered was incorrect", self.nodes[0].walletpassphrase, passphrase_with_nulls.partition("\0")[0], 10)
+        with WalletUnlock(self.nodes[0], passphrase_with_nulls):
+            sig = self.nodes[0].signmessage(address, msg)
+            assert self.nodes[0].verifymessage(address, sig, msg)
 
 
 if __name__ == '__main__':

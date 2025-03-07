@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 The Bitcoin Core developers
+// Copyright (c) 2020-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,11 +6,11 @@
 #define BITCOIN_I2P_H
 
 #include <compat/compat.h>
-#include <fs.h>
 #include <netaddress.h>
 #include <sync.h>
-#include <threadinterrupt.h>
+#include <util/fs.h>
 #include <util/sock.h>
+#include <util/threadinterrupt.h>
 
 #include <memory>
 #include <optional>
@@ -105,7 +105,7 @@ public:
      * completion the `peer` member will be set to the address of the incoming peer.
      * @return true on success
      */
-    bool Accept(Connection& conn);
+    bool Accept(Connection& conn) EXCLUSIVE_LOCKS_REQUIRED(!m_mutex);
 
     /**
      * Connect to an I2P peer.
@@ -261,6 +261,7 @@ private:
      * ("SESSION CREATE"). With the established session id we later open
      * other connections to the SAM service to accept incoming I2P
      * connections and make outgoing ones.
+     * If not connected then this unique_ptr will be empty.
      * See https://geti2p.net/en/docs/api/samv3
      */
     std::unique_ptr<Sock> m_control_sock GUARDED_BY(m_mutex);

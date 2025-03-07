@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017-2021 The Bitcoin Core developers
+# Copyright (c) 2017-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test external signer.
@@ -21,15 +21,12 @@ class RPCSignerTest(BitcoinTestFramework):
     def mock_signer_path(self):
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mocks', 'signer.py')
         if platform.system() == "Windows":
-            return "py " + path
+            return "py -3 " + path
         else:
             return path
 
     def set_test_params(self):
         self.num_nodes = 4
-        # The experimental syscall sandbox feature (-sandbox) is not compatible with -signer (which
-        # invokes execve).
-        self.disable_syscall_sandbox = True
 
         self.extra_args = [
             [],

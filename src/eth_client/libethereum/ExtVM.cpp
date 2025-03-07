@@ -36,7 +36,7 @@ static unsigned const c_offloadPoint = (c_defaultStackSize - c_entryOverhead) / 
 
 void goOnOffloadedStack(Executive& _e, OnOpFunc const& _onOp)
 {
-    // Set new stack size enouth to handle the rest of the calls up to the limit.
+    // Set new stack size enough to handle the rest of the calls up to the limit.
     boost::thread::attributes attrs;
     attrs.set_stack_size((c_depthLimit - c_offloadPoint) * c_singleExecutionStackSize);
 
@@ -132,6 +132,11 @@ h256 ExtVM::codeHashAt(Address _a)
 void ExtVM::setStore(u256 _n, u256 _v)
 {
     m_s.setStorage(myAddress, _n, _v);
+}
+
+void ExtVM::setTransientStore(u256 _n, u256 _v)
+{
+    m_s.setTransientStorage(myAddress, _n, _v);
 }
 
 CreateResult ExtVM::create(u256 _endowment, u256& io_gas, bytesConstRef _code, Instruction _op, u256 _salt, OnOpFunc const& _onOp)

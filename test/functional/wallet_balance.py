@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2021 The Bitcoin Core developers
+# Copyright (c) 2018-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the wallet balance RPC methods."""
@@ -11,6 +11,7 @@ from test_framework.blocktools import COINBASE_MATURITY
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
+    assert_is_hash_string,
     assert_raises_rpc_error,
 )
 from test_framework.runebase import convert_btc_address_to_runebase, generatesynchronized
@@ -48,6 +49,9 @@ def create_transactions(node, address, amt, fees):
     return txs
 
 class WalletTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self):
         self.num_nodes = 3
         self.setup_clean_chain = True
@@ -87,8 +91,18 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[2].sendmany("", {self.nodes[0].getnewaddress(): 50, self.nodes[1].getnewaddress(): 50})
         self.nodes[2].generatetoaddress(1, self.nodes[2].getnewaddress())
         self.sync_all()
+
+        # Verify listunspent returns immature coinbase if 'include_immature_coinbase' is set
+        assert_equal(len(self.nodes[2].listunspent(query_options={'include_immature_coinbase': True})), 2002)
+        assert_equal(len(self.nodes[2].listunspent(query_options={'include_immature_coinbase': False})), 2)
+
         generatesynchronized(self.nodes[1], COINBASE_MATURITY+1, ADDRESS_WATCHONLY, self.nodes)
         self.sync_blocks()
+
+        # Verify listunspent returns all immature coinbases if 'include_immature_coinbase' is set
+        # For now, only the legacy wallet will see the coinbases going to the imported 'ADDRESS_WATCHONLY'
+        assert_equal(len(self.nodes[0].listunspent(query_options={'include_immature_coinbase': False})), 1 if self.options.descriptors else 2)
+        assert_equal(len(self.nodes[0].listunspent(query_options={'include_immature_coinbase': True})), 1 if self.options.descriptors else COINBASE_MATURITY + 2)
 
         if not self.options.descriptors:
             # Tests legacy watchonly behavior which is not present (and does not need to be tested) in descriptor wallets
@@ -184,8 +198,13 @@ class WalletTest(BitcoinTestFramework):
                                                  'stake':             Decimal('0.0')}}  # Doesn't include output of node 0's send since it was spent
             if self.options.descriptors:
                 del expected_balances_0["watchonly"]
-            assert_equal(self.nodes[0].getbalances(), expected_balances_0)
-            assert_equal(self.nodes[1].getbalances(), expected_balances_1)
+            balances_0 = self.nodes[0].getbalances()
+            balances_1 = self.nodes[1].getbalances()
+            # remove lastprocessedblock keys (they will be tested later)
+            del balances_0['lastprocessedblock']
+            del balances_1['lastprocessedblock']
+            assert_equal(balances_0, expected_balances_0)
+            assert_equal(balances_1, expected_balances_1)
             # getbalance without any arguments includes unconfirmed transactions, but not untrusted transactions
             assert_equal(self.nodes[0].getbalance(), Decimal('9.99'))  # change from node 0's send
             assert_equal(self.nodes[1].getbalance(), Decimal('0'))  # node 1's send had an unsafe input
@@ -314,6 +333,31 @@ class WalletTest(BitcoinTestFramework):
             self.nodes[0].importprivkey(privkey)
             assert_equal(self.nodes[0].getbalances()['mine']['untrusted_pending'], Decimal('0.1'))
 
+
+        # Tests the lastprocessedblock JSON object in getbalances, getwalletinfo
+        # and gettransaction by checking for valid hex strings and by comparing
+        # the hashes & heights between generated blocks.
+        self.log.info("Test getbalances returns expected lastprocessedblock json object")
+        prev_hash = self.nodes[0].getbestblockhash()
+        prev_height = self.nodes[0].getblock(prev_hash)['height']
+        self.generatetoaddress(self.nodes[0], 5, self.nodes[0].get_deterministic_priv_key().address)
+        lastblock = self.nodes[0].getbalances()['lastprocessedblock']
+        assert_is_hash_string(lastblock['hash'])
+        assert_equal((prev_hash == lastblock['hash']), False)
+        assert_equal(lastblock['height'], prev_height + 5)
+
+        prev_hash = self.nodes[0].getbestblockhash()
+        prev_height = self.nodes[0].getblock(prev_hash)['height']
+        self.log.info("Test getwalletinfo returns expected lastprocessedblock json object")
+        walletinfo = self.nodes[0].getwalletinfo()
+        assert_equal(walletinfo['lastprocessedblock']['height'], prev_height)
+        assert_equal(walletinfo['lastprocessedblock']['hash'], prev_hash)
+
+        self.log.info("Test gettransaction returns expected lastprocessedblock json object")
+        txid = self.nodes[1].sendtoaddress(self.nodes[1].getnewaddress(), 0.01)
+        tx_info = self.nodes[1].gettransaction(txid)
+        assert_equal(tx_info['lastprocessedblock']['height'], prev_height)
+        assert_equal(tx_info['lastprocessedblock']['hash'], prev_hash)
 
 if __name__ == '__main__':
     WalletTest().main()

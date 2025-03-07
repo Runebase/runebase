@@ -1,4 +1,4 @@
-// Copyright (c) 2021 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -63,9 +63,9 @@ void BanMapFromJson(const UniValue& bans_json, banmap_t& bans)
             LogPrintf("Dropping entry with unknown version (%s) from ban list\n", version);
             continue;
         }
-        CSubNet subnet;
         const auto& subnet_str = ban_entry_json[BANMAN_JSON_ADDR_KEY].get_str();
-        if (!LookupSubNet(subnet_str, subnet)) {
+        const CSubNet subnet{LookupSubNet(subnet_str)};
+        if (!subnet.IsValid()) {
             LogPrintf("Dropping entry with unparseable address or subnet (%s) from ban list\n", subnet_str);
             continue;
         }

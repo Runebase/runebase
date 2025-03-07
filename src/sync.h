@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,7 +11,7 @@
 #include <logging/timer.h>
 #endif
 
-#include <threadsafety.h>
+#include <threadsafety.h> // IWYU pragma: export
 #include <util/macros.h>
 
 #include <condition_variable>
@@ -57,7 +57,6 @@ template <typename MutexType>
 void EnterCritical(const char* pszName, const char* pszFile, int nLine, MutexType* cs, bool fTry = false);
 void LeaveCritical();
 void CheckLastCritical(void* cs, std::string& lockname, const char* guardname, const char* file, int line);
-std::string LocksHeld();
 template <typename MutexType>
 void AssertLockHeldInternal(const char* pszName, const char* pszFile, int nLine, MutexType* cs) EXCLUSIVE_LOCKS_REQUIRED(cs);
 template <typename MutexType>
@@ -111,7 +110,7 @@ public:
         return PARENT::try_lock();
     }
 
-    using UniqueLock = std::unique_lock<PARENT>;
+    using unique_lock = std::unique_lock<PARENT>;
 #ifdef __clang__
     //! For negative capabilities in the Clang Thread Safety Analysis.
     //! A negative requirement uses the EXCLUSIVE_LOCKS_REQUIRED attribute, in conjunction
@@ -147,11 +146,13 @@ inline void AssertLockNotHeldInline(const char* name, const char* file, int line
 inline void AssertLockNotHeldInline(const char* name, const char* file, int line, GlobalMutex* cs) LOCKS_EXCLUDED(cs) { AssertLockNotHeldInternal(name, file, line, cs); }
 #define AssertLockNotHeld(cs) AssertLockNotHeldInline(#cs, __FILE__, __LINE__, &cs)
 
-/** Wrapper around std::unique_lock style lock for Mutex. */
-template <typename Mutex, typename Base = typename Mutex::UniqueLock>
-class SCOPED_LOCKABLE UniqueLock : public Base
+/** Wrapper around std::unique_lock style lock for MutexType. */
+template <typename MutexType>
+class SCOPED_LOCKABLE UniqueLock : public MutexType::unique_lock
 {
 private:
+    using Base = typename MutexType::unique_lock;
+
     void Enter(const char* pszName, const char* pszFile, int nLine)
     {
         EnterCritical(pszName, pszFile, nLine, Base::mutex());
@@ -165,15 +166,15 @@ private:
     bool TryEnter(const char* pszName, const char* pszFile, int nLine)
     {
         EnterCritical(pszName, pszFile, nLine, Base::mutex(), true);
-        Base::try_lock();
-        if (!Base::owns_lock()) {
-            LeaveCritical();
+        if (Base::try_lock()) {
+            return true;
         }
-        return Base::owns_lock();
+        LeaveCritical();
+        return false;
     }
 
 public:
-    UniqueLock(Mutex& mutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) EXCLUSIVE_LOCK_FUNCTION(mutexIn) : Base(mutexIn, std::defer_lock)
+    UniqueLock(MutexType& mutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) EXCLUSIVE_LOCK_FUNCTION(mutexIn) : Base(mutexIn, std::defer_lock)
     {
         if (fTry)
             TryEnter(pszName, pszFile, nLine);
@@ -181,7 +182,7 @@ public:
             Enter(pszName, pszFile, nLine);
     }
 
-    UniqueLock(Mutex* pmutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) EXCLUSIVE_LOCK_FUNCTION(pmutexIn)
+    UniqueLock(MutexType* pmutexIn, const char* pszName, const char* pszFile, int nLine, bool fTry = false) EXCLUSIVE_LOCK_FUNCTION(pmutexIn)
     {
         if (!pmutexIn) return;
 
@@ -241,29 +242,24 @@ public:
 
 #define REVERSE_LOCK(g) typename std::decay<decltype(g)>::type::reverse_lock UNIQUE_NAME(revlock)(g, #g, __FILE__, __LINE__)
 
-template<typename MutexArg>
-using DebugLock = UniqueLock<typename std::remove_reference<typename std::remove_pointer<MutexArg>::type>::type>;
-
 // When locking a Mutex, require negative capability to ensure the lock
 // is not already held
 inline Mutex& MaybeCheckNotHeld(Mutex& cs) EXCLUSIVE_LOCKS_REQUIRED(!cs) LOCK_RETURNED(cs) { return cs; }
 inline Mutex* MaybeCheckNotHeld(Mutex* cs) EXCLUSIVE_LOCKS_REQUIRED(!cs) LOCK_RETURNED(cs) { return cs; }
 
-// When locking a GlobalMutex, just check it is not locked in the surrounding scope
-inline GlobalMutex& MaybeCheckNotHeld(GlobalMutex& cs) LOCKS_EXCLUDED(cs) LOCK_RETURNED(cs) { return cs; }
-inline GlobalMutex* MaybeCheckNotHeld(GlobalMutex* cs) LOCKS_EXCLUDED(cs) LOCK_RETURNED(cs) { return cs; }
+// When locking a GlobalMutex or RecursiveMutex, just check it is not
+// locked in the surrounding scope.
+template <typename MutexType>
+inline MutexType& MaybeCheckNotHeld(MutexType& m) LOCKS_EXCLUDED(m) LOCK_RETURNED(m) { return m; }
+template <typename MutexType>
+inline MutexType* MaybeCheckNotHeld(MutexType* m) LOCKS_EXCLUDED(m) LOCK_RETURNED(m) { return m; }
 
-// When locking a RecursiveMutex, it's okay to already hold the lock
-// but check that it is not known to be locked in the surrounding scope anyway
-inline RecursiveMutex& MaybeCheckNotHeld(RecursiveMutex& cs) LOCKS_EXCLUDED(cs) LOCK_RETURNED(cs) { return cs; }
-inline RecursiveMutex* MaybeCheckNotHeld(RecursiveMutex* cs) LOCKS_EXCLUDED(cs) LOCK_RETURNED(cs) { return cs; }
-
-#define LOCK(cs) DebugLock<decltype(cs)> UNIQUE_NAME(criticalblock)(MaybeCheckNotHeld(cs), #cs, __FILE__, __LINE__)
+#define LOCK(cs) UniqueLock UNIQUE_NAME(criticalblock)(MaybeCheckNotHeld(cs), #cs, __FILE__, __LINE__)
 #define LOCK2(cs1, cs2)                                               \
-    DebugLock<decltype(cs1)> criticalblock1(MaybeCheckNotHeld(cs1), #cs1, __FILE__, __LINE__); \
-    DebugLock<decltype(cs2)> criticalblock2(MaybeCheckNotHeld(cs2), #cs2, __FILE__, __LINE__)
-#define TRY_LOCK(cs, name) DebugLock<decltype(cs)> name(MaybeCheckNotHeld(cs), #cs, __FILE__, __LINE__, true)
-#define WAIT_LOCK(cs, name) DebugLock<decltype(cs)> name(MaybeCheckNotHeld(cs), #cs, __FILE__, __LINE__)
+    UniqueLock criticalblock1(MaybeCheckNotHeld(cs1), #cs1, __FILE__, __LINE__); \
+    UniqueLock criticalblock2(MaybeCheckNotHeld(cs2), #cs2, __FILE__, __LINE__)
+#define TRY_LOCK(cs, name) UniqueLock name(MaybeCheckNotHeld(cs), #cs, __FILE__, __LINE__, true)
+#define WAIT_LOCK(cs, name) UniqueLock name(MaybeCheckNotHeld(cs), #cs, __FILE__, __LINE__)
 
 #define ENTER_CRITICAL_SECTION(cs)                            \
     {                                                         \
@@ -304,6 +300,10 @@ inline RecursiveMutex* MaybeCheckNotHeld(RecursiveMutex* cs) LOCKS_EXCLUDED(cs) 
 //! gcc and the -Wreturn-stack-address flag in clang, both enabled by default.
 #define WITH_LOCK(cs, code) (MaybeCheckNotHeld(cs), [&]() -> decltype(auto) { LOCK(cs); code; }())
 
+/** An implementation of a semaphore.
+ *
+ * See https://en.wikipedia.org/wiki/Semaphore_(programming)
+ */
 class CSemaphore
 {
 private:
@@ -312,25 +312,33 @@ private:
     int value;
 
 public:
-    explicit CSemaphore(int init) : value(init) {}
+    explicit CSemaphore(int init) noexcept : value(init) {}
 
-    void wait()
+    // Disallow default construct, copy, move.
+    CSemaphore() = delete;
+    CSemaphore(const CSemaphore&) = delete;
+    CSemaphore(CSemaphore&&) = delete;
+    CSemaphore& operator=(const CSemaphore&) = delete;
+    CSemaphore& operator=(CSemaphore&&) = delete;
+
+    void wait() noexcept
     {
         std::unique_lock<std::mutex> lock(mutex);
         condition.wait(lock, [&]() { return value >= 1; });
         value--;
     }
 
-    bool try_wait()
+    bool try_wait() noexcept
     {
         std::lock_guard<std::mutex> lock(mutex);
-        if (value < 1)
+        if (value < 1) {
             return false;
+        }
         value--;
         return true;
     }
 
-    void post()
+    void post() noexcept
     {
         {
             std::lock_guard<std::mutex> lock(mutex);
@@ -348,45 +356,64 @@ private:
     bool fHaveGrant;
 
 public:
-    void Acquire()
+    void Acquire() noexcept
     {
-        if (fHaveGrant)
+        if (fHaveGrant) {
             return;
+        }
         sem->wait();
         fHaveGrant = true;
     }
 
-    void Release()
+    void Release() noexcept
     {
-        if (!fHaveGrant)
+        if (!fHaveGrant) {
             return;
+        }
         sem->post();
         fHaveGrant = false;
     }
 
-    bool TryAcquire()
+    bool TryAcquire() noexcept
     {
-        if (!fHaveGrant && sem->try_wait())
+        if (!fHaveGrant && sem->try_wait()) {
             fHaveGrant = true;
+        }
         return fHaveGrant;
     }
 
-    void MoveTo(CSemaphoreGrant& grant)
+    // Disallow copy.
+    CSemaphoreGrant(const CSemaphoreGrant&) = delete;
+    CSemaphoreGrant& operator=(const CSemaphoreGrant&) = delete;
+
+    // Allow move.
+    CSemaphoreGrant(CSemaphoreGrant&& other) noexcept
     {
-        grant.Release();
-        grant.sem = sem;
-        grant.fHaveGrant = fHaveGrant;
-        fHaveGrant = false;
+        sem = other.sem;
+        fHaveGrant = other.fHaveGrant;
+        other.fHaveGrant = false;
+        other.sem = nullptr;
     }
 
-    CSemaphoreGrant() : sem(nullptr), fHaveGrant(false) {}
-
-    explicit CSemaphoreGrant(CSemaphore& sema, bool fTry = false) : sem(&sema), fHaveGrant(false)
+    CSemaphoreGrant& operator=(CSemaphoreGrant&& other) noexcept
     {
-        if (fTry)
+        Release();
+        sem = other.sem;
+        fHaveGrant = other.fHaveGrant;
+        other.fHaveGrant = false;
+        other.sem = nullptr;
+        return *this;
+    }
+
+    CSemaphoreGrant() noexcept : sem(nullptr), fHaveGrant(false) {}
+
+    explicit CSemaphoreGrant(CSemaphore& sema, bool fTry = false) noexcept : sem(&sema), fHaveGrant(false)
+    {
+        if (fTry) {
             TryAcquire();
-        else
+        } else {
             Acquire();
+        }
     }
 
     ~CSemaphoreGrant()
@@ -394,7 +421,7 @@ public:
         Release();
     }
 
-    operator bool() const
+    explicit operator bool() const noexcept
     {
         return fHaveGrant;
     }

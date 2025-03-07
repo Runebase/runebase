@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -138,6 +138,10 @@ public Q_SLOTS:
     void setTabFocus(enum TabTypes tabType);
     /** Active wallet changed */
     void activeWalletChanged(int index);
+#ifdef ENABLE_WALLET
+    /** Set the current (ie - active) wallet */
+    void setCurrentWallet(WalletModel* const wallet_model);
+#endif // ENABLE_WALLET
 
 private:
     struct TranslatedStrings {
@@ -186,6 +190,8 @@ private:
     {
         return time_at_event.count() ? GUIUtil::formatDurationStr(time_now - time_at_event) : tr("Never");
     }
+
+    void updateWindowTitle();
 
 private Q_SLOTS:
     void updateAlerts(const QString& warnings);
