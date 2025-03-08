@@ -58,14 +58,6 @@
         <translation type="unfinished">C&amp;Aagga</translation>
     </message>
     <message>
-        <source>Sending addresses</source>
-        <translation type="unfinished">Cinwaanada dirista</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation type="unfinished">Cinwaanada qaabilaadda</translation>
-    </message>
-    <message>
         <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation type="unfinished">Kuwani waa cinwaanada Seeraar aad ku direyso lacagaha. Marwalba caddadka ama cinwaanka laga soo hubiyo inta aadan dirin lacagta qadaadiicda ah ka hor inta aadan dirin.</translation>
     </message>
@@ -214,6 +206,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
 <context>
     <name>BanTableModel</name>
     <message>
+        <source>IP/Netmask</source>
+        <translation type="unfinished">IP / Netmask</translation>
+    </message>
+    <message>
         <source>Banned Until</source>
         <translation type="unfinished">Mamnuucay Ilaa</translation>
     </message>
@@ -222,7 +218,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <name>BitcoinApplication</name>
     <message>
         <source>Settings file %1 might be corrupt or invalid.</source>
-        <translation type="unfinished">Settings file%1waxaa laga yaabaa in musuqmaasuq ama aan asal ahayn.</translation>
+        <translation type="unfinished">Settings file,%1waxaa laga yaabaa in musuqmaasuq ama aan asal ahayn.</translation>
     </message>
     <message>
         <source>A fatal error occurred. %1 can no longer continue safely and will quit.</source>

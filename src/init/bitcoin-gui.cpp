@@ -1,7 +1,8 @@
-// Copyright (c) 2021 The Bitcoin Core developers
+// Copyright (c) 2021-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <init.h>
 #include <interfaces/chain.h>
 #include <interfaces/echo.h>
 #include <interfaces/init.h>
@@ -10,20 +11,19 @@
 #include <interfaces/wallet.h>
 #include <node/context.h>
 #include <util/check.h>
-#include <util/system.h>
 
 #include <memory>
 
 namespace init {
 namespace {
-const char* EXE_NAME = "bitcoin-gui";
+const char* EXE_NAME = "runebase-gui";
 
 class BitcoinGuiInit : public interfaces::Init
 {
 public:
     BitcoinGuiInit(const char* arg0) : m_ipc(interfaces::MakeIpc(EXE_NAME, arg0, *this))
     {
-        m_node.args = &gArgs;
+        InitContext(m_node);
         m_node.init = this;
     }
     std::unique_ptr<interfaces::Node> makeNode() override { return interfaces::MakeNode(m_node); }

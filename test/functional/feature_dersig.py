@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2021 The Bitcoin Core developers
+# Copyright (c) 2015-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test BIP66 (DER SIG).
 
 Test the DERSIG soft-fork activation on regtest.
 """
-from decimal import Decimal 
+
+from decimal import Decimal
 from test_framework.blocktools import (
     create_block,
     create_coinbase,
@@ -41,7 +42,7 @@ def unDERify(tx):
     tx.vin[0].scriptSig = CScript(newscript)
 
 
-DERSIG_HEIGHT = 2002 
+DERSIG_HEIGHT = 2002
 
 
 class BIP66Test(BitcoinTestFramework):
@@ -57,7 +58,7 @@ class BIP66Test(BitcoinTestFramework):
 
     def create_tx(self, input_txid):
         utxo_to_spend = self.miniwallet.get_utxo(txid=input_txid, mark_as_spent=False)
-        return self.miniwallet.create_self_transfer(fee_rate=Decimal("0.01"), utxo_to_spend=utxo_to_spend)['tx'] 
+        return self.miniwallet.create_self_transfer(fee_rate=Decimal("0.01"), utxo_to_spend=utxo_to_spend)['tx']
 
     def test_dersig_info(self, *, is_active):
         assert_equal(self.nodes[0].getdeploymentinfo()['deployments']['bip66'],
@@ -120,7 +121,7 @@ class BIP66Test(BitcoinTestFramework):
                 'txid': spendtx.hash,
                 'wtxid': spendtx.getwtxid(),
                 'allowed': False,
-                'reject-reason': 'non-mandatory-script-verify-flag (Non-canonical DER signature)',
+                'reject-reason': 'mandatory-script-verify-flag-failed (Non-canonical DER signature)',
             }],
             self.nodes[0].testmempoolaccept(rawtxs=[spendtx.serialize().hex()], maxfeerate=0),
         )
@@ -130,7 +131,7 @@ class BIP66Test(BitcoinTestFramework):
         block.hashMerkleRoot = block.calc_merkle_root()
         block.solve()
 
-        with self.nodes[0].assert_debug_log(expected_msgs=[f'CheckInputScripts on {block.vtx[-1].hash} failed with non-mandatory-script-verify-flag (Non-canonical DER signature)']):
+        with self.nodes[0].assert_debug_log(expected_msgs=[f'CheckInputScripts on {block.vtx[-1].hash} failed with mandatory-script-verify-flag-failed (Non-canonical DER signature)']):
             peer.send_and_ping(msg_block(block))
             assert_equal(int(self.nodes[0].getbestblockhash(), 16), tip)
             peer.sync_with_ping()

@@ -1,10 +1,6 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
 
 #include <qt/sendcoinsentry.h>
 #include <qt/forms/ui_sendcoinsentry.h>
@@ -22,7 +18,6 @@
 SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::SendCoinsEntry),
-    model(nullptr),
     platformStyle(_platformStyle)
 {
     ui->setupUi(this);

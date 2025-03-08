@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,16 +8,19 @@
 
 #include <attributes.h>
 #include <crypto/common.h>
-#include <prevector.h>
+#include <prevector.h> // IWYU pragma: export
 #include <serialize.h>
+#include <uint256.h>
+#include <util/hash_type.h>
 
-#include <assert.h>
-#include <climits>
+#include <cassert>
+#include <cstdint>
+#include <cstring>
 #include <limits>
 #include <stdexcept>
-#include <stdint.h>
-#include <string.h>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 // Maximum number of bytes pushable to the stack
@@ -32,7 +35,6 @@ static const int MAX_PUBKEYS_PER_MULTISIG = 20;
 /** The limit of keys in OP_CHECKSIGADD-based scripts. It is due to the stack limit in BIP342. */
 static constexpr unsigned int MAX_PUBKEYS_PER_MULTI_A = 999;
 
-// Maximum script length in bytes
 static const int MAX_SCRIPT_SIZE = 129000; // (129 kb)
 
 // Maximum base script length in bytes
@@ -478,7 +480,7 @@ public:
     CScript(std::vector<unsigned char>::const_iterator pbegin, std::vector<unsigned char>::const_iterator pend) : CScriptBase(pbegin, pend) { }
     CScript(const unsigned char* pbegin, const unsigned char* pend) : CScriptBase(pbegin, pend) { }
 
-    SERIALIZE_METHODS(CScript, obj) { READWRITEAS(CScriptBase, obj); }
+    SERIALIZE_METHODS(CScript, obj) { READWRITE(AsBase<CScriptBase>(obj)); }
 
     CScript& operator+=(const CScript& b)
     {
@@ -690,6 +692,15 @@ struct CScriptWitness
     void SetNull() { stack.clear(); stack.shrink_to_fit(); }
 
     std::string ToString() const;
+};
+
+/** A reference to a CScript: the Hash160 of its serialization */
+class CScriptID : public BaseHash<uint160>
+{
+public:
+    CScriptID() : BaseHash() {}
+    explicit CScriptID(const CScript& in);
+    explicit CScriptID(const uint160& in) : BaseHash(in) {}
 };
 
 /** Test for OP_SUCCESSx opcodes as defined by BIP342. */

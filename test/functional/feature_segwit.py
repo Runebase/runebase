@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2016-2021 The Bitcoin Core developers
+# Copyright (c) 2016-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the SegWit changeover logic."""
@@ -61,7 +61,6 @@ from test_framework.wallet_util import (
 from test_framework.runebaseconfig import COINBASE_MATURITY, INITIAL_BLOCK_REWARD, ENABLE_REDUCED_BLOCK_TIME, MAX_BLOCK_BASE_SIZE, MAX_BLOCK_SIGOPS, FACTOR_REDUCED_BLOCK_TIME
 from test_framework.runebase import convert_btc_address_to_runebase, generatesynchronized
 
-
 NODE_0 = 0
 NODE_2 = 2
 P2WPKH = 0
@@ -73,7 +72,6 @@ def getutxo(txid):
     utxo["vout"] = 0
     utxo["txid"] = txid
     return utxo
-
 
 def find_unspent(node, min_value):
     for utxo in node.listunspent():
@@ -92,6 +90,9 @@ txs_mined = {}  # txindex from txid to blockhash
 
 
 class SegWitTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 3
@@ -99,13 +100,11 @@ class SegWitTest(BitcoinTestFramework):
         self.extra_args = [
             [
                 "-acceptnonstdtxn=1",
-                "-rpcserialversion=0",
                 "-testactivationheight=segwit@2357" if ENABLE_REDUCED_BLOCK_TIME else "-testactivationheight=segwit@857",
                 "-addresstype=legacy",
             ],
             [
                 "-acceptnonstdtxn=1",
-                "-rpcserialversion=1",
                 "-testactivationheight=segwit@2357" if ENABLE_REDUCED_BLOCK_TIME else "-testactivationheight=segwit@857",
                 "-addresstype=legacy",
             ],
@@ -148,9 +147,9 @@ class SegWitTest(BitcoinTestFramework):
         self.log.info("Verify sigops are counted in GBT with pre-BIP141 rules before the fork")
         txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 1)
         tmpl = self.nodes[0].getblocktemplate({'rules': ['segwit']})
-        assert tmpl['sizelimit'] == MAX_BLOCK_BASE_SIZE
+        assert_equal(tmpl['sizelimit'], MAX_BLOCK_BASE_SIZE)
         assert 'weightlimit' not in tmpl
-        assert tmpl['sigoplimit'] == MAX_BLOCK_SIGOPS
+        assert_equal(tmpl['sigoplimit'], MAX_BLOCK_SIGOPS)
         assert_equal(tmpl['transactions'][0]['hash'], txid)
         assert_equal(tmpl['transactions'][0]['sigops'], 2)
         assert '!segwit' not in tmpl['rules']
@@ -203,15 +202,15 @@ class SegWitTest(BitcoinTestFramework):
         for _ in range(5):
             for n in range(3):
                 for v in range(2):
-                    wit_ids[n][v].append(send_to_witness(v, self.nodes[0], find_unspent(self.nodes[0], INITIAL_BLOCK_REWARD), self.pubkey[n], False, INITIAL_BLOCK_REWARD - Decimal("0.001")))
-                    p2sh_ids[n][v].append(send_to_witness(v, self.nodes[0], find_unspent(self.nodes[0], INITIAL_BLOCK_REWARD), self.pubkey[n], True, INITIAL_BLOCK_REWARD - Decimal("0.001")))
+                    wit_ids[n][v].append(send_to_witness(v, self.nodes[0], find_spendable_utxo(self.nodes[0], INITIAL_BLOCK_REWARD), self.pubkey[n], False, INITIAL_BLOCK_REWARD - Decimal("0.001")))
+                    p2sh_ids[n][v].append(send_to_witness(v, self.nodes[0], find_spendable_utxo(self.nodes[0], INITIAL_BLOCK_REWARD), self.pubkey[n], True, INITIAL_BLOCK_REWARD - Decimal("0.001")))
 
         self.generate(self.nodes[0], 1)  # block 163
 
         # Make sure all nodes recognize the transactions as theirs
-        assert_equal(self.nodes[0].getbalance(), balance_presetup - 60*INITIAL_BLOCK_REWARD + 20*(INITIAL_BLOCK_REWARD - Decimal("0.001")) + (0 if ENABLE_REDUCED_BLOCK_TIME else INITIAL_BLOCK_REWARD))
-        assert_equal(self.nodes[1].getbalance(), 20*(INITIAL_BLOCK_REWARD - Decimal("0.001")))
-        assert_equal(self.nodes[2].getbalance(), 20*(INITIAL_BLOCK_REWARD - Decimal("0.001")))
+        assert_equal(self.nodes[0].getbalance(), balance_presetup - 60 * INITIAL_BLOCK_REWARD + 20 * (INITIAL_BLOCK_REWARD - Decimal("0.001")) + (0 if ENABLE_REDUCED_BLOCK_TIME else INITIAL_BLOCK_REWARD))
+        assert_equal(self.nodes[1].getbalance(), 20 * (INITIAL_BLOCK_REWARD - Decimal("0.001")))
+        assert_equal(self.nodes[2].getbalance(), 20 * (INITIAL_BLOCK_REWARD - Decimal("0.001")))
         self.nodes[0].generate(32 if ENABLE_REDUCED_BLOCK_TIME else 260)  # block 423
 
         self.log.info("Verify unsigned p2sh witness txs without a redeem script are invalid")
@@ -235,25 +234,13 @@ class SegWitTest(BitcoinTestFramework):
 
         self.log.info("Verify default node can't accept txs with missing witness")
         # unsigned, no scriptsig
-        self.fail_accept(self.nodes[0], "non-mandatory-script-verify-flag (Witness program hash mismatch)", wit_ids[NODE_0][P2WPKH][0], sign=False)
-        self.fail_accept(self.nodes[0], "non-mandatory-script-verify-flag (Witness program was passed an empty witness)", wit_ids[NODE_0][P2WSH][0], sign=False)
+        self.fail_accept(self.nodes[0], "mandatory-script-verify-flag-failed (Witness program hash mismatch)", wit_ids[NODE_0][P2WPKH][0], sign=False)
+        self.fail_accept(self.nodes[0], "mandatory-script-verify-flag-failed (Witness program was passed an empty witness)", wit_ids[NODE_0][P2WSH][0], sign=False)
         self.fail_accept(self.nodes[0], "mandatory-script-verify-flag-failed (Operation not valid with the current stack size)", p2sh_ids[NODE_0][P2WPKH][0], sign=False)
         self.fail_accept(self.nodes[0], "mandatory-script-verify-flag-failed (Operation not valid with the current stack size)", p2sh_ids[NODE_0][P2WSH][0], sign=False)
         # unsigned with redeem script
-        self.fail_accept(self.nodes[0], "non-mandatory-script-verify-flag (Witness program hash mismatch)", p2sh_ids[NODE_0][P2WPKH][0], sign=False, redeem_script=witness_script(False, self.pubkey[0]))
-        self.fail_accept(self.nodes[0], "non-mandatory-script-verify-flag (Witness program was passed an empty witness)", p2sh_ids[NODE_0][P2WSH][0], sign=False, redeem_script=witness_script(True, self.pubkey[0]))
-
-        self.log.info("Verify block and transaction serialization rpcs return differing serializations depending on rpc serialization flag")
-        assert self.nodes[2].getblock(blockhash, False) != self.nodes[0].getblock(blockhash, False)
-        assert self.nodes[1].getblock(blockhash, False) == self.nodes[2].getblock(blockhash, False)
-
-        for tx_id in segwit_tx_list:
-            tx = tx_from_hex(self.nodes[2].gettransaction(tx_id)["hex"])
-            assert self.nodes[2].getrawtransaction(tx_id, False, blockhash) != self.nodes[0].getrawtransaction(tx_id, False, blockhash)
-            assert self.nodes[1].getrawtransaction(tx_id, False, blockhash) == self.nodes[2].getrawtransaction(tx_id, False, blockhash)
-            assert self.nodes[0].getrawtransaction(tx_id, False, blockhash) != self.nodes[2].gettransaction(tx_id)["hex"]
-            assert self.nodes[1].getrawtransaction(tx_id, False, blockhash) == self.nodes[2].gettransaction(tx_id)["hex"]
-            assert self.nodes[0].getrawtransaction(tx_id, False, blockhash) == tx.serialize_without_witness().hex()
+        self.fail_accept(self.nodes[0], "mandatory-script-verify-flag-failed (Witness program hash mismatch)", p2sh_ids[NODE_0][P2WPKH][0], sign=False, redeem_script=witness_script(False, self.pubkey[0]))
+        self.fail_accept(self.nodes[0], "mandatory-script-verify-flag-failed (Witness program was passed an empty witness)", p2sh_ids[NODE_0][P2WSH][0], sign=False, redeem_script=witness_script(True, self.pubkey[0]))
 
         # Coinbase contains the witness commitment nonce, check that RPC shows us
         coinbase_txid = self.nodes[2].getblock(blockhash)['tx'][0]
@@ -264,10 +251,10 @@ class SegWitTest(BitcoinTestFramework):
         assert_equal(witnesses[0], '00' * 32)
 
         self.log.info("Verify witness txs without witness data are invalid after the fork")
-        self.fail_accept(self.nodes[2], 'non-mandatory-script-verify-flag (Witness program hash mismatch)', wit_ids[NODE_2][P2WPKH][2], sign=False)
-        self.fail_accept(self.nodes[2], 'non-mandatory-script-verify-flag (Witness program was passed an empty witness)', wit_ids[NODE_2][P2WSH][2], sign=False)
-        self.fail_accept(self.nodes[2], 'non-mandatory-script-verify-flag (Witness program hash mismatch)', p2sh_ids[NODE_2][P2WPKH][2], sign=False, redeem_script=witness_script(False, self.pubkey[2]))
-        self.fail_accept(self.nodes[2], 'non-mandatory-script-verify-flag (Witness program was passed an empty witness)', p2sh_ids[NODE_2][P2WSH][2], sign=False, redeem_script=witness_script(True, self.pubkey[2]))
+        self.fail_accept(self.nodes[2], 'mandatory-script-verify-flag-failed (Witness program hash mismatch)', wit_ids[NODE_2][P2WPKH][2], sign=False)
+        self.fail_accept(self.nodes[2], 'mandatory-script-verify-flag-failed (Witness program was passed an empty witness)', wit_ids[NODE_2][P2WSH][2], sign=False)
+        self.fail_accept(self.nodes[2], 'mandatory-script-verify-flag-failed (Witness program hash mismatch)', p2sh_ids[NODE_2][P2WPKH][2], sign=False, redeem_script=witness_script(False, self.pubkey[2]))
+        self.fail_accept(self.nodes[2], 'mandatory-script-verify-flag-failed (Witness program was passed an empty witness)', p2sh_ids[NODE_2][P2WSH][2], sign=False, redeem_script=witness_script(True, self.pubkey[2]))
 
         self.log.info("Verify default node can now use witness txs")
         self.success_mine(self.nodes[0], wit_ids[NODE_0][P2WPKH][0], True)
@@ -279,9 +266,9 @@ class SegWitTest(BitcoinTestFramework):
         txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 1)
         raw_tx = self.nodes[0].getrawtransaction(txid, True)
         tmpl = self.nodes[0].getblocktemplate({'rules': ['segwit']})
-        assert tmpl['sizelimit'] >= 7999577/FACTOR_REDUCED_BLOCK_TIME  # actual maximum size is lower due to minimum mandatory non-witness data
-        assert tmpl['weightlimit'] == 8000000//FACTOR_REDUCED_BLOCK_TIME
-        assert tmpl['sigoplimit'] == 80000//FACTOR_REDUCED_BLOCK_TIME
+        assert_greater_than_or_equal(tmpl['sizelimit'], 7999577/FACTOR_REDUCED_BLOCK_TIME)  # actual maximum size is lower due to minimum mandatory non-witness data
+        assert_equal(tmpl['weightlimit'], 8000000//FACTOR_REDUCED_BLOCK_TIME)
+        assert_equal(tmpl['sigoplimit'], 80000//FACTOR_REDUCED_BLOCK_TIME)
         assert_equal(tmpl['transactions'][0]['txid'], txid)
         expected_sigops = 9 if 'txinwitness' in raw_tx["vin"][0] else 8
         assert_equal(tmpl['transactions'][0]['sigops'], expected_sigops)
@@ -294,10 +281,7 @@ class SegWitTest(BitcoinTestFramework):
         #                      tx2 (segwit input, paying to a non-segwit output) ->
         #                      tx3 (non-segwit input, paying to a non-segwit output).
         # tx1 is allowed to appear in the block, but no others.
-        txid1 = send_to_witness(1, self.nodes[0], find_unspent(self.nodes[0], INITIAL_BLOCK_REWARD), self.pubkey[0], False, INITIAL_BLOCK_REWARD - Decimal("0.004"))
-        hex_tx = self.nodes[0].gettransaction(txid)['hex']
-        tx = tx_from_hex(hex_tx)
-        assert tx.wit.is_null()  # This should not be a segwit input
+        txid1 = send_to_witness(1, self.nodes[0], find_spendable_utxo(self.nodes[0], INITIAL_BLOCK_REWARD), self.pubkey[0], False, INITIAL_BLOCK_REWARD - Decimal("0.004"))
         assert txid1 in self.nodes[0].getrawmempool()
 
         tx1_hex = self.nodes[0].gettransaction(txid1)['hex']
@@ -313,7 +297,7 @@ class SegWitTest(BitcoinTestFramework):
         # Now create tx2, which will spend from txid1.
         tx = CTransaction()
         tx.vin.append(CTxIn(COutPoint(int(txid1, 16), 0), b''))
-        tx.vout.append(CTxOut(int((INITIAL_BLOCK_REWARD-Decimal('0.01'))*COIN), CScript([OP_TRUE, OP_DROP] * 15 + [OP_TRUE])))
+        tx.vout.append(CTxOut(int((INITIAL_BLOCK_REWARD-Decimal('0.01')) * COIN), CScript([OP_TRUE, OP_DROP] * 15 + [OP_TRUE])))
         tx2_hex = self.nodes[0].signrawtransactionwithwallet(tx.serialize().hex())['hex']
         txid2 = self.nodes[0].sendrawtransaction(tx2_hex)
         tx = tx_from_hex(tx2_hex)
@@ -329,7 +313,7 @@ class SegWitTest(BitcoinTestFramework):
         # Now create tx3, which will spend from txid2
         tx = CTransaction()
         tx.vin.append(CTxIn(COutPoint(int(txid2, 16), 0), b""))
-        tx.vout.append(CTxOut(int((INITIAL_BLOCK_REWARD-Decimal('0.05'))*COIN), CScript([OP_TRUE, OP_DROP] * 15 + [OP_TRUE])))  # Huge fee
+        tx.vout.append(CTxOut(int((INITIAL_BLOCK_REWARD-Decimal('0.05')) * COIN), CScript([OP_TRUE, OP_DROP] * 15 + [OP_TRUE])))  # Huge fee
         tx.calc_sha256()
         txid3 = self.nodes[0].sendrawtransaction(hexstring=tx.serialize().hex(), maxfeerate=0)
         assert tx.wit.is_null()
@@ -633,11 +617,6 @@ class SegWitTest(BitcoinTestFramework):
                 self.restart_node(1)
                 assert_equal(self.nodes[1].gettransaction(txid, True)["txid"], txid)
                 assert_equal(self.nodes[1].listtransactions("*", 1, 0, True)[0]["txid"], txid)
-
-        self.log.info('Test negative and unknown rpcserialversion throw an init error')
-        self.stop_node(0)
-        self.nodes[0].assert_start_raises_init_error(["-rpcserialversion=-1"], "Error: rpcserialversion must be non-negative.")
-        self.nodes[0].assert_start_raises_init_error(["-rpcserialversion=100"], "Error: Unknown rpcserialversion requested.")
 
     def mine_and_test_listunspent(self, script_list, ismine):
         utxo = find_spendable_utxo(self.nodes[0], 50)

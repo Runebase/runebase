@@ -1,13 +1,15 @@
 #ifndef RUNEBASETESTS_TEST_UTILS_H
 #define RUNEBASETESTS_TEST_UTILS_H
 
-#include <util/system.h>
+#include <common/system.h>
 #include <validation.h>
 #include <util/strencodings.h>
 #include <util/convert.h>
 #include <test/util/setup_common.h>
 #include <boost/filesystem/operations.hpp>
-#include <fs.h>
+#include <util/fs.h>
+
+#include <random.h>
 
 extern std::unique_ptr<RunebaseState> globalState;
 

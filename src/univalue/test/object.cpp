@@ -1,5 +1,5 @@
 // Copyright (c) 2014 BitPay Inc.
-// Copyright (c) 2014-2016 The Bitcoin Core developers
+// Copyright (c) 2014-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://opensource.org/licenses/mit-license.php.
 
@@ -11,6 +11,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #define BOOST_CHECK(expr) assert(expr)
@@ -85,7 +86,7 @@ void univalue_push_throw()
     UniValue j;
     BOOST_CHECK_THROW(j.push_back(1), std::runtime_error);
     BOOST_CHECK_THROW(j.push_backV({1}), std::runtime_error);
-    BOOST_CHECK_THROW(j.__pushKV("k", 1), std::runtime_error);
+    BOOST_CHECK_THROW(j.pushKVEnd("k", 1), std::runtime_error);
     BOOST_CHECK_THROW(j.pushKV("k", 1), std::runtime_error);
     BOOST_CHECK_THROW(j.pushKVs({}), std::runtime_error);
 }
@@ -160,6 +161,14 @@ void univalue_set()
     BOOST_CHECK(v.isStr());
     BOOST_CHECK_EQUAL(v.getValStr(), "zum");
 
+    {
+        std::string_view sv{"ab\0c", 4};
+        UniValue j{sv};
+        BOOST_CHECK(j.isStr());
+        BOOST_CHECK_EQUAL(j.getValStr(), sv);
+        BOOST_CHECK_EQUAL(j.write(), "\"ab\\u0000c\"");
+    }
+
     v.setFloat(-1.01);
     BOOST_CHECK(v.isNum());
     BOOST_CHECK_EQUAL(v.getValStr(), "-1.01");
@@ -184,13 +193,13 @@ void univalue_set()
     BOOST_CHECK_EQUAL(v.isBool(), true);
     BOOST_CHECK_EQUAL(v.isTrue(), false);
     BOOST_CHECK_EQUAL(v.isFalse(), true);
-    BOOST_CHECK_EQUAL(v.getBool(), false);
+    BOOST_CHECK_EQUAL(v.get_bool(), false);
 
     v.setBool(true);
     BOOST_CHECK_EQUAL(v.isBool(), true);
     BOOST_CHECK_EQUAL(v.isTrue(), true);
     BOOST_CHECK_EQUAL(v.isFalse(), false);
-    BOOST_CHECK_EQUAL(v.getBool(), true);
+    BOOST_CHECK_EQUAL(v.get_bool(), true);
 
     BOOST_CHECK_THROW(v.setNumStr("zombocom"), std::runtime_error);
 
@@ -355,7 +364,7 @@ void univalue_object()
     obj.setObject();
     UniValue uv;
     uv.setInt(42);
-    obj.__pushKV("age", uv);
+    obj.pushKVEnd("age", uv);
     BOOST_CHECK_EQUAL(obj.size(), 1);
     BOOST_CHECK_EQUAL(obj["age"].getValStr(), "42");
 
@@ -402,6 +411,33 @@ void univalue_readwrite()
     BOOST_CHECK(obj["key3"].isObject());
 
     BOOST_CHECK_EQUAL(strJson1, v.write());
+
+    // Valid
+    BOOST_CHECK(v.read("1.0") && (v.get_real() == 1.0));
+    BOOST_CHECK(v.read("true") && v.get_bool());
+    BOOST_CHECK(v.read("[false]") && !v[0].get_bool());
+    BOOST_CHECK(v.read("{\"a\": true}") && v["a"].get_bool());
+    BOOST_CHECK(v.read("{\"1\": \"true\"}") && (v["1"].get_str() == "true"));
+    // Valid, with leading or trailing whitespace
+    BOOST_CHECK(v.read(" 1.0") && (v.get_real() == 1.0));
+    BOOST_CHECK(v.read("1.0 ") && (v.get_real() == 1.0));
+    BOOST_CHECK(v.read("0.00000000000000000000000000000000000001e+30 "));
+
+    BOOST_CHECK(!v.read(".19e-6")); //should fail, missing leading 0, therefore invalid JSON
+    // Invalid, initial garbage
+    BOOST_CHECK(!v.read("[1.0"));
+    BOOST_CHECK(!v.read("a1.0"));
+    // Invalid, trailing garbage
+    BOOST_CHECK(!v.read("1.0sds"));
+    BOOST_CHECK(!v.read("1.0]"));
+    // Invalid, keys have to be names
+    BOOST_CHECK(!v.read("{1: \"true\"}"));
+    BOOST_CHECK(!v.read("{true: 1}"));
+    BOOST_CHECK(!v.read("{[1]: 1}"));
+    BOOST_CHECK(!v.read("{{\"a\": \"a\"}: 1}"));
+    // BTC addresses should fail parsing
+    BOOST_CHECK(!v.read("175tWpb8K1S7NmH4Zx6rewF9WQrcZv245W"));
+    BOOST_CHECK(!v.read("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNL"));
 
     /* Check for (correctly reporting) a parsing error if the initial
        JSON construct is followed by more stuff.  Note that whitespace

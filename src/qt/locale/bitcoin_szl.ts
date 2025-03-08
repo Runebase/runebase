@@ -58,14 +58,6 @@
         <translation type="unfinished">Ô&amp;bier</translation>
     </message>
     <message>
-        <source>Sending addresses</source>
-        <translation type="unfinished">Adresy posyłaniŏ</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation type="unfinished">Adresy ôdbiyraniŏ</translation>
-    </message>
-    <message>
         <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation type="unfinished">Tukej sōm adresy Runebase na kere posyłŏsz płaty. Dycki wybaduj wielość i adresã ôdbiyrŏcza przed posłaniym mōnet.</translation>
     </message>
@@ -270,69 +262,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
-    <message>
-        <source>The %s developers</source>
-        <translation type="unfinished">Twōrcy %s</translation>
-    </message>
-    <message>
-        <source>Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.</source>
-        <translation type="unfinished">Imyntnŏ dugość kety wersyje (%i) przekrŏczŏ maksymalnõ dopuszczalnõ dugość (%i). Zmyńsz wielość abo miara parametra uacomment.</translation>
-    </message>
-    <message>
-        <source>Warning: Private keys detected in wallet {%s} with disabled private keys</source>
-        <translation type="unfinished">Pozōr: Wykryto było klucze prywatne w portmanyju {%s} kery mŏ zastawiōne klucze prywatne</translation>
-    </message>
-    <message>
-        <source>Done loading</source>
-        <translation type="unfinished">Wgrŏwanie zakōńczōne</translation>
-    </message>
-    <message>
-        <source>Error loading %s</source>
-        <translation type="unfinished">Feler wgrŏwaniŏ %s</translation>
-    </message>
-    <message>
-        <source>Error loading %s: Private keys can only be disabled during creation</source>
-        <translation type="unfinished">Feler wgrŏwaniŏ %s: Klucze prywatne mogōm być zastawiōne ino w czasie tworzyniŏ</translation>
-    </message>
-    <message>
-        <source>Error loading %s: Wallet corrupted</source>
-        <translation type="unfinished">Feler wgrŏwaniŏ %s: Portmanyj poprzniōny</translation>
-    </message>
-    <message>
-        <source>Error loading %s: Wallet requires newer version of %s</source>
-        <translation type="unfinished">Feler wgrŏwaniŏ %s: Portmanyj fołdruje nowszyj wersyje %s</translation>
-    </message>
-    <message>
-        <source>Error loading block database</source>
-        <translation type="unfinished">Feler wgrŏwaniŏ bazy blokōw</translation>
-    </message>
-    <message>
-        <source>Error: Disk space is low for %s</source>
-        <translation type="unfinished">Feler: Za mało wolnego placu na dysku dlŏ %s</translation>
-    </message>
-    <message>
-        <source>Signing transaction failed</source>
-        <translation type="unfinished">Szkryftniyńcie transakcyji niy podarziło sie</translation>
-    </message>
-    <message>
-        <source>This is experimental software.</source>
-        <translation type="unfinished">To je eksperymyntalny softwer.</translation>
-    </message>
-    <message>
-        <source>Transaction too large</source>
-        <translation type="unfinished">Transakcyjŏ za srogŏ</translation>
-    </message>
-    <message>
-        <source>Unknown network specified in -onlynet: '%s'</source>
-        <translation type="unfinished">Niyznōmy nec ôkryślōny w -onlynet: '%s'</translation>
-    </message>
-    <message>
-        <source>Unsupported logging category %s=%s.</source>
-        <translation type="unfinished">Niypodpiyranŏ kategoryjŏ registrowaniŏ %s=%s.</translation>
-    </message>
-    </context>
-<context>
     <name>BitcoinGUI</name>
     <message>
         <source>&amp;Overview</source>
@@ -416,7 +345,7 @@
         <translation type="unfinished">Szyfruj klucze prywatne, kere sōm we twojim portmanyju</translation>
     </message>
     <message>
-        <source>Sign messages with your Runebase addresses to prove you own them</source> 
+        <source>Sign messages with your Runebase addresses to prove you own them</source>
         <translation type="unfinished">Podpisz wiadōmości swojōm adresōm coby dowiyść jejich posiadanie</translation>
     </message>
     <message>
@@ -442,7 +371,7 @@
     <message>
         <source>Request payments (generates QR codes and runebase: URIs)</source>
         <translation type="unfinished">Żōndej płatu (gyneruje kod QR jak tyż URI runebase:)</translation>
-   </message>
+    </message>
     <message>
         <source>Show the list of used sending addresses and labels</source>
         <translation type="unfinished">Pokŏż wykŏz adres i etyket użytych do posyłaniŏ</translation>
@@ -494,7 +423,7 @@
         <translation type="unfinished">&amp;Adresy posyłaniŏ</translation>
     </message>
     <message>
-        <source>Show the %1 help message to get a list with possible Runebase command-line options</source> 
+        <source>Show the %1 help message to get a list with possible Runebase command-line options</source>
         <translation type="unfinished">Pokŏż pōmoc %1 coby zobŏczyć wykŏz wszyjskich ôpcyji piski nakŏzań.</translation>
     </message>
     <message>
@@ -510,7 +439,7 @@
         <translation type="unfinished">%1 klijynt</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Runebase network.</source> 
+        <source>%n active connection(s) to Runebase network.</source>
         <extracomment>A substring of the tooltip.</extracomment>
         <translation type="unfinished">
             <numerusform />
@@ -604,10 +533,6 @@
         <translation type="unfinished">Ôpłŏcka:</translation>
     </message>
     <message>
-        <source>Dust:</source>
-        <translation type="unfinished">Sztaub:</translation>
-    </message>
-    <message>
         <source>After Fee:</source>
         <translation type="unfinished">Po ôpłŏcce:</translation>
     </message>
@@ -672,28 +597,12 @@
         <translation type="unfinished">Kopiyruj wielość bajtōw</translation>
     </message>
     <message>
-        <source>Copy dust</source>
-        <translation type="unfinished">Kopiyruj sztaub</translation>
-    </message>
-    <message>
         <source>Copy change</source>
         <translation type="unfinished">Kopiyruj wydŏwkã</translation>
     </message>
     <message>
         <source>(%1 locked)</source>
         <translation type="unfinished">(%1 zaszperowane)</translation>
-    </message>
-    <message>
-        <source>yes</source>
-        <translation type="unfinished">ja</translation>
-    </message>
-    <message>
-        <source>no</source>
-        <translation type="unfinished">niy</translation>
-    </message>
-    <message>
-        <source>This label turns red if any recipient receives an amount smaller than the current dust threshold.</source>
-        <translation type="unfinished">Ta etyketa stŏwŏ sie czyrwōnŏ jeźli keryś z ôdbiyrŏczy dostŏwŏ kwotã myńszõ aniżeli terŏźny prōg sztaubu.</translation>
     </message>
     <message>
         <source>Can vary +/- %1 satoshi(s) per input.</source>
@@ -762,8 +671,8 @@
     </message>
     <message>
         <source>The entered address "%1" is not a valid Runebase address.</source>
-        <translation type="unfinished">Wkludzōnŏ adresa "%1" niyma nŏleżnōm adresōm Runebase.</translation>  
-  </message>
+        <translation type="unfinished">Wkludzōnŏ adresa "%1" niyma nŏleżnōm adresōm Runebase.</translation>
+    </message>
     <message>
         <source>Address "%1" already exists as a receiving address with label "%2" and so cannot be added as a sending address.</source>
         <translation type="unfinished">Adresa "%1" już je za adresã ôdbiorczõ z etyketōm "%2" i bez to niy idzie jeji przidać za adresã nadŏwcy.</translation>
@@ -838,7 +747,7 @@
     <message>
         <source>%1 will download and store a copy of the Runebase block chain.</source>
         <translation type="unfinished">%1 sebiere i spamiyntŏ kopijõ kety blokōw Runebase.</translation>
-   </message>
+    </message>
     <message>
         <source>The wallet will also be stored in this directory.</source>
         <translation type="unfinished">Portmanyj tyż ôstanie spamiyntany w tym katalogu.</translation>
@@ -904,11 +813,11 @@
     <message>
         <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the runebase network, as detailed below.</source>
         <translation type="unfinished">Świyże transakcyje mogōm niy być jeszcze widzialne, a tedyć saldo portmanyja może być niynŏleżne. Te detale bydōm nŏleżne, kej portmanyj zakōńczy synchrōnizacyjõ z necym runebase, zgodnie z miyniōnym ôpisym.</translation>
-  </message>
+    </message>
     <message>
         <source>Attempting to spend runebases that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
         <translation type="unfinished">Prōba wydaniŏ runebaseōw kere niy sōm jeszcze wyświytlōne za transakcyjŏ ôstanie ôdciepniyntŏ bez nec.</translation>
-   </message>
+    </message>
     <message>
         <source>Number of blocks left</source>
         <translation type="unfinished">Ôstało blokōw</translation>
@@ -1023,7 +932,7 @@
     <message>
         <source>Automatically open the Runebase client port on the router. This only works when your router supports UPnP and it is enabled.</source>
         <translation type="unfinished">Autōmatycznie ôdewrzij port klijynta Runebase na routerze. Ta ôpcyjŏ funguje ino jeźli twōj router podpiyrŏ UPnP i je ôno zapuszczone.</translation>
-   </message>
+    </message>
     <message>
         <source>Map port using &amp;UPnP</source>
         <translation type="unfinished">Mapuj port przi używaniu &amp;UPnP</translation>
@@ -1039,7 +948,7 @@
     <message>
         <source>Connect to the Runebase network through a SOCKS5 proxy.</source>
         <translation type="unfinished">Skupluj sie z necym Runebase bez SOCKS5 proxy.</translation>
-   </message>
+    </message>
     <message>
         <source>&amp;Connect through SOCKS5 proxy (default proxy):</source>
         <translation type="unfinished">&amp;Skupluj bez proxy SOCKS5 (wychodne proxy):</translation>
@@ -1095,7 +1004,7 @@
     <message>
         <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Runebase network after a connection is established, but this process has not completed yet.</source>
         <translation type="unfinished">Wyświytlanŏ informacyjŏ może być niyterŏźnŏ. Twōj portmanyj synchrōnizuje sie autōmatycznie z necym runebase zarŏz po tym, jak zrychtowane je skuplowanie, ale proces tyn niy ôstoł jeszcze skōńczōny.</translation>
-   </message>
+    </message>
     <message>
         <source>Available:</source>
         <translation type="unfinished">Dostympne:</translation>
@@ -1137,7 +1046,7 @@
     <message>
         <source>'runebase://' is not a valid URI. Use 'runebase:' instead.</source>
         <translation type="unfinished">'runebase://' to niyma nŏleżne URI. Użyj 'runebase:'.</translation>
-   </message>
+    </message>
     </context>
 <context>
     <name>PeerTableModel</name>
@@ -1304,8 +1213,8 @@
     </message>
     <message>
         <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Runebase network.</source>
-        <translation type="unfinished">Ôpcyjōnalnŏ wiadōmość do prziwstōniŏ do żōndaniŏ płatu, kerŏ bydzie wyświytlanŏ, kej żōndanie ôstanie ôdewrzōne. Napōmniynie: wiadōmość ta niy ôstanie wysłanŏ z płatym w nec Runebase.</translation>  
-  </message>
+        <translation type="unfinished">Ôpcyjōnalnŏ wiadōmość do prziwstōniŏ do żōndaniŏ płatu, kerŏ bydzie wyświytlanŏ, kej żōndanie ôstanie ôdewrzōne. Napōmniynie: wiadōmość ta niy ôstanie wysłanŏ z płatym w nec Runebase.</translation>
+    </message>
     <message>
         <source>Clear</source>
         <translation type="unfinished">Wypucuj</translation>
@@ -1424,10 +1333,6 @@
         <translation type="unfinished">Włŏsne:</translation>
     </message>
     <message>
-        <source>Dust:</source>
-        <translation type="unfinished">Sztaub:</translation>
-    </message>
-    <message>
         <source>Balance:</source>
         <translation type="unfinished">Saldo:</translation>
     </message>
@@ -1450,10 +1355,6 @@
     <message>
         <source>Copy bytes</source>
         <translation type="unfinished">Kopiyruj wielość bajtōw</translation>
-    </message>
-    <message>
-        <source>Copy dust</source>
-        <translation type="unfinished">Kopiyruj sztaub</translation>
     </message>
     <message>
         <source>Copy change</source>
@@ -1499,7 +1400,7 @@
     <message>
         <source>The Runebase address to send the payment to</source>
         <translation type="unfinished">Adresa Runebase, na kerõ chcesz posłać płat</translation>
-   </message>
+    </message>
     <message>
         <source>Use available balance</source>
         <translation type="unfinished">Użyj dostympnego salda</translation>
@@ -1510,9 +1411,9 @@
     </message>
     <message>
         <source>A message that was attached to the runebase: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Runebase network.</source>
-        <translation type="unfinished">Wiadōmość, kerŏ ôstała prziwstōnŏ do URI runebase:, kerŏ bydzie przechowowanŏ z transakcyjōm w cylach informacyjnych. Napōmniynie: Ta wiadōmość niy bydzie rozszyrzowanŏ w necu Runebase.</translation>  
-  </message>
-    </context>
+        <translation type="unfinished">Wiadōmość, kerŏ ôstała prziwstōnŏ do URI runebase:, kerŏ bydzie przechowowanŏ z transakcyjōm w cylach informacyjnych. Napōmniynie: Ta wiadōmość niy bydzie rozszyrzowanŏ w necu Runebase.</translation>
+    </message>
+</context>
 <context>
     <name>SignVerifyMessageDialog</name>
     <message>
@@ -1620,10 +1521,6 @@
         <translation type="unfinished">Ôdebrane ôd</translation>
     </message>
     <message>
-        <source>Payment to yourself</source>
-        <translation type="unfinished">Płat do siebie</translation>
-    </message>
-    <message>
         <source>(no label)</source>
         <translation type="unfinished">(chyba etykety)</translation>
     </message>
@@ -1720,4 +1617,67 @@
         <translation type="unfinished">Pociep</translation>
     </message>
 </context>
+<context>
+    <name>bitcoin-core</name>
+    <message>
+        <source>The %s developers</source>
+        <translation type="unfinished">Twōrcy %s</translation>
+    </message>
+    <message>
+        <source>Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.</source>
+        <translation type="unfinished">Imyntnŏ dugość kety wersyje (%i) przekrŏczŏ maksymalnõ dopuszczalnõ dugość (%i). Zmyńsz wielość abo miara parametra uacomment.</translation>
+    </message>
+    <message>
+        <source>Warning: Private keys detected in wallet {%s} with disabled private keys</source>
+        <translation type="unfinished">Pozōr: Wykryto było klucze prywatne w portmanyju {%s} kery mŏ zastawiōne klucze prywatne</translation>
+    </message>
+    <message>
+        <source>Done loading</source>
+        <translation type="unfinished">Wgrŏwanie zakōńczōne</translation>
+    </message>
+    <message>
+        <source>Error loading %s</source>
+        <translation type="unfinished">Feler wgrŏwaniŏ %s</translation>
+    </message>
+    <message>
+        <source>Error loading %s: Private keys can only be disabled during creation</source>
+        <translation type="unfinished">Feler wgrŏwaniŏ %s: Klucze prywatne mogōm być zastawiōne ino w czasie tworzyniŏ</translation>
+    </message>
+    <message>
+        <source>Error loading %s: Wallet corrupted</source>
+        <translation type="unfinished">Feler wgrŏwaniŏ %s: Portmanyj poprzniōny</translation>
+    </message>
+    <message>
+        <source>Error loading %s: Wallet requires newer version of %s</source>
+        <translation type="unfinished">Feler wgrŏwaniŏ %s: Portmanyj fołdruje nowszyj wersyje %s</translation>
+    </message>
+    <message>
+        <source>Error loading block database</source>
+        <translation type="unfinished">Feler wgrŏwaniŏ bazy blokōw</translation>
+    </message>
+    <message>
+        <source>Error: Disk space is low for %s</source>
+        <translation type="unfinished">Feler: Za mało wolnego placu na dysku dlŏ %s</translation>
+    </message>
+    <message>
+        <source>Signing transaction failed</source>
+        <translation type="unfinished">Szkryftniyńcie transakcyji niy podarziło sie</translation>
+    </message>
+    <message>
+        <source>This is experimental software.</source>
+        <translation type="unfinished">To je eksperymyntalny softwer.</translation>
+    </message>
+    <message>
+        <source>Transaction too large</source>
+        <translation type="unfinished">Transakcyjŏ za srogŏ</translation>
+    </message>
+    <message>
+        <source>Unknown network specified in -onlynet: '%s'</source>
+        <translation type="unfinished">Niyznōmy nec ôkryślōny w -onlynet: '%s'</translation>
+    </message>
+    <message>
+        <source>Unsupported logging category %s=%s.</source>
+        <translation type="unfinished">Niypodpiyranŏ kategoryjŏ registrowaniŏ %s=%s.</translation>
+    </message>
+    </context>
 </TS>

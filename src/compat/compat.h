@@ -1,14 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_COMPAT_COMPAT_H
 #define BITCOIN_COMPAT_COMPAT_H
-
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
 
 // Windows defines FD_SETSIZE to 64 (see _fd_types.h in mingw-w64),
 // which is too small for our usage, but allows us to redefine it safely.
@@ -22,19 +18,18 @@
 #include <ws2tcpip.h>
 #include <cstdint>
 #else
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <net/if.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <limits.h>
-#include <netdb.h>
-#include <unistd.h>
+#include <arpa/inet.h>   // IWYU pragma: export
+#include <fcntl.h>       // IWYU pragma: export
+#include <ifaddrs.h>     // IWYU pragma: export
+#include <net/if.h>      // IWYU pragma: export
+#include <netdb.h>       // IWYU pragma: export
+#include <netinet/in.h>  // IWYU pragma: export
+#include <netinet/tcp.h> // IWYU pragma: export
+#include <sys/mman.h>    // IWYU pragma: export
+#include <sys/select.h>  // IWYU pragma: export
+#include <sys/socket.h>  // IWYU pragma: export
+#include <sys/types.h>   // IWYU pragma: export
+#include <unistd.h>      // IWYU pragma: export
 #endif
 
 // We map Linux / BSD error functions and codes, to the equivalent
@@ -59,15 +54,6 @@ typedef unsigned int SOCKET;
 #define WSAEAGAIN EAGAIN
 #else
 #define WSAEAGAIN WSAEWOULDBLOCK
-#endif
-#endif
-
-// Windows doesn't define S_IRUSR or S_IWUSR. We define both
-// here, with the same values as glibc (see stat.h).
-#ifdef WIN32
-#ifndef S_IRUSR
-#define S_IRUSR             0400
-#define S_IWUSR             0200
 #endif
 #endif
 
@@ -108,14 +94,6 @@ typedef char* sockopt_arg_type;
 #if defined(__linux__)
 #define USE_POLL
 #endif
-
-bool static inline IsSelectableSocket(const SOCKET& s) {
-#if defined(USE_POLL) || defined(WIN32)
-    return true;
-#else
-    return (s < FD_SETSIZE);
-#endif
-}
 
 // MSG_NOSIGNAL is not available on some platforms, if it doesn't exist define it as 0
 #if !defined(MSG_NOSIGNAL)

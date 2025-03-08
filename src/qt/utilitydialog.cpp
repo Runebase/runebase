@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,11 +13,11 @@
 #include <qt/guiutil.h>
 
 #include <clientversion.h>
+#include <common/args.h>
 #include <init.h>
-#include <util/system.h>
 #include <util/strencodings.h>
 
-#include <stdio.h>
+#include <cstdio>
 
 #include <QCloseEvent>
 #include <QLabel>
@@ -58,7 +58,8 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
         ui->helpMessage->setVisible(false);
     } else {
         setWindowTitle(tr("Command-line options"));
-        QString header = "Usage:  runebase-qt [command-line options]                     \n"; 
+        QString header = "Usage: runebase-qt [command-line options] [URI]\n\n"
+                         "Optional URI is a Runebase address in BIP21 URI format.\n";
         QTextCursor cursor(ui->helpMessage->document());
         cursor.insertText(version);
         cursor.insertBlock();

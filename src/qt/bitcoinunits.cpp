@@ -44,7 +44,7 @@ QString BitcoinUnits::shortName(Unit unit)
     switch (unit) {
     case Unit::BTC: return longName(unit);
     case Unit::mBTC: return longName(unit);
-    case Unit::uBTC: return QString("DUST");
+    case Unit::uBTC: return QString("CHIPS");
     case Unit::SAT: return QString("DUST");
     } // no default case, so the compiler can warn about missing cases
     assert(false);

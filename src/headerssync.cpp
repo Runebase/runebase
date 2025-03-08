@@ -7,14 +7,13 @@
 #include <pow.h>
 #include <timedata.h>
 #include <util/check.h>
+#include <util/time.h>
+#include <util/vector.h>
 
-// The two Bitcoin constants are computed using the simulation script on
-// https://gist.github.com/sipa/016ae445c132cdf65a2791534dfb7ae1
-// The two Runebase constants below are computed using the simulation script on
-// runebase/contrib/sync/headersync_params.py
-// It is the same simulation as for Bitcoin, just updated with Runebase parameters.
+// The two constants below are computed using the simulation script in
+// contrib/devtools/headerssync-params.py.
 
-//! Store a commitment to a header every HEADER_COMMITMENT_PERIOD blocks.
+//! Store one header commitment per HEADER_COMMITMENT_PERIOD blocks.
 constexpr size_t HEADER_COMMITMENT_PERIOD{59};
 
 //! Only feed headers to validation once this many headers on top have been
@@ -28,11 +27,11 @@ static_assert(sizeof(CompressedHeader) == 176 || sizeof(CompressedHeader) == 160
 
 HeadersSyncState::HeadersSyncState(NodeId id, const Consensus::Params& consensus_params,
         const CBlockIndex* chain_start, const arith_uint256& minimum_required_work) :
+    m_commit_offset(GetRand<unsigned>(HEADER_COMMITMENT_PERIOD)),
     m_id(id), m_consensus_params(consensus_params),
     m_chain_start(chain_start),
     m_minimum_required_work(minimum_required_work),
     m_current_chain_work(chain_start->nChainWork),
-    m_commit_offset(GetRand<unsigned>(HEADER_COMMITMENT_PERIOD)),
     m_last_header_received(m_chain_start->GetBlockHeader()),
     m_current_height(chain_start->nHeight)
 {
@@ -47,7 +46,7 @@ HeadersSyncState::HeadersSyncState(NodeId id, const Consensus::Params& consensus
     if(consensus_params.nLastPOWBlock != consensus_params.nLastBigReward)
     {
         // Regtest mode, so use the Bitcoin formula for max commitments
-        m_max_commitments = 6*(Ticks<std::chrono::seconds>(GetAdjustedTime() - NodeSeconds{std::chrono::seconds{chain_start->GetMedianTimePast()}}) + MAX_FUTURE_BLOCK_TIME) / HEADER_COMMITMENT_PERIOD;
+        m_max_commitments = 6*(Ticks<std::chrono::seconds>(NodeClock::now() - NodeSeconds{std::chrono::seconds{chain_start->GetMedianTimePast()}}) + MAX_FUTURE_BLOCK_TIME) / HEADER_COMMITMENT_PERIOD;
     }
     else
     {
@@ -73,9 +72,9 @@ HeadersSyncState::HeadersSyncState(NodeId id, const Consensus::Params& consensus
 void HeadersSyncState::Finalize()
 {
     Assume(m_download_state != State::FINAL);
-    m_header_commitments = {};
+    ClearShrink(m_header_commitments);
     m_last_header_received.SetNull();
-    m_redownloaded_headers = {};
+    ClearShrink(m_redownloaded_headers);
     m_redownload_buffer_last_hash.SetNull();
     m_redownload_buffer_first_prev_hash.SetNull();
     m_process_all_remaining_headers = false;
@@ -293,7 +292,7 @@ bool HeadersSyncState::ValidateAndStoreRedownloadedHeader(const CBlockHeader& he
     }
 
     // Store this header for later processing.
-    m_redownloaded_headers.push_back(header);
+    m_redownloaded_headers.emplace_back(header);
     m_redownload_buffer_last_height = next_height;
     m_redownload_buffer_last_hash = header.GetHash();
 

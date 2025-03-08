@@ -1,16 +1,11 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_QT_WALLETMODEL_H
 #define BITCOIN_QT_WALLETMODEL_H
 
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
-
 #include <key.h>
-#include <script/standard.h>
 
 #include <qt/walletmodeltransaction.h>
 #include <qt/runebasehwitool.h> 
@@ -138,19 +133,17 @@ public:
 
         bool isValid() const { return valid; }
 
-        // Copy constructor is disabled.
+        // Disable unused copy/move constructors/assignments explicitly.
         UnlockContext(const UnlockContext&) = delete;
-        // Move operator and constructor transfer the context
-        UnlockContext(UnlockContext&& obj) { CopyFrom(std::move(obj)); }
-        UnlockContext& operator=(UnlockContext&& rhs) { CopyFrom(std::move(rhs)); return *this; }
+        UnlockContext(UnlockContext&&) = delete;
+        UnlockContext& operator=(const UnlockContext&) = delete;
+        UnlockContext& operator=(UnlockContext&&) = delete;
+
     private:
         WalletModel *wallet;
-        bool valid;
-        mutable bool relock; // mutable, as it can be set to false by copying
+        const bool valid;
+        const bool relock;
         bool stakingOnly;
-
-        UnlockContext& operator=(const UnlockContext&) = default;
-        void CopyFrom(UnlockContext&& rhs);
     };
 
     UnlockContext requestUnlock();
@@ -197,6 +190,7 @@ public:
     // Get or set hardware wallet init required (only for hardware wallet applicable)
     void importAddressesData(bool rescan = true, bool importPKH = true, bool importP2SH = true, bool importBech32 = true, QString pathPKH = QString(), QString pathP2SH = QString(), QString pathBech32 = QString());
     bool getSignPsbtWithHwiTool();
+    bool getSignMessageWithHwiTool();
     bool createUnsigned();
     bool hasLedgerProblem();
 
@@ -223,19 +217,19 @@ private:
     // (transaction fee, for example)
     OptionsModel *optionsModel;
 
-    AddressTableModel *addressTableModel;
-    ContractTableModel *contractTableModel;
-    TransactionTableModel *transactionTableModel;
-    RecentRequestsTableModel *recentRequestsTableModel;
-    TokenItemModel *tokenItemModel;
-    TokenTransactionTableModel *tokenTransactionTableModel;
-    DelegationItemModel *delegationItemModel;
-    SuperStakerItemModel *superStakerItemModel;
-    DelegationStakerItemModel *delegationStakerItemModel;
+    AddressTableModel* addressTableModel{nullptr};
+    ContractTableModel* contractTableModel{nullptr};
+    TransactionTableModel* transactionTableModel{nullptr};
+    RecentRequestsTableModel* recentRequestsTableModel{nullptr};
+    TokenItemModel* tokenItemModel{nullptr};
+    TokenTransactionTableModel* tokenTransactionTableModel{nullptr};
+    DelegationItemModel* delegationItemModel{nullptr};
+    SuperStakerItemModel* superStakerItemModel{nullptr};
+    DelegationStakerItemModel* delegationStakerItemModel{nullptr};
 
     // Cache some values to be able to detect changes
     interfaces::WalletBalances m_cached_balances;
-    EncryptionStatus cachedEncryptionStatus;
+    EncryptionStatus cachedEncryptionStatus{Unencrypted};
     QTimer* timer;
 
     // Block hash denoting when the last balance update was done.
@@ -245,9 +239,9 @@ private:
     QString restorePath;
     QString restoreParam;
 
-    uint64_t nWeight;
-    std::atomic<bool> updateStakeWeight;
-    std::atomic<bool> updateCoinAddresses;
+    uint64_t nWeight{0};
+    std::atomic<bool> updateStakeWeight{true};
+    std::atomic<bool> updateCoinAddresses{true};
 
     QString fingerprint;
     std::atomic<bool> hardwareWalletInitRequired{false};
@@ -259,10 +253,10 @@ private:
     QString pathP2SH;
     QString pathBech32;
     QList<HWDevice> devices;
-    int64_t deviceTime = 0;
+    SteadyMilliseconds deviceTime{0ms};
 
     QThread t;
-    WalletWorker *worker;
+    WalletWorker *worker{nullptr};
     void subscribeToCoreSignals();
     void unsubscribeFromCoreSignals();
     bool checkBalanceChanged(const interfaces::WalletBalances& new_balances);
@@ -314,7 +308,7 @@ public Q_SLOTS:
     /* New transaction, or transaction changed status */
     void updateTransaction();
     /* New, updated or removed address book entry */
-    void updateAddressBook(const QString &address, const QString &label, bool isMine, const QString &purpose, int status);
+    void updateAddressBook(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status);
     /* Watch-only added */
     void updateWatchOnlyFlag(bool fHaveWatchonly);
     /* Current, immature or unconfirmed balance might have changed - emit 'balanceChanged' if so */

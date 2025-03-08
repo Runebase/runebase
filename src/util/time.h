@@ -1,14 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_UTIL_TIME_H
 #define BITCOIN_UTIL_TIME_H
 
-#include <compat/compat.h>
-
-#include <chrono>
+#include <chrono> // IWYU pragma: export
 #include <cstdint>
 #include <string>
 
@@ -28,6 +26,8 @@ using SteadyClock = std::chrono::steady_clock;
 using SteadySeconds = std::chrono::time_point<std::chrono::steady_clock, std::chrono::seconds>;
 using SteadyMilliseconds = std::chrono::time_point<std::chrono::steady_clock, std::chrono::milliseconds>;
 using SteadyMicroseconds = std::chrono::time_point<std::chrono::steady_clock, std::chrono::microseconds>;
+
+using SystemClock = std::chrono::system_clock;
 
 void UninterruptibleSleep(const std::chrono::microseconds& n);
 
@@ -57,21 +57,17 @@ constexpr int64_t count_microseconds(std::chrono::microseconds t) { return t.cou
 
 using HoursDouble = std::chrono::duration<double, std::chrono::hours::period>;
 using SecondsDouble = std::chrono::duration<double, std::chrono::seconds::period>;
+using MillisecondsDouble = std::chrono::duration<double, std::chrono::milliseconds::period>;
 
 /**
  * DEPRECATED
  * Use either ClockType::now() or Now<TimePointType>() if a cast is needed.
  * ClockType is
- * - std::chrono::steady_clock for steady time
- * - std::chrono::system_clock for system time
- * - NodeClock                 for mockable system time
+ * - SteadyClock/std::chrono::steady_clock for steady time
+ * - SystemClock/std::chrono::system_clock for system time
+ * - NodeClock                             for mockable system time
  */
 int64_t GetTime();
-
-/** Returns the system time (not mockable) */
-int64_t GetTimeMillis();
-/** Returns the system time (not mockable) */
-int64_t GetTimeMicros();
 
 /**
  * DEPRECATED
@@ -109,7 +105,6 @@ T GetTime()
  */
 std::string FormatISO8601DateTime(int64_t nTime);
 std::string FormatISO8601Date(int64_t nTime);
-int64_t ParseISO8601DateTime(const std::string& str);
 
 /**
  * Convert milliseconds to a struct timeval for e.g. select.

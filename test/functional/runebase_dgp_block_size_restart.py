@@ -16,6 +16,9 @@ import random
 Note, these tests do not test the functionality of the DGP template contract itself, for tests for the DGP template, see runebase-dgp.py
 """
 class RunebaseDGPActivation(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1

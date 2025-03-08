@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2021 The Bitcoin Core developers
+# Copyright (c) 2014-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Run regression test suite.
@@ -17,6 +17,7 @@ from collections import deque
 import configparser
 import datetime
 import os
+import platform
 import time
 import shutil
 import signal
@@ -26,6 +27,8 @@ import tempfile
 import re
 import logging
 import unittest
+
+os.environ["REQUIRE_WALLET_TYPE_SET"] = "1"
 
 # Formatting. Default colors to empty strings.
 DEFAULT, BOLD, GREEN, RED = ("", ""), ("", ""), ("", ""), ("", "")
@@ -40,8 +43,8 @@ except UnicodeDecodeError:
     CROSS = "x "
     CIRCLE = "o "
 
-if os.name != 'nt' or sys.getwindowsversion() >= (10, 0, 14393): #type:ignore
-    if os.name == 'nt':
+if platform.system() != 'Windows' or sys.getwindowsversion() >= (10, 0, 14393): #type:ignore
+    if platform.system() == 'Windows':
         import ctypes
         kernel32 = ctypes.windll.kernel32  # type: ignore
         ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4
@@ -67,14 +70,21 @@ if os.name != 'nt' or sys.getwindowsversion() >= (10, 0, 14393): #type:ignore
 TEST_EXIT_PASSED = 0
 TEST_EXIT_SKIPPED = 77
 
+# List of framework modules containing unit tests. Should be kept in sync with
+# the output of `git grep unittest.TestCase ./test/functional/test_framework`
 TEST_FRAMEWORK_MODULES = [
     "address",
+    "crypto.bip324_cipher",
     "blocktools",
-    "muhash",
+    "crypto.chacha20",
+    "crypto.ellswift",
     "key",
+    "messages",
+    "crypto.muhash",
+    "crypto.poly1305",
+    "crypto.ripemd160",
     "script",
     "segwit_addr",
-    "util",
 ]
 
 EXTENDED_SCRIPTS = [
@@ -82,64 +92,100 @@ EXTENDED_SCRIPTS = [
     # Longest test should go first, to favor running tests in parallel
     'runebase_evm_london_activation.py',
     'runebase_evm_shanghai_activation.py',
+    'runebase_evm_cancun_activation.py',
     'feature_pruning.py',
-    'feature_dbcrash.py'
+    'feature_dbcrash.py',
+    'wallet_pruning.py --legacy-wallet',
 ]
 
 BASE_SCRIPTS = [
     # Scripts that are run by default.
     # Longest test should go first, to favor running tests in parallel
-    'wallet_hd.py --legacy-wallet',
-    'wallet_hd.py --descriptors',
+    # vv Tests less than 5m vv
+    'feature_fee_estimation.py',
+    'feature_taproot.py',
+    'feature_block.py',
+    # vv Tests less than 2m vv
+    'mining_getblocktemplate_longpoll.py',
+    'p2p_segwit.py',
+    'feature_maxuploadtarget.py',
+    'mempool_updatefromblock.py',
+    'mempool_persist.py --descriptors',
+    # vv Tests less than 60s vv
+    'rpc_psbt.py --legacy-wallet',
+    'rpc_psbt.py --descriptors',
+    'wallet_fundrawtransaction.py --legacy-wallet',
+    'wallet_fundrawtransaction.py --descriptors',
+    'wallet_bumpfee.py --legacy-wallet',
+    'wallet_bumpfee.py --descriptors',
+    'wallet_import_rescan.py --legacy-wallet',
     'wallet_backup.py --legacy-wallet',
     'wallet_backup.py --descriptors',
-    # vv Tests less than 5m vv
-    'mining_getblocktemplate_longpoll.py',
-    'feature_maxuploadtarget.py',
-    'feature_block.py',
-    'rpc_fundrawtransaction.py --legacy-wallet',
-    'rpc_fundrawtransaction.py --descriptors',
-    'p2p_compactblocks.py',
-    'p2p_compactblocks_blocksonly.py',
     'feature_segwit.py --legacy-wallet',
     'feature_segwit.py --descriptors',
-    # vv Tests less than 2m vv
+    'feature_segwit.py --descriptors --v2transport',
+    'p2p_tx_download.py',
+    'wallet_avoidreuse.py --legacy-wallet',
+    'wallet_avoidreuse.py --descriptors',
+    'feature_abortnode.py',
+    'wallet_address_types.py --legacy-wallet',
+    'wallet_address_types.py --descriptors',
+    'p2p_orphan_handling.py',
     'wallet_basic.py --legacy-wallet',
     'wallet_basic.py --descriptors',
-    'wallet_labels.py --legacy-wallet',
-    'wallet_labels.py --descriptors',
-    'p2p_segwit.py',
+    'feature_maxtipage.py',
+    'wallet_multiwallet.py --legacy-wallet',
+    'wallet_multiwallet.py --descriptors',
+    'wallet_multiwallet.py --usecli',
+    'p2p_dns_seeds.py',
+    'wallet_groups.py --legacy-wallet',
+    'wallet_groups.py --descriptors',
+    'p2p_blockfilters.py',
+    'feature_assumevalid.py',
+    'wallet_taproot.py --descriptors',
+    'feature_bip68_sequence.py',
+    'rpc_packages.py',
+    'rpc_bind.py --ipv4',
+    'rpc_bind.py --ipv6',
+    'rpc_bind.py --nonloopback',
+    'p2p_headers_sync_with_minchainwork.py',
+    'p2p_feefilter.py',
+    #'feature_csv_activation.py',
+    'p2p_sendheaders.py',
+    'wallet_listtransactions.py --legacy-wallet',
+    'wallet_listtransactions.py --descriptors',
+    'wallet_miniscript.py --descriptors',
+    # vv Tests less than 30s vv
+    'p2p_invalid_messages.py',
+    'rpc_createmultisig.py',
     'p2p_timeouts.py',
-    'p2p_tx_download.py',
-    'mempool_updatefromblock.py',
+    'p2p_timeouts.py --v2transport',
     'wallet_dump.py --legacy-wallet',
-    'feature_taproot.py',
     'rpc_signer.py',
     'wallet_signer.py --descriptors',
-    # vv Tests less than 60s vv
-    'p2p_sendheaders.py',
     'wallet_importmulti.py --legacy-wallet',
     'mempool_limit.py',
     'rpc_txoutproof.py',
     'wallet_listreceivedby.py --legacy-wallet',
     'wallet_listreceivedby.py --descriptors',
     'wallet_abandonconflict.py --legacy-wallet',
-    'p2p_dns_seeds.py',
     'wallet_abandonconflict.py --descriptors',
-    #'feature_csv_activation.py',
-    'wallet_address_types.py --legacy-wallet',
-    'wallet_address_types.py --descriptors',
-    'feature_bip68_sequence.py',
-    'p2p_feefilter.py',
-    'rpc_packages.py',
     'feature_reindex.py',
-    'feature_abortnode.py',
-    # vv Tests less than 30s vv
+    'feature_reindex_readonly.py',
+    'wallet_labels.py --legacy-wallet',
+    'wallet_labels.py --descriptors',
+    'p2p_compactblocks.py',
+    'p2p_compactblocks_blocksonly.py',
+    'wallet_hd.py --legacy-wallet',
+    'wallet_hd.py --descriptors',
+    'wallet_blank.py --legacy-wallet',
+    'wallet_blank.py --descriptors',
     'wallet_keypool_topup.py --legacy-wallet',
     'wallet_keypool_topup.py --descriptors',
-    'feature_fee_estimation.py',
+    'wallet_fast_rescan.py --descriptors',
     'interface_zmq.py',
     'rpc_invalid_address_message.py',
+    'rpc_validateaddress.py',
     'interface_bitcoin_cli.py --legacy-wallet',
     'interface_bitcoin_cli.py --descriptors',
     'feature_bind_extra.py',
@@ -155,49 +201,46 @@ BASE_SCRIPTS = [
     'rpc_misc.py',
     'interface_rest.py',
     'mempool_spend_coinbase.py',
-    'wallet_avoidreuse.py --legacy-wallet',
-    'wallet_avoidreuse.py --descriptors',
     'wallet_avoid_mixing_output_types.py --descriptors',
     'mempool_reorg.py',
-    'mempool_persist.py',
     'p2p_block_sync.py',
-    'wallet_multiwallet.py --legacy-wallet',
-    'wallet_multiwallet.py --descriptors',
-    'wallet_multiwallet.py --usecli',
+    'p2p_block_sync.py --v2transport',
     'wallet_createwallet.py --legacy-wallet',
     'wallet_createwallet.py --usecli',
     'wallet_createwallet.py --descriptors',
-    'wallet_listtransactions.py --legacy-wallet',
-    'wallet_listtransactions.py --descriptors',
     'wallet_watchonly.py --legacy-wallet',
     'wallet_watchonly.py --usecli --legacy-wallet',
+    'wallet_reindex.py --legacy-wallet',
+    'wallet_reindex.py --descriptors',
     'wallet_reorgsrestore.py',
+    'wallet_conflicts.py --legacy-wallet',
+    'wallet_conflicts.py --descriptors',
     'interface_http.py',
     'interface_rpc.py',
     'interface_usdt_coinselection.py',
+    'interface_usdt_mempool.py',
     'interface_usdt_net.py',
     'interface_usdt_utxocache.py',
     'interface_usdt_validation.py',
-    'rpc_psbt.py --legacy-wallet',
-    'rpc_psbt.py --descriptors',
     'rpc_users.py',
     'rpc_whitelist.py',
     'feature_proxy.py',
-    'feature_syscall_sandbox.py',
     'wallet_signrawtransactionwithwallet.py --legacy-wallet',
     'wallet_signrawtransactionwithwallet.py --descriptors',
-    'rpc_signrawtransactionwithkey.py',
-    'p2p_headers_sync_with_minchainwork.py',
+    'rpc_signrawtransactionwithkey.py --legacy-wallet',
+    'rpc_signrawtransactionwithkey.py --descriptors',
     'rpc_rawtransaction.py --legacy-wallet',
-    'wallet_groups.py --legacy-wallet',
     'wallet_transactiontime_rescan.py --descriptors',
     'wallet_transactiontime_rescan.py --legacy-wallet',
     'p2p_addrv2_relay.py',
-    'wallet_groups.py --descriptors',
     'p2p_compactblocks_hb.py',
+    'p2p_compactblocks_hb.py --v2transport',
     'p2p_disconnect_ban.py',
+    'p2p_disconnect_ban.py --v2transport',
+    'feature_posix_fs_permissions.py',
     'rpc_decodescript.py',
     'rpc_blockchain.py',
+    'rpc_blockchain.py --v2transport',
     'rpc_deprecated.py',
     'wallet_disable.py',
     'wallet_change_address.py --legacy-wallet',
@@ -207,27 +250,31 @@ BASE_SCRIPTS = [
     'p2p_getdata.py',
     'p2p_addrfetch.py',
     'rpc_net.py',
+    'rpc_net.py --v2transport',
     'wallet_keypool.py --legacy-wallet',
     'wallet_keypool.py --descriptors',
     'wallet_descriptor.py --descriptors',
-    'wallet_miniscript.py',
-    'feature_maxtipage.py',
     'p2p_nobloomfilter_messages.py',
     'p2p_filter.py',
     'rpc_setban.py',
+    'rpc_setban.py --v2transport',
     'p2p_blocksonly.py',
     'mining_prioritisetransaction.py',
     'p2p_invalid_locator.py',
     'p2p_invalid_block.py',
-    'p2p_invalid_messages.py',
+    'p2p_invalid_block.py --v2transport',
     'p2p_invalid_tx.py',
-    'feature_assumevalid.py',
+    'p2p_invalid_tx.py --v2transport',
+    'p2p_v2_transport.py',
+    'p2p_v2_encrypted.py',
+    'p2p_v2_earlykeyresponse.py',
     'example_test.py',
+    'mempool_accept_v3.py',
     'wallet_txn_doublespend.py --legacy-wallet',
-    'wallet_multisig_descriptor_psbt.py',
+    'wallet_multisig_descriptor_psbt.py --descriptors',
     'wallet_txn_doublespend.py --descriptors',
-    'feature_backwards_compatibility.py --legacy-wallet',
-    'feature_backwards_compatibility.py --descriptors',
+    'wallet_backwards_compatibility.py --legacy-wallet',
+    'wallet_backwards_compatibility.py --descriptors',
     'wallet_txn_clone.py --mineblock',
     'feature_notifications.py',
     'rpc_getblockfilter.py',
@@ -237,35 +284,35 @@ BASE_SCRIPTS = [
     'feature_rbf.py',
     'mempool_packages.py',
     'mempool_package_onemore.py',
-    'rpc_createmultisig.py',
     'mempool_package_limits.py',
     'feature_versionbits_warning.py',
     'rpc_preciousblock.py',
     'wallet_importprunedfunds.py --legacy-wallet',
     'wallet_importprunedfunds.py --descriptors',
     'p2p_leak_tx.py',
+    'p2p_leak_tx.py --v2transport',
     'p2p_eviction.py',
+    'p2p_ibd_stalling.py',
+    'p2p_ibd_stalling.py --v2transport',
+    'p2p_net_deadlock.py',
+    'p2p_net_deadlock.py --v2transport',
     'wallet_signmessagewithaddress.py',
     'rpc_signmessagewithprivkey.py',
     'rpc_generate.py',
     'wallet_balance.py --legacy-wallet',
     'wallet_balance.py --descriptors',
     'p2p_initial_headers_sync.py',
-    'feature_nulldummy.py',
+    'feature_nulldummy.py --legacy-wallet',
+    'feature_nulldummy.py --descriptors',
     'mempool_accept.py',
     'mempool_expiry.py',
-    'wallet_import_rescan.py --legacy-wallet',
     'wallet_import_with_label.py --legacy-wallet',
     'wallet_importdescriptors.py --descriptors',
     'wallet_upgradewallet.py --legacy-wallet',
-    'rpc_bind.py --ipv4',
-    'rpc_bind.py --ipv6',
-    'rpc_bind.py --nonloopback',
     'wallet_crosschain.py',
     'mining_basic.py',
     'feature_signet.py',
-    'wallet_bumpfee.py --legacy-wallet',
-    'wallet_bumpfee.py --descriptors',
+    'p2p_mutated_blocks.py',
     'wallet_implicitsegwit.py --legacy-wallet',
     'rpc_named_arguments.py',
     'feature_startupnotify.py',
@@ -280,6 +327,7 @@ BASE_SCRIPTS = [
     'feature_dersig.py',
     #'feature_cltv.py',
     'rpc_uptime.py',
+    'feature_discover.py',
     'wallet_resendwallettransactions.py --legacy-wallet',
     'wallet_resendwallettransactions.py --descriptors',
     'wallet_fallbackfee.py --legacy-wallet',
@@ -294,9 +342,12 @@ BASE_SCRIPTS = [
     'wallet_send.py --descriptors',
     'wallet_sendall.py --legacy-wallet',
     'wallet_sendall.py --descriptors',
+    'wallet_sendmany.py --descriptors',
+    'wallet_sendmany.py --legacy-wallet',
     'wallet_create_tx.py --descriptors',
-    'wallet_taproot.py',
-    'wallet_inactive_hdchains.py',
+    'wallet_inactive_hdchains.py --legacy-wallet',
+    'wallet_spend_unconfirmed.py',
+    'wallet_rescan_unconfirmed.py --descriptors',
     'p2p_fingerprint.py',
     'feature_uacomment.py',
     'feature_init.py',
@@ -304,24 +355,29 @@ BASE_SCRIPTS = [
     'wallet_coinbase_category.py --descriptors',
     'feature_filelock.py',
     'feature_loadblock.py',
+    'feature_assumeutxo.py',
+    'wallet_assumeutxo.py --descriptors',
     #'p2p_dos_header_tree.py',
     'p2p_add_connections.py',
     'feature_bind_port_discover.py',
     'p2p_unrequested_blocks.py',
-    'p2p_blockfilters.py',
     'p2p_message_capture.py',
     'feature_includeconf.py',
     'feature_addrman.py',
     'feature_asmap.py',
+    'feature_fastprune.py',
     'mempool_unbroadcast.py',
     'mempool_compatibility.py',
     'mempool_accept_wtxid.py',
+    'mempool_dust.py',
+    'mempool_sigoplimit.py',
     'rpc_deriveaddresses.py',
     'rpc_deriveaddresses.py --usecli',
     'p2p_ping.py',
     'p2p_tx_privacy.py',
+    'rpc_scanblocks.py',
+    'p2p_sendtxrcncl.py',
     'rpc_scantxoutset.py',
-    'feature_txindex_compatibility.py',
     'feature_unsupported_utxo_db.py',
     'feature_logging.py',
     'feature_anchors.py',
@@ -330,9 +386,11 @@ BASE_SCRIPTS = [
     # 'wallet_orphanedreward.py', // N/A in Runebase due to rolling checkpoints 
     'wallet_timelock.py',
     'p2p_node_network_limited.py',
+    'p2p_node_network_limited.py --v2transport',
     'p2p_permissions.py',
     'feature_blocksdir.py',
     'wallet_startup.py',
+    'feature_remove_pruned_files_on_startup.py',
     'p2p_i2p_ports.py',
     'p2p_i2p_sessions.py',
     'feature_config_args.py',
@@ -350,68 +408,126 @@ BASE_SCRIPTS = [
     # Don't append tests at the end to avoid merge conflicts
     # Put them in a random line within the section that fits their approximate run-time
     # runebase
-    'runebase_evm_london_gas_usage.py',
-    'runebase_dgp.py',
-    'runebase_pos.py',
-    'runebase_opcall.py',
-    'runebase_opcreate.py',
-    'runebase_8mb_block.py',
-    'runebase_gas_limit.py',
-    'runebase_searchlog.py',
-    'runebase_pos_segwit.py',
-    'runebase_state_root.py',
-    'runebase_evm_globals.py',
-    'runebase_null_sender.py',
-    'runebase_waitforlogs.py',
-    'runebase_block_header.py',
-    'runebase_callcontract.py',
-    'runebase_spend_op_call.py',
-    'runebase_condensing_txs.py',
-    'runebase_createcontract.py',
-    'runebase_sendtocontract.py',
-    'runebase_identical_refunds.py',
-    'runebase_create_eth_op_code.py',
-    'runebase_gas_limit_overflow.py',
-    'runebase_call_empty_contract.py',
-    'runebase_dgp_block_size_sync.py',
-    'runebase_pos_conflicting_txs.py',
-    'runebase_globals_state_changer.py',
-    'runebase_no_exec_call_disabled.py',
-    'runebase_soft_block_gas_limits.py',
-    'runebase_dgp_block_size_restart.py',
-    'runebase_searchlog_restart_node.py',
-    'runebase_immature_coinstake_spend.py',
-    'runebase_transaction_prioritization.py',
-    'runebase_assign_mpos_fees_to_gas_refund.py',
-    'runebase_ignore_mpos_participant_reward.py',
-    'runebase_evm_constantinople_activation.py',
-    'runebase_many_value_refunds_from_same_tx.py',
-    'runebase_combined_outputs_exceed_gas_limit.py',
-    'runebase_dgp_gas_price_lingering_mempool_tx.py',
-    'runebase_dgp_gas_schedule.py',
-    'runebase_header_spam.py --dos-same-height',
-    'runebase_header_spam.py --dos-variable-height',
-    'runebase_header_spam.py --run-standard-tests',
-    'runebase_divergence_dos.py',
-    'runebase_prioritize_create_over_call.py',
-    'runebase_callcontract_timestamp.py',
-    'runebase_transaction_receipt_origin_contract_address.py',
-    'runebase_block_number_corruption.py',
-    'runebase_duplicate_stake.py',
-    'runebase_rpc_bitcore.py',
-    'runebase_faulty_header_chain.py',
-    'runebase_signrawsender.py',
-    'runebase_op_sender.py',
-    'runebase_evm_revert.py',
-    'runebase_evm_create2.py',
-    'runebase_evm_staticcall.py',
-    'runebase_evm_constantinople_precompiles.py',
-    'runebase_evm_constantinople_opcodes.py',
-    'runebase_block_index_cleanup.py',
-    'runebase_pod.py',
-    'runebase_simple_delegation_contract.py',
-    'runebase_delegation_contract.py',
-    'runebase_qrc20.py'
+    'runebase_evm_london_gas_usage.py --legacy-wallet',
+    'runebase_evm_london_gas_usage.py --descriptors',
+    'runebase_evm_cancun_gas_usage.py --legacy-wallet',
+    'runebase_evm_cancun_gas_usage.py --descriptors',
+    'runebase_dgp.py --legacy-wallet',
+    'runebase_dgp.py --descriptors',
+    'runebase_pos.py --legacy-wallet',
+    'runebase_pos.py --descriptors',
+    'runebase_opcall.py --legacy-wallet',
+    'runebase_opcall.py --descriptors',
+    'runebase_opcreate.py --legacy-wallet',
+    'runebase_opcreate.py --descriptors',
+    'runebase_8mb_block.py --legacy-wallet',
+    'runebase_8mb_block.py --descriptors',
+    'runebase_gas_limit.py --legacy-wallet',
+    'runebase_gas_limit.py --descriptors',
+    'runebase_searchlog.py --legacy-wallet',
+    'runebase_searchlog.py --descriptors',
+    'runebase_pos_segwit.py --legacy-wallet',
+    'runebase_pos_segwit.py --descriptors',
+    'runebase_state_root.py --legacy-wallet',
+    'runebase_state_root.py --descriptors',
+    'runebase_evm_globals.py --legacy-wallet',
+    'runebase_evm_globals.py --descriptors',
+    'runebase_null_sender.py --legacy-wallet',
+    'runebase_null_sender.py --descriptors',
+    'runebase_waitforlogs.py --legacy-wallet',
+    'runebase_waitforlogs.py --descriptors',
+    'runebase_block_header.py --legacy-wallet',
+    'runebase_block_header.py --descriptors',
+    'runebase_callcontract.py --legacy-wallet',
+    'runebase_callcontract.py --descriptors',
+    'runebase_spend_op_call.py --legacy-wallet',
+    'runebase_spend_op_call.py --descriptors',
+    'runebase_condensing_txs.py --legacy-wallet',
+    'runebase_condensing_txs.py --descriptors',
+    'runebase_createcontract.py --legacy-wallet',
+    'runebase_createcontract.py --descriptors',
+    'runebase_sendtocontract.py --legacy-wallet',
+    'runebase_sendtocontract.py --descriptors',
+    'runebase_identical_refunds.py --legacy-wallet',
+    'runebase_identical_refunds.py --descriptors',
+    'runebase_create_eth_op_code.py --legacy-wallet',
+    'runebase_create_eth_op_code.py --descriptors',
+    'runebase_gas_limit_overflow.py --legacy-wallet',
+    'runebase_gas_limit_overflow.py --descriptors',
+    'runebase_call_empty_contract.py --legacy-wallet',
+    'runebase_call_empty_contract.py --descriptors',
+    'runebase_dgp_block_size_sync.py --legacy-wallet',
+    'runebase_dgp_block_size_sync.py --descriptors',
+    'runebase_pos_conflicting_txs.py --legacy-wallet',
+    'runebase_pos_conflicting_txs.py --descriptors',
+    'runebase_globals_state_changer.py --legacy-wallet',
+    'runebase_globals_state_changer.py --descriptors',
+    'runebase_no_exec_call_disabled.py --legacy-wallet',
+    'runebase_no_exec_call_disabled.py --descriptors',
+    'runebase_soft_block_gas_limits.py --legacy-wallet',
+    'runebase_soft_block_gas_limits.py --descriptors',
+    'runebase_dgp_block_size_restart.py --legacy-wallet',
+    'runebase_dgp_block_size_restart.py --descriptors',
+    'runebase_searchlog_restart_node.py --legacy-wallet',
+    'runebase_searchlog_restart_node.py --descriptors',
+    'runebase_immature_coinstake_spend.py --legacy-wallet',
+    'runebase_immature_coinstake_spend.py --descriptors',
+    'runebase_transaction_prioritization.py --legacy-wallet',
+    'runebase_transaction_prioritization.py --descriptors',
+    'runebase_assign_mpos_fees_to_gas_refund.py --legacy-wallet',
+    'runebase_assign_mpos_fees_to_gas_refund.py --descriptors',
+    'runebase_ignore_mpos_participant_reward.py --legacy-wallet',
+    'runebase_ignore_mpos_participant_reward.py --descriptors',
+    'runebase_evm_constantinople_activation.py --legacy-wallet',
+    'runebase_evm_constantinople_activation.py --descriptors',
+    'runebase_many_value_refunds_from_same_tx.py --legacy-wallet',
+    'runebase_many_value_refunds_from_same_tx.py --descriptors',
+    'runebase_combined_outputs_exceed_gas_limit.py --legacy-wallet',
+    'runebase_combined_outputs_exceed_gas_limit.py --descriptors',
+    'runebase_dgp_gas_price_lingering_mempool_tx.py --legacy-wallet',
+    'runebase_dgp_gas_price_lingering_mempool_tx.py --descriptors',
+    'runebase_dgp_gas_schedule.py --legacy-wallet',
+    'runebase_dgp_gas_schedule.py --descriptors',
+    'runebase_header_spam.py --dos-same-height --legacy-wallet',
+    'runebase_header_spam.py --dos-variable-height --legacy-wallet',
+    'runebase_header_spam.py --run-standard-tests --legacy-wallet',
+    'runebase_header_spam.py --dos-same-height --descriptors',
+    'runebase_header_spam.py --dos-variable-height --descriptors',
+    'runebase_header_spam.py --run-standard-tests --descriptors',
+    'runebase_divergence_dos.py --legacy-wallet',
+    'runebase_divergence_dos.py --descriptors',
+    'runebase_prioritize_create_over_call.py --legacy-wallet',
+    'runebase_prioritize_create_over_call.py --descriptors',
+    'runebase_callcontract_timestamp.py --legacy-wallet',
+    'runebase_callcontract_timestamp.py --descriptors',
+    'runebase_transaction_receipt_origin_contract_address.py --legacy-wallet',
+    'runebase_transaction_receipt_origin_contract_address.py --descriptors',
+    'runebase_block_number_corruption.py --legacy-wallet',
+    'runebase_block_number_corruption.py --descriptors',
+    'runebase_duplicate_stake.py --legacy-wallet',
+    'runebase_duplicate_stake.py --descriptors',
+    'runebase_rpc_bitcore.py --legacy-wallet',
+    'runebase_rpc_bitcore.py --descriptors',
+    'runebase_faulty_header_chain.py --legacy-wallet',
+    'runebase_faulty_header_chain.py --descriptors',
+    'runebase_signrawsender.py --legacy-wallet',
+    'runebase_op_sender.py --legacy-wallet',
+    'runebase_evm_revert.py --legacy-wallet',
+    'runebase_evm_revert.py --descriptors',
+    'runebase_evm_create2.py --legacy-wallet',
+    'runebase_evm_create2.py --descriptors',
+    'runebase_evm_staticcall.py --legacy-wallet',
+    'runebase_evm_staticcall.py --descriptors',
+    'runebase_evm_constantinople_precompiles.py --legacy-wallet',
+    'runebase_evm_constantinople_precompiles.py --descriptors',
+    'runebase_evm_constantinople_opcodes.py --legacy-wallet',
+    'runebase_evm_constantinople_opcodes.py --descriptors',
+    'runebase_block_index_cleanup.py --legacy-wallet',
+    'runebase_block_index_cleanup.py --descriptors',
+    'runebase_pod.py --legacy-wallet',
+    'runebase_simple_delegation_contract.py --legacy-wallet',
+    'runebase_delegation_contract.py --legacy-wallet',
+    'runebase_qrc20.py --legacy-wallet',
 ]
 # scripts irreleveant for Runebase
 DISABLED_SCRIPTS = [
@@ -452,6 +568,8 @@ def main():
     parser.add_argument('--tmpdirprefix', '-t', default=tempfile.gettempdir(), help="Root directory for datadirs")
     parser.add_argument('--failfast', '-F', action='store_true', help='stop execution after the first test failure')
     parser.add_argument('--filter', help='filter scripts to run by regular expression')
+    parser.add_argument('--skipunit', '-u', action='store_true', help='skip unit tests for the test framework')
+
 
     args, unknown_args = parser.parse_known_args()
     if not args.ansi:
@@ -562,9 +680,10 @@ def main():
         combined_logs_len=args.combinedlogslen,
         failfast=args.failfast,
         use_term_control=args.ansi,
+        skipunit=args.skipunit,
     )
 
-def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=False, args=None, combined_logs_len=0, failfast=False, use_term_control):
+def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=False, args=None, combined_logs_len=0, failfast=False, use_term_control, skipunit=False):
     args = args or []
 
     # Warn if bitcoind is already running
@@ -581,17 +700,20 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
     if os.path.isdir(cache_dir):
         print("%sWARNING!%s There is a cache directory here: %s. If tests fail unexpectedly, try deleting the cache directory." % (BOLD[1], BOLD[0], cache_dir))
 
-    # Test Framework Tests
-    print("Running Unit Tests for Test Framework Modules")
-    test_framework_tests = unittest.TestSuite()
-    for module in TEST_FRAMEWORK_MODULES:
-        test_framework_tests.addTest(unittest.TestLoader().loadTestsFromName("test_framework.{}".format(module)))
-    result = unittest.TextTestRunner(verbosity=1, failfast=True).run(test_framework_tests)
-    if not result.wasSuccessful():
-        logging.debug("Early exiting after failure in TestFramework unit tests")
-        sys.exit(False)
 
     tests_dir = src_dir + '/test/functional/'
+    # This allows `test_runner.py` to work from an out-of-source build directory using a symlink,
+    # a hard link or a copy on any platform. See https://github.com/bitcoin/bitcoin/pull/27561.
+    sys.path.append(tests_dir)
+
+    if not skipunit:
+        print("Running Unit Tests for Test Framework Modules")
+        test_framework_tests = unittest.TestSuite()
+        for module in TEST_FRAMEWORK_MODULES:
+            test_framework_tests.addTest(unittest.TestLoader().loadTestsFromName("test_framework.{}".format(module)))
+        result = unittest.TextTestRunner(verbosity=1, failfast=True).run(test_framework_tests)
+        if not result.wasSuccessful():
+            sys.exit("Early exiting after failure in TestFramework unit tests")
 
     flags = ['--cachedir={}'.format(cache_dir)] + args
 
@@ -651,7 +773,7 @@ def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, enable_coverage=
                     combined_logs_args = [sys.executable, os.path.join(tests_dir, 'combine_logs.py'), testdir]
                     if BOLD[0]:
                         combined_logs_args += ['--color']
-                    combined_logs, _ = subprocess.Popen(combined_logs_args, universal_newlines=True, stdout=subprocess.PIPE).communicate()
+                    combined_logs, _ = subprocess.Popen(combined_logs_args, text=True, stdout=subprocess.PIPE).communicate()
                     print("\n".join(deque(combined_logs.splitlines(), combined_logs_len)))
 
                 if failfast:
@@ -736,7 +858,7 @@ class TestHandler:
             self.jobs.append((test,
                               time.time(),
                               subprocess.Popen([sys.executable, self.tests_dir + test_argv[0]] + test_argv[1:] + self.flags + portseed_arg + tmpdir_arg,
-                                               universal_newlines=True,
+                                               text=True,
                                                stdout=log_stdout,
                                                stderr=log_stderr),
                               testdir,
@@ -830,8 +952,8 @@ def check_script_prefixes():
 def check_script_list(*, src_dir, fail_on_warn):
     """Check scripts directory.
 
-    Check that there are no scripts in the functional tests directory which are
-    not being run by pull-tester.py."""
+    Check that all python files in this directory are categorized
+    as a test script or meta script."""
     script_dir = src_dir + '/test/functional/'
     python_files = set([test_file for test_file in os.listdir(script_dir) if test_file.endswith(".py")])
     missed_tests = list(python_files - set(map(lambda x: x.split()[0], ALL_SCRIPTS + NON_SCRIPTS + DISABLED_SCRIPTS)))

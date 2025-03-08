@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -11,6 +11,7 @@
 #include <chrono>
 #include <limits>
 #include <map>
+#include <vector>
 
 namespace Consensus {
 
@@ -115,6 +116,8 @@ struct Params {
     int nLondonHeight;
     /** Block height at which EVM Shanghai fork becomes active */
     int nShanghaiHeight;
+    /** Block height at which EVM Cancun fork becomes active */
+    int nCancunHeight;
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.

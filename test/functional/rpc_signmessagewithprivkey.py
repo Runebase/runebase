@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2016-2021 The Bitcoin Core developers
+# Copyright (c) 2016-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test RPC commands for signing messages with private key."""
@@ -13,6 +13,7 @@ from test_framework.util import (
     assert_raises_rpc_error,
 )
 from test_framework.runebase import convert_btc_address_to_runebase
+
 
 class SignMessagesWithPrivTest(BitcoinTestFramework):
     def set_test_params(self):

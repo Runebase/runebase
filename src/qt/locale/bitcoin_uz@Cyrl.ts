@@ -58,14 +58,6 @@
         <translation type="unfinished">&amp;Танлаш</translation>
     </message>
     <message>
-        <source>Sending addresses</source>
-        <translation type="unfinished">Жўнатиладиган манзиллар</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation type="unfinished">Қабул қилинадиган манзиллар</translation>
-    </message>
-    <message>
         <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation type="unfinished">Улар тўловларни жўнатиш учун сизнинг Runebase манзилларингиз. Доимо тангаларни жўнатишдан олдин сумма ва қабул қилувчи манзилни текшириб кўринг. </translation>
     </message>
@@ -165,8 +157,8 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR RUNEBASES&lt;/b&gt;!</source>
-        <translation type="unfinished">Диққат: Агар сиз ҳамёнингизни кодласангиз ва махфий сўзингизни унутсангиз, сиз &lt;b&gt;БАРЧА RUNEBASE ПУЛЛАРИНГИЗНИ ЙЎҚОТАСИЗ&lt;/b&gt;!</translation> 
-   </message>
+        <translation type="unfinished">Диққат: Агар сиз ҳамёнингизни кодласангиз ва махфий сўзингизни унутсангиз, сиз &lt;b&gt;БАРЧА RUNEBASE ПУЛЛАРИНГИЗНИ ЙЎҚОТАСИЗ&lt;/b&gt;!</translation>
+    </message>
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">Ҳамёнингизни кодлашни ростдан хоҳлайсизми?</translation>
@@ -271,14 +263,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Fatal xatolik yuz berdi. Sozlamalar fayli tahrirlashga yaroqliligini tekshiring yoki -nosettings bilan davom etishga harakat qiling.</translation>
     </message>
     <message>
-        <source>Error: Specified data directory "%1" does not exist.</source>
-        <translation type="unfinished">Xatolik. Belgilangan "%1" mavjud emas.</translation>
-    </message>
-    <message>
-        <source>Error: Cannot parse configuration file: %1.</source>
-        <translation type="unfinished">Xatolik. %1 ni tahlil qilish imkonsiz.</translation>
-    </message>
-    <message>
         <source>Error: %1</source>
         <translation type="unfinished">Xatolik: %1</translation>
     </message>
@@ -297,7 +281,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Enter a Runebase address (e.g. %1)</source>
         <translation type="unfinished">Runebase манзилини киритинг (масалан.  %1)</translation>
-   </message>
+    </message>
     <message>
         <source>Inbound</source>
         <extracomment>An inbound connection from a peer. An inbound connection is a connection initiated by a peer.</extracomment>
@@ -385,41 +369,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>%1 GB</source>
         <translation type="unfinished">%1 ГБ</translation>
-    </message>
-</context>
-<context>
-    <name>bitcoin-core</name>
-    <message>
-        <source>Settings file could not be read</source>
-        <translation type="unfinished">Sozlamalar fayli o'qishga yaroqsiz</translation>
-    </message>
-    <message>
-        <source>Settings file could not be written</source>
-        <translation type="unfinished">Sozlamalar fayli yaratish uchun yaroqsiz</translation>
-    </message>
-    <message>
-        <source>Done loading</source>
-        <translation type="unfinished">Юклаш тайёр</translation>
-    </message>
-    <message>
-        <source>Insufficient funds</source>
-        <translation type="unfinished">Кам миқдор</translation>
-    </message>
-    <message>
-        <source>Unable to start HTTP server. See debug log for details.</source>
-        <translation type="unfinished">HTTP serverni ishga tushirib bo'lmadi. Tafsilotlar uchun disk raskadrovka jurnaliga qarang.</translation>
-    </message>
-    <message>
-        <source>Verifying blocks…</source>
-        <translation type="unfinished">Bloklar tekshirilmoqda…</translation>
-    </message>
-    <message>
-        <source>Verifying wallet(s)…</source>
-        <translation type="unfinished">Hamyon(lar) tekshirilmoqda…</translation>
-    </message>
-    <message>
-        <source>Wallet needed to be rewritten: restart %s to complete</source>
-        <translation type="unfinished">Hamyonni qayta yozish kerak: bajarish uchun 1%s ni qayta ishga tushiring</translation>
     </message>
 </context>
 <context>
@@ -531,7 +480,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>Sign &amp;message…</source>
-        <translation type="unfinished">Kirish &amp;xabarlashish</translation>
+        <translation type="unfinished">Xabarni &amp;signlash...</translation>
     </message>
     <message>
         <source>Sign messages with your Runebase addresses to prove you own them</source>
@@ -539,7 +488,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>&amp;Verify message…</source>
-        <translation type="unfinished">&amp;Xabarni tasdiqlash</translation>
+        <translation type="unfinished">&amp;Xabarni tasdiqlash...</translation>
     </message>
     <message>
         <source>Verify messages to ensure they were signed with specified Runebase addresses</source>
@@ -591,15 +540,11 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>Indexing blocks on disk…</source>
-        <translation type="unfinished">Diskdagi bloklarni indekslash</translation>
+        <translation type="unfinished">Diskdagi bloklarni indekslash...</translation>
     </message>
     <message>
         <source>Processing blocks on disk…</source>
-        <translation type="unfinished">Diskdagi bloklarni protsesslash</translation>
-    </message>
-    <message>
-        <source>Reindexing blocks on disk…</source>
-        <translation type="unfinished">Diskdagi bloklarni qayta indekslash...</translation>
+        <translation type="unfinished">Diskdagi bloklarni protsesslash...</translation>
     </message>
     <message>
         <source>Connecting to peers…</source>
@@ -694,7 +639,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>Open Wallet</source>
-        <translation type="unfinished">Hamyonni ochish</translation>
+        <translation type="unfinished">Ochiq hamyon</translation>
     </message>
     <message>
         <source>Open a wallet</source>
@@ -754,7 +699,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Ko'&amp;rsatish</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Runebase network.</source> 
+        <source>%n active connection(s) to Runebase network.</source>
         <extracomment>A substring of the tooltip.</extracomment>
         <translation type="unfinished">
             <numerusform>Bitkoin tarmog'iga %n aktiv ulanishlar.</numerusform>
@@ -792,7 +737,8 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Date: %1
 </source>
-        <translation type="unfinished">Sana: %1</translation>
+        <translation type="unfinished">Sana: %1
+</translation>
     </message>
     <message>
         <source>Amount: %1
@@ -834,7 +780,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>HD key generation is &lt;b&gt;enabled&lt;/b&gt;</source>
-        <translation type="unfinished">HD kalit yaratish &lt;b&gt;imkonsiz&lt;/b&gt;</translation>
+        <translation type="unfinished">HD kalit yaratish &lt;b&gt;yoqilgan&lt;/b&gt;</translation>
     </message>
     <message>
         <source>HD key generation is &lt;b&gt;disabled&lt;/b&gt;</source>
@@ -885,10 +831,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Fee:</source>
         <translation type="unfinished">Солиқ:</translation>
-    </message>
-    <message>
-        <source>Dust:</source>
-        <translation type="unfinished">Ахлат қутиси:</translation>
     </message>
     <message>
         <source>After Fee:</source>
@@ -979,28 +921,12 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Нусха байти</translation>
     </message>
     <message>
-        <source>Copy dust</source>
-        <translation type="unfinished">Нусха чангги</translation>
-    </message>
-    <message>
         <source>Copy change</source>
         <translation type="unfinished">Нусха қайтими</translation>
     </message>
     <message>
         <source>(%1 locked)</source>
         <translation type="unfinished">(%1 қулфланган)</translation>
-    </message>
-    <message>
-        <source>yes</source>
-        <translation type="unfinished">ҳа</translation>
-    </message>
-    <message>
-        <source>no</source>
-        <translation type="unfinished">йўқ</translation>
-    </message>
-    <message>
-        <source>This label turns red if any recipient receives an amount smaller than the current dust threshold.</source>
-        <translation type="unfinished">Agar qabul qiluvchi joriy 'dust' chegarasidan kichikroq miqdor olsa, bu yorliq qizil rangga aylanadi</translation>
     </message>
     <message>
         <source>Can vary +/- %1 satoshi(s) per input.</source>
@@ -1074,7 +1000,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Open Wallet</source>
         <extracomment>Title of window indicating the progress of opening of a wallet.</extracomment>
-        <translation type="unfinished">Hamyonni ochish</translation>
+        <translation type="unfinished">Ochiq hamyon</translation>
     </message>
     <message>
         <source>Opening Wallet &lt;b&gt;%1&lt;/b&gt;…</source>
@@ -1148,14 +1074,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Bo'sh hamyon yaratish</translation>
     </message>
     <message>
-        <source>Use descriptors for scriptPubKey management</source>
-        <translation type="unfinished">scriptPubKey yaratishda izohlovchidan foydalanish</translation>
-    </message>
-    <message>
-        <source>Descriptor Wallet</source>
-        <translation type="unfinished">Izohlovchi hamyon</translation>
-    </message>
-    <message>
         <source>Use an external signing device such as a hardware wallet. Configure the external signer script in wallet preferences first.</source>
         <translation type="unfinished">Uskuna hamyoni kabi tashqi signing qurilmasidan foydalaning. Avval hamyon sozlamalarida tashqi signer skriptini sozlang.</translation>
     </message>
@@ -1166,10 +1084,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Create</source>
         <translation type="unfinished">Yaratmoq</translation>
-    </message>
-    <message>
-        <source>Compiled without sqlite support (required for descriptor wallets)</source>
-        <translation type="unfinished">Sqlite yordamisiz tuzilgan (deskriptor hamyonlari uchun talab qilinadi)</translation>
     </message>
     <message>
         <source>Compiled without external signing support (required for external signing)</source>
@@ -1732,6 +1646,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
 <context>
     <name>PSBTOperationsDialog</name>
     <message>
+        <source>own address</source>
+        <translation type="unfinished">ўз манзили</translation>
+    </message>
+    <message>
         <source>or</source>
         <translation type="unfinished">ёки</translation>
     </message>
@@ -2128,10 +2046,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Шаклнинг барча майдончаларини тозалаш</translation>
     </message>
     <message>
-        <source>Dust:</source>
-        <translation type="unfinished">Ахлат қутиси:</translation>
-    </message>
-    <message>
         <source>Clear &amp;All</source>
         <translation type="unfinished">Барчасини &amp; Тозалаш</translation>
     </message>
@@ -2168,10 +2082,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Нусха байти</translation>
     </message>
     <message>
-        <source>Copy dust</source>
-        <translation type="unfinished">Нусха чангги</translation>
-    </message>
-    <message>
         <source>Copy change</source>
         <translation type="unfinished">Нусха қайтими</translation>
     </message>
@@ -2204,8 +2114,8 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>Warning: Invalid Runebase address</source>
-        <translation type="unfinished">Диққат: Нотўғр Runebase манзили</translation> 
-   </message>
+        <translation type="unfinished">Диққат: Нотўғр Runebase манзили</translation>
+    </message>
     <message>
         <source>Warning: Unknown change address</source>
         <translation type="unfinished">Диққат: Номаълум ўзгариш манзили</translation>
@@ -2411,10 +2321,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Жўнатиш</translation>
     </message>
     <message>
-        <source>Payment to yourself</source>
-        <translation type="unfinished">Ўзингизга тўлов</translation>
-    </message>
-    <message>
         <source>Mined</source>
         <translation type="unfinished">Фойда</translation>
     </message>
@@ -2476,10 +2382,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Sent to</source>
         <translation type="unfinished">Жўнатиш</translation>
-    </message>
-    <message>
-        <source>To yourself</source>
-        <translation type="unfinished">Ўзингизга</translation>
     </message>
     <message>
         <source>Mined</source>
@@ -2588,4 +2490,39 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Жорий ички ойна ичидаги маълумотларни файлга экспорт қилиш</translation>
     </message>
     </context>
+<context>
+    <name>bitcoin-core</name>
+    <message>
+        <source>Done loading</source>
+        <translation type="unfinished">Юклаш тайёр</translation>
+    </message>
+    <message>
+        <source>Insufficient funds</source>
+        <translation type="unfinished">Кам миқдор</translation>
+    </message>
+    <message>
+        <source>Unable to start HTTP server. See debug log for details.</source>
+        <translation type="unfinished">HTTP serverni ishga tushirib bo'lmadi. Tafsilotlar uchun disk raskadrovka jurnaliga qarang.</translation>
+    </message>
+    <message>
+        <source>Verifying blocks…</source>
+        <translation type="unfinished">Bloklar tekshirilmoqda…</translation>
+    </message>
+    <message>
+        <source>Verifying wallet(s)…</source>
+        <translation type="unfinished">Hamyon(lar) tekshirilmoqda…</translation>
+    </message>
+    <message>
+        <source>Wallet needed to be rewritten: restart %s to complete</source>
+        <translation type="unfinished">Hamyonni qayta yozish kerak: bajarish uchun 1%s ni qayta ishga tushiring</translation>
+    </message>
+    <message>
+        <source>Settings file could not be read</source>
+        <translation type="unfinished">Sozlamalar fayli o'qishga yaroqsiz</translation>
+    </message>
+    <message>
+        <source>Settings file could not be written</source>
+        <translation type="unfinished">Sozlamalar fayli yaratish uchun yaroqsiz</translation>
+    </message>
+</context>
 </TS>

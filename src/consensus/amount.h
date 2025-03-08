@@ -16,7 +16,7 @@ static constexpr CAmount COIN = 100000000;
 static constexpr CAmount CENT = 1000000;
 
 /** No amount larger than this (in satoshi) is valid.
-*/
+ * */
 static constexpr CAmount MAX_MONEY = 52636000000 * COIN;
 inline bool MoneyRange(const CAmount& nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 

@@ -15,33 +15,41 @@ import sys
 from subprocess import check_output, CalledProcessError
 
 
-EXCLUDED_DIRS = ["src/leveldb/",
+EXCLUDED_DIRS = ["contrib/devtools/bitcoin-tidy/",
+                 "src/leveldb/",
                  "src/crc32c/",
                  "src/secp256k1/",
                  "src/minisketch/",
                 ]
 
 EXPECTED_BOOST_INCLUDES = ["boost/date_time/posix_time/posix_time.hpp",
+                           "boost/multi_index/detail/hash_index_iterator.hpp",
                            "boost/multi_index/hashed_index.hpp",
+                           "boost/multi_index/identity.hpp",
+                           "boost/multi_index/indexed_by.hpp",
                            "boost/multi_index/ordered_index.hpp",
                            "boost/multi_index/sequenced_index.hpp",
+                           "boost/multi_index/tag.hpp",
                            "boost/multi_index_container.hpp",
+                           "boost/operators.hpp",
                            "boost/process.hpp",
                            "boost/signals2/connection.hpp",
                            "boost/signals2/optional_last_value.hpp",
                            "boost/signals2/signal.hpp",
                            "boost/test/included/unit_test.hpp",
-                           "boost/test/unit_test.hpp"]
+                           "boost/test/unit_test.hpp",
+                           "boost/tuple/tuple.hpp",
+                          ]
 
 
 def get_toplevel():
-    return check_output(["git", "rev-parse", "--show-toplevel"], universal_newlines=True, encoding="utf8").rstrip("\n")
+    return check_output(["git", "rev-parse", "--show-toplevel"], text=True, encoding="utf8").rstrip("\n")
 
 
 def list_files_by_suffix(suffixes):
     exclude_args = [":(exclude)" + dir for dir in EXCLUDED_DIRS]
 
-    files_list = check_output(["git", "ls-files", "src"] + exclude_args, universal_newlines=True, encoding="utf8").splitlines()
+    files_list = check_output(["git", "ls-files", "src"] + exclude_args, text=True, encoding="utf8").splitlines()
 
     return [file for file in files_list if file.endswith(suffixes)]
 
@@ -63,7 +71,7 @@ def find_included_cpps():
     included_cpps = list()
 
     try:
-        included_cpps = check_output(["git", "grep", "-E", r"^#include [<\"][^>\"]+\.cpp[>\"]", "--", "*.cpp", "*.h"], universal_newlines=True, encoding="utf8").splitlines()
+        included_cpps = check_output(["git", "grep", "-E", r"^#include [<\"][^>\"]+\.cpp[>\"]", "--", "*.cpp", "*.h"], text=True, encoding="utf8").splitlines()
     except CalledProcessError as e:
         if e.returncode > 1:
             raise e
@@ -77,7 +85,7 @@ def find_extra_boosts():
     exclusion_set = set()
 
     try:
-        included_boosts = check_output(["git", "grep", "-E", r"^#include <boost/", "--", "*.cpp", "*.h"], universal_newlines=True, encoding="utf8").splitlines()
+        included_boosts = check_output(["git", "grep", "-E", r"^#include <boost/", "--", "*.cpp", "*.h"], text=True, encoding="utf8").splitlines()
     except CalledProcessError as e:
         if e.returncode > 1:
             raise e
@@ -100,7 +108,7 @@ def find_quote_syntax_inclusions():
     quote_syntax_inclusions = list()
 
     try:
-        quote_syntax_inclusions = check_output(["git", "grep", r"^#include \"", "--", "*.cpp", "*.h"] + exclude_args, universal_newlines=True, encoding="utf8").splitlines()
+        quote_syntax_inclusions = check_output(["git", "grep", r"^#include \"", "--", "*.cpp", "*.h"] + exclude_args, text=True, encoding="utf8").splitlines()
     except CalledProcessError as e:
         if e.returncode > 1:
             raise e
@@ -143,13 +151,13 @@ def main():
     if extra_boosts:
         for boost in extra_boosts:
             print(f"A new Boost dependency in the form of \"{boost}\" appears to have been introduced:")
-            print(check_output(["git", "grep", boost, "--", "*.cpp", "*.h"], universal_newlines=True, encoding="utf8"))
+            print(check_output(["git", "grep", boost, "--", "*.cpp", "*.h"], text=True, encoding="utf8"))
         exit_code = 1
 
     # Check if Boost dependencies are no longer used
     for expected_boost in EXPECTED_BOOST_INCLUDES:
         try:
-            check_output(["git", "grep", "-q", r"^#include <%s>" % expected_boost, "--", "*.cpp", "*.h"], universal_newlines=True, encoding="utf8")
+            check_output(["git", "grep", "-q", r"^#include <%s>" % expected_boost, "--", "*.cpp", "*.h"], text=True, encoding="utf8")
         except CalledProcessError as e:
             if e.returncode > 1:
                 raise e

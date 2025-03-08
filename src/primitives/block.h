@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2020 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -33,11 +33,11 @@ public:
     // proof-of-stake specific fields
     COutPoint prevoutStake;
     std::vector<unsigned char> vchBlockSigDlgt; // The delegate is 65 bytes or 0 bytes, it can be added in the signature paramether at the end to avoid compatibility problems
+
     CBlockHeader()
     {
         SetNull();
     }
-    virtual ~CBlockHeader(){};
 
     SERIALIZE_METHODS(CBlockHeader, obj) { READWRITE(obj.nVersion, obj.hashPrevBlock, obj.hashMerkleRoot, obj.nTime, obj.nBits, obj.nNonce, obj.hashStateRoot, obj.hashUTXORoot, obj.prevoutStake, obj.vchBlockSigDlgt); }
 
@@ -77,17 +77,17 @@ public:
     }
 
     // ppcoin: two types of block: proof-of-work or proof-of-stake
-    virtual bool IsProofOfStake() const //runebase
+    bool IsProofOfStake() const //runebase
     {
         return !prevoutStake.IsNull();
     }
 
-    virtual bool IsProofOfWork() const
+    bool IsProofOfWork() const
     {
         return !IsProofOfStake();
     }
     
-    virtual uint32_t StakeTime() const
+    uint32_t StakeTime() const
     {
         uint32_t ret = 0;
         if(IsProofOfStake())
@@ -104,24 +104,6 @@ public:
     std::vector<unsigned char> GetProofOfDelegation() const;
 
     bool HasProofOfDelegation() const;
-
-    CBlockHeader& operator=(const CBlockHeader& other) //runebase
-    {
-        if (this != &other)
-        {
-            this->nVersion       = other.nVersion;
-            this->hashPrevBlock  = other.hashPrevBlock;
-            this->hashMerkleRoot = other.hashMerkleRoot;
-            this->nTime          = other.nTime;
-            this->nBits          = other.nBits;
-            this->nNonce         = other.nNonce;
-            this->hashStateRoot  = other.hashStateRoot;
-            this->hashUTXORoot   = other.hashUTXORoot;
-            this->vchBlockSigDlgt    = other.vchBlockSigDlgt;
-            this->prevoutStake   = other.prevoutStake;
-        }
-        return *this;
-    }
 };
 
 
@@ -131,8 +113,10 @@ public:
     // network and disk
     std::vector<CTransactionRef> vtx;
 
-    // memory only
-    mutable bool fChecked;
+    // Memory-only flags for caching expensive checks
+    mutable bool fChecked;                            // CheckBlock()
+    mutable bool m_checked_witness_commitment{false}; // CheckWitnessCommitment()
+    mutable bool m_checked_merkle_root{false};        // CheckMerkleRoot()
 
     CBlock()
     {
@@ -147,8 +131,7 @@ public:
 
     SERIALIZE_METHODS(CBlock, obj)
     {
-        READWRITEAS(CBlockHeader, obj);
-        READWRITE(obj.vtx);
+        READWRITE(AsBase<CBlockHeader>(obj), obj.vtx);
     }
 
     void SetNull()
@@ -156,6 +139,8 @@ public:
         CBlockHeader::SetNull();
         vtx.clear();
         fChecked = false;
+        m_checked_witness_commitment = false;
+        m_checked_merkle_root = false;
     }
 
     std::pair<COutPoint, unsigned int> GetProofOfStake() const //runebase
@@ -188,6 +173,15 @@ public:
  */
 struct CBlockLocator
 {
+    /** Historically CBlockLocator's version field has been written to network
+     * streams as the negotiated protocol version and to disk streams as the
+     * client version, but the value has never been used.
+     *
+     * Hard-code to the highest protocol version ever written to a network stream.
+     * SerParams can be used if the field requires any meaning in the future,
+     **/
+    static constexpr int DUMMY_VERSION = 70016;
+
     std::vector<uint256> vHave;
 
     CBlockLocator() {}
@@ -196,9 +190,8 @@ struct CBlockLocator
 
     SERIALIZE_METHODS(CBlockLocator, obj)
     {
-        int nVersion = s.GetVersion();
-        if (!(s.GetType() & SER_GETHASH))
-            READWRITE(nVersion);
+        int nVersion = DUMMY_VERSION;
+        READWRITE(nVersion);
         READWRITE(obj.vHave);
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -65,12 +65,11 @@ protected:
 AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent) :
     QDialog(parent, GUIUtil::dialog_flags),
     ui(new Ui::AddressBookPage),
-    model(nullptr),
     mode(_mode),
     tab(_tab)
 {
-    ui->setupUi(this);
-    SetObjectStyleSheet(ui->tableView, StyleSheetNames::TableViewLight); 
+   ui->setupUi(this);
+    SetObjectStyleSheet(ui->tableView, StyleSheetNames::TableViewLight);
     setStyleSheet("");
     if (!platformStyle->getImagesOnButtons()) {
         ui->newAddress->setIcon(QIcon());
@@ -83,15 +82,14 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         ui->deleteAddress->setIcon(platformStyle->MultiStatesIcon(":/icons/remove", PlatformStyle::PushButtonLight));
         ui->exportButton->setIcon(platformStyle->MultiStatesIcon(":/icons/export", PlatformStyle::PushButton));
     }
+
     SetObjectStyleSheet(ui->newAddress, StyleSheetNames::ButtonLight);
     SetObjectStyleSheet(ui->copyAddress, StyleSheetNames::ButtonLight);
     SetObjectStyleSheet(ui->deleteAddress, StyleSheetNames::ButtonLight);
     SetObjectStyleSheet(ui->exportButton, StyleSheetNames::ButtonGray);
     SetObjectStyleSheet(ui->closeButton, StyleSheetNames::ButtonGray);
 
-    switch(mode)
-    {
-    case ForSelection:
+    if (mode == ForSelection) {
         switch(tab)
         {
         case SendingTab: setWindowTitle(tr("Choose the address to send coins to")); break;
@@ -102,20 +100,11 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         ui->tableView->setFocus();
         ui->closeButton->setText(tr("C&hoose"));
         ui->exportButton->hide();
-        break;
-    case ForEditing:
-        switch(tab)
-        {
-        case SendingTab: setWindowTitle(tr("Sending addresses")); break;
-        case ReceivingTab: setWindowTitle(tr("Receiving addresses")); break;
-        }
-        break;
     }
     switch(tab)
     {
     case SendingTab:
         ui->labelExplanation->setText(tr("These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins."));
-        ui->deleteAddress->setVisible(true);
         ui->newAddress->setVisible(true);
         break;
     case ReceivingTab:
@@ -172,6 +161,7 @@ void AddressBookPage::setModel(AddressTableModel *_model)
     connect(_model, &AddressTableModel::rowsInserted, this, &AddressBookPage::selectNewAddress);
 
     selectionChanged();
+    this->updateWindowsTitleWithWalletName();
 }
 
 void AddressBookPage::on_copyAddress_clicked()
@@ -334,5 +324,18 @@ void AddressBookPage::selectNewAddress(const QModelIndex &parent, int begin, int
         ui->tableView->setFocus();
         ui->tableView->selectRow(idx.row());
         newAddressToSelect.clear();
+    }
+}
+
+void AddressBookPage::updateWindowsTitleWithWalletName()
+{
+    const QString walletName = this->model->GetWalletDisplayName();
+
+    if (mode == ForEditing) {
+        switch(tab)
+        {
+        case SendingTab: setWindowTitle(tr("Sending addresses - %1").arg(walletName)); break;
+        case ReceivingTab: setWindowTitle(tr("Receiving addresses - %1").arg(walletName)); break;
+        }
     }
 }

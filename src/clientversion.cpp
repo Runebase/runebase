@@ -1,6 +1,10 @@
-// Copyright (c) 2012-2021 The Bitcoin Core developers
+// Copyright (c) 2012-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h>
+#endif
 
 #include <clientversion.h>
 #include <util/translation.h>
@@ -29,7 +33,7 @@ const std::string CLIENT_NAME("Satoshi");
 #endif
 
 //! git will put "#define GIT_COMMIT_ID ..." on the next line inside archives. 
-#define GIT_COMMIT_ID "88fd52d40026f4705b63889cdd4b4c86375ddaf8"
+#define GIT_COMMIT_ID "ff18e4dfa6f8ef7f0fd18e282e7225b1b5ecc787"
 
 #ifdef BUILD_GIT_TAG
     #define BUILD_DESC BUILD_GIT_TAG

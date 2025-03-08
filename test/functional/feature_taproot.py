@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019-2021 The Bitcoin Core developers
+# Copyright (c) 2019-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 # Test Taproot softfork (BIPs 340-342)
@@ -9,8 +9,7 @@ from test_framework.blocktools import (
     create_coinbase,
     create_block,
     add_witness_commitment,
-MAX_BLOCK_SIGOPS_WEIGHT,
-
+    MAX_BLOCK_SIGOPS_WEIGHT,
     NORMAL_GBT_REQUEST_PARAMS,
     WITNESS_SCALE_FACTOR,
 )
@@ -21,6 +20,7 @@ from test_framework.messages import (
     CTxInWitness,
     CTxOut,
     SEQUENCE_FINAL,
+    tx_from_hex,
 )
 from test_framework.script import (
     ANNEX_TAG,
@@ -95,15 +95,21 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_raises_rpc_error,
     assert_equal,
-    random_bytes,
 )
-from test_framework.key import generate_privkey, compute_xonly_pubkey, sign_schnorr, tweak_add_privkey, ECKey
+from test_framework.wallet_util import generate_keypair
+from test_framework.key import (
+    generate_privkey,
+    compute_xonly_pubkey,
+    sign_schnorr,
+    tweak_add_privkey,
+    ECKey,
+)
+from test_framework.crypto import secp256k1
 from test_framework.address import (
     hash160,
     program_to_witness,
 )
 from collections import OrderedDict, namedtuple
-from io import BytesIO
 import json
 import hashlib
 import os
@@ -664,10 +670,48 @@ def spenders_taproot_active():
     # Test with signature with bit flipped.
     add_spender(spenders, "sig/bitflip", tap=tap, key=secs[0], failure={"signature": bitflipper(default_signature)}, **ERR_SIG_SCHNORR)
 
+    # == Test involving an internal public key not on the curve ==
+
+    # X-only public keys are 32 bytes, but not every 32-byte array is a valid public key; only
+    # around 50% of them are. This does not affect users using correct software; these "keys" have
+    # no corresponding private key, and thus will never appear as output of key
+    # generation/derivation/tweaking.
+    #
+    # Using an invalid public key as P2TR output key makes the UTXO unspendable. Revealing an
+    # invalid public key as internal key in a P2TR script path spend also makes the spend invalid.
+    # These conditions are explicitly spelled out in BIP341.
+    #
+    # It is however hard to create test vectors for this, because it involves "guessing" how a
+    # hypothetical incorrect implementation deals with an obviously-invalid condition, and making
+    # sure that guessed behavior (accepting it in certain condition) doesn't occur.
+    #
+    # The test case added here tries to detect a very specific bug a verifier could have: if they
+    # don't verify whether or not a revealed internal public key in a script path spend is valid,
+    # and (correctly) implement output_key == tweak(internal_key, tweakval) but (incorrectly) treat
+    # tweak(invalid_key, tweakval) as equal the public key corresponding to private key tweakval.
+    # This may seem like a far-fetched edge condition to test for, but in fact, the BIP341 wallet
+    # pseudocode did exactly that (but obviously only triggerable by someone invoking the tweaking
+    # function with an invalid public key, which shouldn't happen).
+
+    # Generate an invalid public key
+    while True:
+        invalid_pub = random.randbytes(32)
+        if not secp256k1.GE.is_valid_x(int.from_bytes(invalid_pub, 'big')):
+            break
+
+    # Implement a test case that detects validation logic which maps invalid public keys to the
+    # point at infinity in the tweaking logic.
+    tap = taproot_construct(invalid_pub, [("true", CScript([OP_1]))], treat_internal_as_infinity=True)
+    add_spender(spenders, "output/invalid_x", tap=tap, key_tweaked=tap.tweak, failure={"leaf": "true", "inputs": []}, **ERR_WITNESS_PROGRAM_MISMATCH)
+
+    # Do the same thing without invalid point, to make sure there is no mistake in the test logic.
+    tap = taproot_construct(pubs[0], [("true", CScript([OP_1]))])
+    add_spender(spenders, "output/invalid_x_mock", tap=tap, key=secs[0], leaf="true", inputs=[])
+
     # == Tests for signature hashing ==
 
     # Run all tests once with no annex, and once with a valid random annex.
-    for annex in [None, lambda _: bytes([ANNEX_TAG]) + random_bytes(random.randrange(0, 250))]:
+    for annex in [None, lambda _: bytes([ANNEX_TAG]) + random.randbytes(random.randrange(0, 250))]:
         # Non-empty annex is non-standard
         no_annex = annex is None
 
@@ -696,7 +740,11 @@ def spenders_taproot_active():
         scripts = [
             ("pk_codesep", CScript(random_checksig_style(pubs[1]) + bytes([OP_CODESEPARATOR]))),  # codesep after checksig
             ("codesep_pk", CScript(bytes([OP_CODESEPARATOR]) + random_checksig_style(pubs[1]))),  # codesep before checksig
-            ("branched_codesep", CScript([random_bytes(random.randrange(511)), OP_DROP, OP_IF, OP_CODESEPARATOR, pubs[0], OP_ELSE, OP_CODESEPARATOR, pubs[1], OP_ENDIF, OP_CHECKSIG])),  # branch dependent codesep
+            ("branched_codesep", CScript([random.randbytes(random.randrange(2, 511)), OP_DROP, OP_IF, OP_CODESEPARATOR, pubs[0], OP_ELSE, OP_CODESEPARATOR, pubs[1], OP_ENDIF, OP_CHECKSIG])),  # branch dependent codesep
+            # Note that the first data push in the "branched_codesep" script has the purpose of
+            # randomizing the sighash, both by varying script size and content. In order to
+            # avoid MINIMALDATA script verification errors caused by not-minimal-encoded data
+            # pushes (e.g. `OP_PUSH1 1` instead of `OP_1`), we set a minimum data size of 2 bytes.
         ]
         random.shuffle(scripts)
         tap = taproot_construct(pubs[0], scripts)
@@ -708,7 +756,7 @@ def spenders_taproot_active():
     # Reusing the scripts above, test that various features affect the sighash.
     add_spender(spenders, "sighash/annex", tap=tap, leaf="pk_codesep", key=secs[1], hashtype=hashtype, standard=False, **SINGLE_SIG, annex=bytes([ANNEX_TAG]), failure={"sighash": override(default_sighash, annex=None)}, **ERR_SIG_SCHNORR)
     add_spender(spenders, "sighash/script", tap=tap, leaf="pk_codesep", key=secs[1], **common, **SINGLE_SIG, failure={"sighash": override(default_sighash, script_taproot=tap.leaves["codesep_pk"].script)}, **ERR_SIG_SCHNORR)
-    add_spender(spenders, "sighash/leafver", tap=tap, leaf="pk_codesep", key=secs[1], **common, **SINGLE_SIG, failure={"sighash": override(default_sighash, leafversion=random.choice([x & 0xFE for x in range(0x100) if x & 0xFE != 0xC0]))}, **ERR_SIG_SCHNORR)
+    add_spender(spenders, "sighash/leafver", tap=tap, leaf="pk_codesep", key=secs[1], **common, **SINGLE_SIG, failure={"sighash": override(default_sighash, leafversion=random.choice([x & 0xFE for x in range(0x100) if x & 0xFE != LEAF_VERSION_TAPSCRIPT]))}, **ERR_SIG_SCHNORR)
     add_spender(spenders, "sighash/scriptpath", tap=tap, leaf="pk_codesep", key=secs[1], **common, **SINGLE_SIG, failure={"sighash": override(default_sighash, leaf=None)}, **ERR_SIG_SCHNORR)
     add_spender(spenders, "sighash/keypath", tap=tap, key=secs[0], **common, failure={"sighash": override(default_sighash, leaf="pk_codesep")}, **ERR_SIG_SCHNORR)
 
@@ -745,8 +793,8 @@ def spenders_taproot_active():
         add_spender(spenders, "siglen/empty_csv", tap=tap, key=secs[2], leaf="csv", hashtype=hashtype, **SINGLE_SIG, failure={"sign": b""}, **ERR_CHECKSIGVERIFY)
         add_spender(spenders, "siglen/empty_cs", tap=tap, key=secs[2], leaf="cs_pos", hashtype=hashtype, **SINGLE_SIG, failure={"sign": b""}, **ERR_NO_SUCCESS)
         add_spender(spenders, "siglen/empty_csa", tap=tap, key=secs[2], leaf="csa_pos", hashtype=hashtype, **SINGLE_SIG, failure={"sign": b""}, **ERR_NO_SUCCESS)
-        add_spender(spenders, "siglen/empty_cs_neg", tap=tap, key=secs[2], leaf="cs_neg", hashtype=hashtype, **SINGLE_SIG, sign=b"", failure={"sign": lambda _: random_bytes(random.randrange(1, 63))}, **ERR_SIG_SIZE)
-        add_spender(spenders, "siglen/empty_csa_neg", tap=tap, key=secs[2], leaf="csa_neg", hashtype=hashtype, **SINGLE_SIG, sign=b"", failure={"sign": lambda _: random_bytes(random.randrange(66, 100))}, **ERR_SIG_SIZE)
+        add_spender(spenders, "siglen/empty_cs_neg", tap=tap, key=secs[2], leaf="cs_neg", hashtype=hashtype, **SINGLE_SIG, sign=b"", failure={"sign": lambda _: random.randbytes(random.randrange(1, 63))}, **ERR_SIG_SIZE)
+        add_spender(spenders, "siglen/empty_csa_neg", tap=tap, key=secs[2], leaf="csa_neg", hashtype=hashtype, **SINGLE_SIG, sign=b"", failure={"sign": lambda _: random.randbytes(random.randrange(66, 100))}, **ERR_SIG_SIZE)
         # Appending a zero byte to signatures invalidates them
         add_spender(spenders, "siglen/padzero_keypath", tap=tap, key=secs[3], hashtype=hashtype, **SIG_ADD_ZERO, **(ERR_SIG_HASHTYPE if hashtype == SIGHASH_DEFAULT else ERR_SIG_SIZE))
         add_spender(spenders, "siglen/padzero_csv", tap=tap, key=secs[2], leaf="csv", hashtype=hashtype, **SINGLE_SIG, **SIG_ADD_ZERO, **(ERR_SIG_HASHTYPE if hashtype == SIGHASH_DEFAULT else ERR_SIG_SIZE))
@@ -827,14 +875,14 @@ def spenders_taproot_active():
     # Test that empty witnesses are invalid.
     add_spender(spenders, "spendpath/emptywit", tap=tap, leaf="128deep", **SINGLE_SIG, key=secs[0], failure={"witness": []}, **ERR_EMPTY_WITNESS)
     # Test that adding garbage to the control block invalidates it.
-    add_spender(spenders, "spendpath/padlongcontrol", tap=tap, leaf="128deep", **SINGLE_SIG, key=secs[0], failure={"controlblock": lambda ctx: default_controlblock(ctx) + random_bytes(random.randrange(1, 32))}, **ERR_CONTROLBLOCK_SIZE)
+    add_spender(spenders, "spendpath/padlongcontrol", tap=tap, leaf="128deep", **SINGLE_SIG, key=secs[0], failure={"controlblock": lambda ctx: default_controlblock(ctx) + random.randbytes(random.randrange(1, 32))}, **ERR_CONTROLBLOCK_SIZE)
     # Test that truncating the control block invalidates it.
     add_spender(spenders, "spendpath/trunclongcontrol", tap=tap, leaf="128deep", **SINGLE_SIG, key=secs[0], failure={"controlblock": lambda ctx: default_merklebranch(ctx)[0:random.randrange(1, 32)]}, **ERR_CONTROLBLOCK_SIZE)
 
     scripts = [("s", CScript([pubs[0], OP_CHECKSIG]))]
     tap = taproot_construct(pubs[1], scripts)
     # Test that adding garbage to the control block invalidates it.
-    add_spender(spenders, "spendpath/padshortcontrol", tap=tap, leaf="s", **SINGLE_SIG, key=secs[0], failure={"controlblock": lambda ctx: default_controlblock(ctx) + random_bytes(random.randrange(1, 32))}, **ERR_CONTROLBLOCK_SIZE)
+    add_spender(spenders, "spendpath/padshortcontrol", tap=tap, leaf="s", **SINGLE_SIG, key=secs[0], failure={"controlblock": lambda ctx: default_controlblock(ctx) + random.randbytes(random.randrange(1, 32))}, **ERR_CONTROLBLOCK_SIZE)
     # Test that truncating the control block invalidates it.
     add_spender(spenders, "spendpath/truncshortcontrol", tap=tap, leaf="s", **SINGLE_SIG, key=secs[0], failure={"controlblock": lambda ctx: default_merklebranch(ctx)[0:random.randrange(1, 32)]}, **ERR_CONTROLBLOCK_SIZE)
     # Test that truncating the control block to 1 byte ("-1 Merkle length") invalidates it
@@ -923,9 +971,9 @@ def spenders_taproot_active():
         # 24) Script that expects an input stack of 1001 elements
         ("t24", CScript([OP_DROP] * 1000 + [pubs[1], OP_CHECKSIG])),
         # 25) Script that pushes a MAX_SCRIPT_ELEMENT_SIZE-bytes element
-        ("t25", CScript([random_bytes(MAX_SCRIPT_ELEMENT_SIZE), OP_DROP, pubs[1], OP_CHECKSIG])),
+        ("t25", CScript([random.randbytes(MAX_SCRIPT_ELEMENT_SIZE), OP_DROP, pubs[1], OP_CHECKSIG])),
         # 26) Script that pushes a (MAX_SCRIPT_ELEMENT_SIZE+1)-bytes element
-        ("t26", CScript([random_bytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP, pubs[1], OP_CHECKSIG])),
+        ("t26", CScript([random.randbytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP, pubs[1], OP_CHECKSIG])),
         # 27) CHECKSIGADD that must fail because numeric argument number is >4 bytes
         ("t27", CScript([CScriptNum(OVERSIZE_NUMBER), pubs[1], OP_CHECKSIGADD])),
         # 28) Pushes random CScriptNum value, checks OP_CHECKSIGADD result
@@ -958,9 +1006,9 @@ def spenders_taproot_active():
         "tap": tap,
     }
     # Test that MAX_SCRIPT_ELEMENT_SIZE byte stack element inputs are valid, but not one more (and 80 bytes is standard but 81 is not).
-    add_spender(spenders, "tapscript/inputmaxlimit", leaf="t0", **common, standard=False, inputs=[getter("sign"), random_bytes(MAX_SCRIPT_ELEMENT_SIZE)], failure={"inputs": [getter("sign"), random_bytes(MAX_SCRIPT_ELEMENT_SIZE+1)]}, **ERR_PUSH_LIMIT)
-    add_spender(spenders, "tapscript/input80limit", leaf="t0", **common, inputs=[getter("sign"), random_bytes(80)])
-    add_spender(spenders, "tapscript/input81limit", leaf="t0", **common, standard=False, inputs=[getter("sign"), random_bytes(81)])
+    add_spender(spenders, "tapscript/inputmaxlimit", leaf="t0", **common, standard=False, inputs=[getter("sign"), random.randbytes(MAX_SCRIPT_ELEMENT_SIZE)], failure={"inputs": [getter("sign"), random.randbytes(MAX_SCRIPT_ELEMENT_SIZE+1)]}, **ERR_PUSH_LIMIT)
+    add_spender(spenders, "tapscript/input80limit", leaf="t0", **common, inputs=[getter("sign"), random.randbytes(80)])
+    add_spender(spenders, "tapscript/input81limit", leaf="t0", **common, standard=False, inputs=[getter("sign"), random.randbytes(81)])
     # Test that OP_CHECKMULTISIG and OP_CHECKMULTISIGVERIFY cause failure, but OP_CHECKSIG and OP_CHECKSIGVERIFY work.
     add_spender(spenders, "tapscript/disabled_checkmultisig", leaf="t1", **common, **SINGLE_SIG, failure={"leaf": "t3"}, **ERR_TAPSCRIPT_CHECKMULTISIG)
     add_spender(spenders, "tapscript/disabled_checkmultisigverify", leaf="t2", **common, **SINGLE_SIG, failure={"leaf": "t4"}, **ERR_TAPSCRIPT_CHECKMULTISIG)
@@ -1010,22 +1058,22 @@ def spenders_taproot_active():
     # input a valid signature with the passed pk followed by a dummy push of bytes that are to be dropped, and
     # will execute sigops signature checks.
     SIGOPS_RATIO_SCRIPTS = [
-        # n OP_CHECKSIGVERFIYs and 1 OP_CHECKSIG.
+        # n OP_CHECKSIGVERIFYs and 1 OP_CHECKSIG.
         lambda n, pk: (CScript([OP_DROP, pk] + [OP_2DUP, OP_CHECKSIGVERIFY] * n + [OP_CHECKSIG]), n + 1),
         # n OP_CHECKSIGVERIFYs and 1 OP_CHECKSIGADD, but also one unexecuted OP_CHECKSIGVERIFY.
         lambda n, pk: (CScript([OP_DROP, pk, OP_0, OP_IF, OP_2DUP, OP_CHECKSIGVERIFY, OP_ENDIF] + [OP_2DUP, OP_CHECKSIGVERIFY] * n + [OP_2, OP_SWAP, OP_CHECKSIGADD, OP_3, OP_EQUAL]), n + 1),
         # n OP_CHECKSIGVERIFYs and 1 OP_CHECKSIGADD, but also one unexecuted OP_CHECKSIG.
-        lambda n, pk: (CScript([random_bytes(220), OP_2DROP, pk, OP_1, OP_NOTIF, OP_2DUP, OP_CHECKSIG, OP_VERIFY, OP_ENDIF] + [OP_2DUP, OP_CHECKSIGVERIFY] * n + [OP_4, OP_SWAP, OP_CHECKSIGADD, OP_5, OP_EQUAL]), n + 1),
-        # n OP_CHECKSIGVERFIYs and 1 OP_CHECKSIGADD, but also one unexecuted OP_CHECKSIGADD.
+        lambda n, pk: (CScript([random.randbytes(220), OP_2DROP, pk, OP_1, OP_NOTIF, OP_2DUP, OP_CHECKSIG, OP_VERIFY, OP_ENDIF] + [OP_2DUP, OP_CHECKSIGVERIFY] * n + [OP_4, OP_SWAP, OP_CHECKSIGADD, OP_5, OP_EQUAL]), n + 1),
+        # n OP_CHECKSIGVERIFYs and 1 OP_CHECKSIGADD, but also one unexecuted OP_CHECKSIGADD.
         lambda n, pk: (CScript([OP_DROP, pk, OP_1, OP_IF, OP_ELSE, OP_2DUP, OP_6, OP_SWAP, OP_CHECKSIGADD, OP_7, OP_EQUALVERIFY, OP_ENDIF] + [OP_2DUP, OP_CHECKSIGVERIFY] * n + [OP_8, OP_SWAP, OP_CHECKSIGADD, OP_9, OP_EQUAL]), n + 1),
         # n+1 OP_CHECKSIGs, but also one OP_CHECKSIG with an empty signature.
         lambda n, pk: (CScript([OP_DROP, OP_0, pk, OP_CHECKSIG, OP_NOT, OP_VERIFY, pk] + [OP_2DUP, OP_CHECKSIG, OP_VERIFY] * n + [OP_CHECKSIG]), n + 1),
         # n OP_CHECKSIGADDs and 1 OP_CHECKSIG, but also an OP_CHECKSIGADD with an empty signature.
         lambda n, pk: (CScript([OP_DROP, OP_0, OP_10, pk, OP_CHECKSIGADD, OP_10, OP_EQUALVERIFY, pk] + [OP_2DUP, OP_16, OP_SWAP, OP_CHECKSIGADD, b'\x11', OP_EQUALVERIFY] * n + [OP_CHECKSIG]), n + 1),
     ]
-    for annex in [None, bytes([ANNEX_TAG]) + random_bytes(random.randrange(1000))]:
+    for annex in [None, bytes([ANNEX_TAG]) + random.randbytes(random.randrange(1000))]:
         for hashtype in [SIGHASH_DEFAULT, SIGHASH_ALL]:
-            for pubkey in [pubs[1], random_bytes(random.choice([x for x in range(2, 81) if x != 32]))]:
+            for pubkey in [pubs[1], random.randbytes(random.choice([x for x in range(2, 81) if x != 32]))]:
                 for fn_num, fn in enumerate(SIGOPS_RATIO_SCRIPTS):
                     merkledepth = random.randrange(129)
 
@@ -1062,7 +1110,7 @@ def spenders_taproot_active():
                         scripts = [scripts, random.choice(PARTNER_MERKLE_FN)]
                     tap = taproot_construct(pubs[0], scripts)
                     standard = annex is None and dummylen <= 80 and len(pubkey) == 32
-                    add_spender(spenders, "tapscript/sigopsratio_%i" % fn_num, tap=tap, leaf="s", annex=annex, hashtype=hashtype, key=secs[1], inputs=[getter("sign"), random_bytes(dummylen)], standard=standard, failure={"inputs": [getter("sign"), random_bytes(dummylen - 1)]}, **ERR_SIGOPS_RATIO)
+                    add_spender(spenders, "tapscript/sigopsratio_%i" % fn_num, tap=tap, leaf="s", annex=annex, hashtype=hashtype, key=secs[1], inputs=[getter("sign"), random.randbytes(dummylen)], standard=standard, failure={"inputs": [getter("sign"), random.randbytes(dummylen - 1)]}, **ERR_SIGOPS_RATIO)
 
     # Future leaf versions
     for leafver in range(0, 0x100, 2):
@@ -1076,8 +1124,8 @@ def spenders_taproot_active():
             ("return_unkver", CScript([OP_RETURN]), leafver),
             ("undecodable_c0", CScript([OP_PUSHDATA1])),
             ("undecodable_unkver", CScript([OP_PUSHDATA1]), leafver),
-            ("bigpush_c0", CScript([random_bytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP])),
-            ("bigpush_unkver", CScript([random_bytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP]), leafver),
+            ("bigpush_c0", CScript([random.randbytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP])),
+            ("bigpush_unkver", CScript([random.randbytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP]), leafver),
             ("1001push_c0", CScript([OP_0] * 1001)),
             ("1001push_unkver", CScript([OP_0] * 1001), leafver),
         ]
@@ -1106,8 +1154,8 @@ def spenders_taproot_active():
             ("undecodable_success", CScript([opcode, OP_PUSHDATA1])),
             ("undecodable_nop", CScript([OP_NOP, OP_PUSHDATA1])),
             ("undecodable_bypassed_success", CScript([OP_PUSHDATA1, OP_2, opcode])),
-            ("bigpush_success", CScript([random_bytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP, opcode])),
-            ("bigpush_nop", CScript([random_bytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP, OP_NOP])),
+            ("bigpush_success", CScript([random.randbytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP, opcode])),
+            ("bigpush_nop", CScript([random.randbytes(MAX_SCRIPT_ELEMENT_SIZE+1), OP_DROP, OP_NOP])),
             ("1001push_success", CScript([OP_0] * 1001 + [opcode])),
             ("1001push_nop", CScript([OP_0] * 1001 + [OP_NOP])),
         ]
@@ -1144,11 +1192,8 @@ def spenders_taproot_active():
 
     # Also add a few legacy spends into the mix, so that transactions which combine taproot and pre-taproot spends get tested too.
     for compressed in [False, True]:
-        eckey1 = ECKey()
-        eckey1.set(generate_privkey(), compressed)
-        pubkey1 = eckey1.get_pubkey().get_bytes()
-        eckey2 = ECKey()
-        eckey2.set(generate_privkey(), compressed)
+        eckey1, pubkey1 = generate_keypair(compressed=compressed)
+        eckey2, _ = generate_keypair(compressed=compressed)
         for p2sh in [False, True]:
             for witv0 in [False, True]:
                 for hashtype in VALID_SIGHASHES_ECDSA + [random.randrange(0x04, 0x80), random.randrange(0x84, 0x100)]:
@@ -1232,6 +1277,7 @@ UTXOData = namedtuple('UTXOData', 'outpoint,output,spender')
 
 class TaprootTest(BitcoinTestFramework):
     def add_options(self, parser):
+        self.add_wallet_options(parser)
         parser.add_argument("--dumptests", dest="dump_tests", default=False, action="store_true",
                             help="Dump generated test cases to directory set by TEST_DUMP_DIR environment variable")
 
@@ -1249,7 +1295,7 @@ class TaprootTest(BitcoinTestFramework):
         # It is not impossible to fit enough tapscript sigops to hit the old 80k limit without
         # busting txin-level limits. We simply have to account for the p2pk outputs in all
         # transactions.
-        extra_output_script = CScript([OP_CHECKSIG]*((MAX_BLOCK_SIGOPS_WEIGHT - sigops_weight) // WITNESS_SCALE_FACTOR))
+        extra_output_script = CScript(bytes([OP_CHECKSIG]*((MAX_BLOCK_SIGOPS_WEIGHT - sigops_weight) // WITNESS_SCALE_FACTOR)))
 
         coinbase_tx = create_coinbase(self.lastblockheight + 1, pubkey=cb_pubkey, extra_output_script=extra_output_script, fees=fees)
         block = create_block(self.tip, coinbase_tx, self.lastblocktime + 1, txlist=txs)
@@ -1343,8 +1389,7 @@ class TaprootTest(BitcoinTestFramework):
             # Add change
             fund_tx.vout.append(CTxOut(balance - 10000, random.choice(host_spks)))
             # Ask the wallet to sign
-            ss = BytesIO(bytes.fromhex(node.signrawtransactionwithwallet(fund_tx.serialize().hex())["hex"]))
-            fund_tx.deserialize(ss)
+            fund_tx = tx_from_hex(node.signrawtransactionwithwallet(fund_tx.serialize().hex())["hex"])
             # Construct UTXOData entries
             fund_tx.rehash()
             for i in range(count_this_tx):
@@ -1512,12 +1557,16 @@ class TaprootTest(BitcoinTestFramework):
 
         script_lists = [
             None,
-            [("0", CScript([pubs[50], OP_CHECKSIG]), 0xc0)],
-            [("0", CScript([pubs[51], OP_CHECKSIG]), 0xc0)],
-            [("0", CScript([pubs[52], OP_CHECKSIG]), 0xc0), ("1", CScript([b"BIP341"]), VALID_LEAF_VERS[pubs[99][0] % 41])],
-            [("0", CScript([pubs[53], OP_CHECKSIG]), 0xc0), ("1", CScript([b"Taproot"]), VALID_LEAF_VERS[pubs[99][1] % 41])],
-            [("0", CScript([pubs[54], OP_CHECKSIG]), 0xc0), [("1", CScript([pubs[55], OP_CHECKSIG]), 0xc0), ("2", CScript([pubs[56], OP_CHECKSIG]), 0xc0)]],
-            [("0", CScript([pubs[57], OP_CHECKSIG]), 0xc0), [("1", CScript([pubs[58], OP_CHECKSIG]), 0xc0), ("2", CScript([pubs[59], OP_CHECKSIG]), 0xc0)]],
+            [("0", CScript([pubs[50], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT)],
+            [("0", CScript([pubs[51], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT)],
+            [("0", CScript([pubs[52], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT), ("1", CScript([b"BIP341"]), VALID_LEAF_VERS[pubs[99][0] % 41])],
+            [("0", CScript([pubs[53], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT), ("1", CScript([b"Taproot"]), VALID_LEAF_VERS[pubs[99][1] % 41])],
+            [("0", CScript([pubs[54], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT),
+                [("1", CScript([pubs[55], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT), ("2", CScript([pubs[56], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT)]
+            ],
+            [("0", CScript([pubs[57], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT),
+                [("1", CScript([pubs[58], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT), ("2", CScript([pubs[59], OP_CHECKSIG]), LEAF_VERSION_TAPSCRIPT)]
+            ],
         ]
         taps = [taproot_construct(inner_keys[i], script_lists[i]) for i in range(len(inner_keys))]
 

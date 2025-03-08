@@ -9,6 +9,9 @@ from test_framework.runebaseconfig import *
 from test_framework.util import *
 
 class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2

@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,16 +9,22 @@
 #include <arith_uint256.h>
 #include <consensus/params.h>
 #include <flatfile.h>
+#include <kernel/cs_main.h>
 #include <primitives/block.h>
+#include <serialize.h>
 #include <sync.h>
 #include <uint256.h>
 #include <util/time.h>
 
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <string>
 #include <vector>
 
 /**
  * Maximum amount of time that a block timestamp is allowed to exceed the
- * current network-adjusted time before the block will be accepted.
+ * current time before the block will be accepted.
  */
 static constexpr int64_t MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60;
 
@@ -38,18 +44,16 @@ static constexpr int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME;
  */
 static constexpr int64_t MAX_BLOCK_TIME_GAP = 90 * 60;
 
-extern RecursiveMutex cs_main;
-
 class CBlockFileInfo
 {
 public:
-    unsigned int nBlocks;      //!< number of blocks stored in file
-    unsigned int nSize;        //!< number of used bytes of block file
-    unsigned int nUndoSize;    //!< number of used bytes in the undo file
-    unsigned int nHeightFirst; //!< lowest height of block in file
-    unsigned int nHeightLast;  //!< highest height of block in file
-    uint64_t nTimeFirst;       //!< earliest time of block in file
-    uint64_t nTimeLast;        //!< latest time of block in file
+    unsigned int nBlocks{};      //!< number of blocks stored in file
+    unsigned int nSize{};        //!< number of used bytes of block file
+    unsigned int nUndoSize{};    //!< number of used bytes in the undo file
+    unsigned int nHeightFirst{}; //!< lowest height of block in file
+    unsigned int nHeightLast{};  //!< highest height of block in file
+    uint64_t nTimeFirst{};       //!< earliest time of block in file
+    uint64_t nTimeLast{};        //!< latest time of block in file
 
     SERIALIZE_METHODS(CBlockFileInfo, obj)
     {
@@ -62,21 +66,7 @@ public:
         READWRITE(VARINT(obj.nTimeLast));
     }
 
-    void SetNull()
-    {
-        nBlocks = 0;
-        nSize = 0;
-        nUndoSize = 0;
-        nHeightFirst = 0;
-        nHeightLast = 0;
-        nTimeFirst = 0;
-        nTimeLast = 0;
-    }
-
-    CBlockFileInfo()
-    {
-        SetNull();
-    }
+    CBlockFileInfo() {}
 
     std::string ToString() const;
 
@@ -114,10 +104,10 @@ enum BlockStatus : uint32_t {
     BLOCK_VALID_TRANSACTIONS =    3,
 
     //! Outputs do not overspend inputs, no double spends, coinbase output ok, no immature coinbase spends, BIP30.
-    //! Implies all parents are also at least CHAIN.
+    //! Implies all parents are either at least VALID_CHAIN, or are ASSUMED_VALID
     BLOCK_VALID_CHAIN        =    4,
 
-    //! Scripts & signatures ok. Implies all parents are also at least SCRIPTS.
+    //! Scripts & signatures ok. Implies all parents are either at least VALID_SCRIPTS, or are ASSUMED_VALID.
     BLOCK_VALID_SCRIPTS      =    5,
 
     //! All validity bits.
@@ -135,10 +125,18 @@ enum BlockStatus : uint32_t {
     BLOCK_OPT_WITNESS        =   128, //!< block data in blk*.dat was received with a witness-enforcing client
 
     /**
-     * If set, this indicates that the block index entry is assumed-valid.
-     * Certain diagnostics will be skipped in e.g. CheckBlockIndex().
-     * It almost certainly means that the block's full validation is pending
-     * on a background chainstate. See `doc/design/assumeutxo.md`.
+     * If ASSUMED_VALID is set, it means that this block has not been validated
+     * and has validity status less than VALID_SCRIPTS. Also that it may have
+     * descendant blocks with VALID_SCRIPTS set, because they can be validated
+     * based on an assumeutxo snapshot.
+     *
+     * When an assumeutxo snapshot is loaded, the ASSUMED_VALID flag is added to
+     * unvalidated blocks at the snapshot height and below. Then, as the background
+     * validation progresses, and these blocks are validated, the ASSUMED_VALID
+     * flags are removed. See `doc/design/assumeutxo.md` for details.
+     *
+     * This flag is only used to implement checks in CheckBlockIndex() and
+     * should not be used elsewhere.
      */
     BLOCK_ASSUMED_VALID      =   256,
 };
@@ -225,10 +223,6 @@ public:
     //! (memory only) Maximum nTime in the chain up to and including this block.
     unsigned int nTimeMax{0};
 
-    CBlockIndex()
-    {
-    }
-
     explicit CBlockIndex(const CBlockHeader& block)
         : nVersion{block.nVersion},
           hashMerkleRoot{block.hashMerkleRoot},
@@ -293,8 +287,12 @@ public:
      *
      * Does not imply the transactions are consensus-valid (ConnectTip might fail)
      * Does not imply the transactions are still stored on disk. (IsBlockPruned might return true)
+     *
+     * Note that this will be true for the snapshot base block, if one is loaded (and
+     * all subsequent assumed-valid blocks) since its nChainTx value will have been set
+     * manually based on the related AssumeutxoData entry.
      */
-    bool HaveTxsDownloaded() const { return nChainTx != 0; }
+    bool HaveNumChainTxs() const { return nChainTx != 0; }
 
     NodeSeconds Time() const
     {
@@ -391,6 +389,24 @@ public:
     //! Efficiently find an ancestor of this block.
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
+
+    CBlockIndex() = default;
+    ~CBlockIndex() = default;
+
+protected:
+    //! CBlockIndex should not allow public copy construction because equality
+    //! comparison via pointer is very common throughout the codebase, making
+    //! use of copy a footgun. Also, use of copies do not have the benefit
+    //! of simplifying lifetime considerations due to attributes like pprev and
+    //! pskip, which are at risk of becoming dangling pointers in a copied
+    //! instance.
+    //!
+    //! We declare these protected instead of simply deleting them so that
+    //! CDiskBlockIndex can reuse copy construction.
+    CBlockIndex(const CBlockIndex&) = default;
+    CBlockIndex& operator=(const CBlockIndex&) = delete;
+    CBlockIndex(CBlockIndex&&) = delete;
+    CBlockIndex& operator=(CBlockIndex&&) = delete;
 };
 
 arith_uint256 GetBlockProof(const CBlockIndex& block);
@@ -403,6 +419,14 @@ const CBlockIndex* LastCommonAncestor(const CBlockIndex* pa, const CBlockIndex* 
 /** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex
 {
+    /** Historically CBlockLocator's version field has been written to disk
+     * streams as the client version, but the value has never been used.
+     *
+     * Hard-code to the highest client version ever written.
+     * SerParams can be used if the field requires any meaning in the future.
+     **/
+    static constexpr int DUMMY_VERSION = 259900;
+
 public:
     uint256 hashPrev;
 
@@ -419,8 +443,8 @@ public:
     SERIALIZE_METHODS(CDiskBlockIndex, obj)
     {
         LOCK(::cs_main);
-        int _nVersion = s.GetVersion();
-        if (!(s.GetType() & SER_GETHASH)) READWRITE(VARINT_MODE(_nVersion, VarIntMode::NONNEGATIVE_SIGNED));
+        int _nVersion = DUMMY_VERSION;
+        READWRITE(VARINT_MODE(_nVersion, VarIntMode::NONNEGATIVE_SIGNED));
 
         READWRITE(VARINT_MODE(obj.nHeight, VarIntMode::NONNEGATIVE_SIGNED));
         READWRITE(VARINT(obj.nStatus));

@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,30 +14,88 @@
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
+
 #ifdef ENABLE_WALLET
 #include <qt/hardwaresigntx.h>
 #endif
+#include <common/system.h>
 #include <interfaces/node.h>
-#include <validation.h> // for DEFAULT_SCRIPTCHECK_THREADS and MAX_SCRIPTCHECK_THREADS
+#include <node/chainstatemanager_args.h>
 #include <netbase.h>
-#include <txdb.h> // for -dbcache defaults
+#include <txdb.h>
+#include <util/strencodings.h>
+
 #include <qt/styleSheet.h>
 #include <chainparams.h>
 #include <chrono>
-
+#include <node/miner.h>
+#include <QApplication>
 #include <QDataWidgetMapper>
 #include <QDir>
+#include <QFontDialog>
 #include <QIntValidator>
 #include <QLocale>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <QTimer>
 
-OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
-    QDialog(parent, GUIUtil::dialog_flags),
-    ui(new Ui::OptionsDialog),
-    model(nullptr),
-    mapper(nullptr)
+int setFontChoice(QComboBox* cb, const OptionsModel::FontChoice& fc)
+{
+    int i;
+    for (i = cb->count(); --i >= 0; ) {
+        QVariant item_data = cb->itemData(i);
+        if (!item_data.canConvert<OptionsModel::FontChoice>()) continue;
+        if (item_data.value<OptionsModel::FontChoice>() == fc) {
+            break;
+        }
+    }
+    if (i == -1) {
+        // New item needed
+        QFont chosen_font = OptionsModel::getFontForChoice(fc);
+        QSignalBlocker block_currentindexchanged_signal(cb);  // avoid triggering QFontDialog
+        cb->insertItem(0, QFontInfo(chosen_font).family(), QVariant::fromValue(fc));
+        i = 0;
+    }
+
+    cb->setCurrentIndex(i);
+    return i;
+}
+
+void setupFontOptions(QComboBox* cb, QLabel* preview)
+{
+    QFont embedded_font{GUIUtil::fixedPitchFont(true)};
+    QFont system_font{GUIUtil::fixedPitchFont(false)};
+    cb->addItem(QObject::tr("Embedded \"%1\"").arg(QFontInfo(embedded_font).family()), QVariant::fromValue(OptionsModel::FontChoice{OptionsModel::FontChoiceAbstract::EmbeddedFont}));
+    cb->addItem(QObject::tr("Default system font \"%1\"").arg(QFontInfo(system_font).family()), QVariant::fromValue(OptionsModel::FontChoice{OptionsModel::FontChoiceAbstract::BestSystemFont}));
+    cb->addItem(QObject::tr("Custom…"));
+
+    const auto& on_font_choice_changed = [cb, preview](int index) {
+        static int previous_index = -1;
+        QVariant item_data = cb->itemData(index);
+        QFont f;
+        if (item_data.canConvert<OptionsModel::FontChoice>()) {
+            f = OptionsModel::getFontForChoice(item_data.value<OptionsModel::FontChoice>());
+        } else {
+            bool ok;
+            f = QFontDialog::getFont(&ok, GUIUtil::fixedPitchFont(false), cb->parentWidget());
+            if (!ok) {
+                cb->setCurrentIndex(previous_index);
+                return;
+            }
+            index = setFontChoice(cb, OptionsModel::FontChoice{f});
+        }
+        if (preview) {
+            preview->setFont(f);
+        }
+        previous_index = index;
+    };
+    QObject::connect(cb, QOverload<int>::of(&QComboBox::currentIndexChanged), on_font_choice_changed);
+    on_font_choice_changed(cb->currentIndex());
+}
+
+OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
+    : QDialog(parent, GUIUtil::dialog_flags),
+      ui(new Ui::OptionsDialog)
 {
     ui->setupUi(this);
     SetObjectStyleSheet(ui->resetButton, StyleSheetNames::ButtonLight);
@@ -77,7 +135,6 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     ui->proxyPortTor->setValidator(new QIntValidator(1, 65535, this));
 
     ui->reserveBalance->setNotifyAlways(false);
-
     connect(ui->connectSocks, &QPushButton::toggled, ui->proxyIp, &QWidget::setEnabled);
     connect(ui->connectSocks, &QPushButton::toggled, ui->proxyIpLabel, &QWidget::setEnabled);
     connect(ui->connectSocks, &QPushButton::toggled, ui->proxyPort, &QWidget::setEnabled);
@@ -97,7 +154,6 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     /* hide launch at startup option on macOS */
     ui->bitcoinAtStartup->setVisible(false);
     ui->tabMain->layout()->removeWidget(ui->bitcoinAtStartup);
-
 #endif
 
     /* remove Wallet tab and 3rd party-URL textbox in case of -disablewallet */
@@ -121,12 +177,15 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
         ui->toolHWIPath->setVisible(fHasHardwareWalletSupport);
         ui->HWIToolLabel->setVisible(fHasHardwareWalletSupport);
         ui->signPSBTHWITool->setVisible(fHasHardwareWalletSupport);
-        ui->txtStakeLedgerId->setVisible(fHasHardwareWalletSupport);
-        ui->toolStakeLedgerId->setVisible(fHasHardwareWalletSupport);
-        ui->stakeLedgerIdlabel->setVisible(fHasHardwareWalletSupport);
+        bool fHasHardwareStakeSupport = fHasHardwareWalletSupport && node::ENABLE_HARDWARE_STAKE;
+        ui->txtStakeLedgerId->setVisible(fHasHardwareStakeSupport);
+        ui->toolStakeLedgerId->setVisible(fHasHardwareStakeSupport);
+        ui->stakeLedgerIdlabel->setVisible(fHasHardwareStakeSupport);
     }
 
-#ifndef ENABLE_EXTERNAL_SIGNER
+#ifdef ENABLE_EXTERNAL_SIGNER
+    ui->externalSignerPath->setToolTip(ui->externalSignerPath->toolTip().arg(PACKAGE_NAME));
+#else
     //: "External signing" means using devices such as hardware wallets.
     ui->externalSignerPath->setToolTip(tr("Compiled without external signing support (required for external signing)"));
     ui->externalSignerPath->setEnabled(false);
@@ -197,23 +256,12 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
         ui->minimizeToTray->setEnabled(false);
     }
 
-    QFont embedded_font{GUIUtil::fixedPitchFont(true)};
-    ui->embeddedFont_radioButton->setText(ui->embeddedFont_radioButton->text().arg(QFontInfo(embedded_font).family()));
-    ui->embeddedFont_label_1->setFont(embedded_font);
-    ui->embeddedFont_label_9->setFont(embedded_font);
-
-    QFont system_font{GUIUtil::fixedPitchFont(false)};
-    ui->systemFont_radioButton->setText(ui->systemFont_radioButton->text().arg(QFontInfo(system_font).family()));
-    ui->systemFont_label_1->setFont(system_font);
-    ui->systemFont_label_9->setFont(system_font);
-    // Checking the embeddedFont_radioButton automatically unchecks the systemFont_radioButton.
-    ui->systemFont_radioButton->setChecked(true);
+    setupFontOptions(ui->moneyFont, ui->moneyFont_preview);
 
     if(enableWallet)
     {
         connect(ui->superStaking, &QCheckBox::clicked, this, &OptionsDialog::updateLogEvents);
     }
-
     GUIUtil::handleCloseWindowShortcut(this);
 }
 
@@ -249,6 +297,9 @@ void OptionsDialog::setModel(OptionsModel *_model)
         mapper->setModel(_model);
         setMapper();
         mapper->toFirst();
+
+        const auto& font_for_money = _model->data(_model->index(OptionsModel::FontForMoney, 0), Qt::EditRole).value<OptionsModel::FontChoice>();
+        setFontChoice(ui->moneyFont, font_for_money);
 
         updateDefaultProxyNets();
         updateLogEvents();
@@ -301,6 +352,7 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->databaseCache, OptionsModel::DatabaseCache);
     mapper->addMapping(ui->prune, OptionsModel::Prune);
     mapper->addMapping(ui->pruneSize, OptionsModel::PruneSize);
+
     mapper->addMapping(ui->logEvents, OptionsModel::LogEvents);
     mapper->addMapping(ui->superStaking, OptionsModel::SuperStaking);
     mapper->addMapping(ui->reserveBalance, OptionsModel::ReserveBalance, "valueText");
@@ -343,7 +395,6 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->lang, OptionsModel::Language);
     mapper->addMapping(ui->unit, OptionsModel::DisplayUnit);
     mapper->addMapping(ui->thirdPartyTxUrls, OptionsModel::ThirdPartyTxUrls);
-    mapper->addMapping(ui->embeddedFont_radioButton, OptionsModel::UseEmbeddedMonospacedFont);
     mapper->addMapping(ui->theme, OptionsModel::Theme);
 }
 
@@ -406,6 +457,8 @@ void OptionsDialog::on_openBitcoinConfButton_clicked()
 
 void OptionsDialog::on_okButton_clicked()
 {
+    model->setData(model->index(OptionsModel::FontForMoney, 0), ui->moneyFont->itemData(ui->moneyFont->currentIndex()));
+
     mapper->submit();
     updateDefaultProxyNets();
     if (model && model->isRestartRequired()) {
@@ -455,7 +508,6 @@ void OptionsDialog::on_toolStakeLedgerId_clicked()
     ui->txtStakeLedgerId->setText(fingerprint);
 #endif
 }
-
 void OptionsDialog::on_showTrayIcon_stateChanged(int state)
 {
     if (state == Qt::Checked) {
@@ -515,24 +567,20 @@ void OptionsDialog::updateProxyValidationState()
 
 void OptionsDialog::updateDefaultProxyNets()
 {
+    const std::optional<CNetAddr> ui_proxy_netaddr{LookupHost(ui->proxyIp->text().toStdString(), /*fAllowLookup=*/false)};
+    const CService ui_proxy{ui_proxy_netaddr.value_or(CNetAddr{}), ui->proxyPort->text().toUShort()};
+
     Proxy proxy;
-    std::string strProxy;
-    QString strDefaultProxyGUI;
+    bool has_proxy;
 
-    model->node().getProxy(NET_IPV4, proxy);
-    strProxy = proxy.proxy.ToStringIP() + ":" + proxy.proxy.ToStringPort();
-    strDefaultProxyGUI = ui->proxyIp->text() + ":" + ui->proxyPort->text();
-    (strProxy == strDefaultProxyGUI.toStdString()) ? ui->proxyReachIPv4->setChecked(true) : ui->proxyReachIPv4->setChecked(false);
+    has_proxy = model->node().getProxy(NET_IPV4, proxy);
+    ui->proxyReachIPv4->setChecked(has_proxy && proxy.proxy == ui_proxy);
 
-    model->node().getProxy(NET_IPV6, proxy);
-    strProxy = proxy.proxy.ToStringIP() + ":" + proxy.proxy.ToStringPort();
-    strDefaultProxyGUI = ui->proxyIp->text() + ":" + ui->proxyPort->text();
-    (strProxy == strDefaultProxyGUI.toStdString()) ? ui->proxyReachIPv6->setChecked(true) : ui->proxyReachIPv6->setChecked(false);
+    has_proxy = model->node().getProxy(NET_IPV6, proxy);
+    ui->proxyReachIPv6->setChecked(has_proxy && proxy.proxy == ui_proxy);
 
-    model->node().getProxy(NET_ONION, proxy);
-    strProxy = proxy.proxy.ToStringIP() + ":" + proxy.proxy.ToStringPort();
-    strDefaultProxyGUI = ui->proxyIp->text() + ":" + ui->proxyPort->text();
-    (strProxy == strDefaultProxyGUI.toStdString()) ? ui->proxyReachTor->setChecked(true) : ui->proxyReachTor->setChecked(false);
+    has_proxy = model->node().getProxy(NET_ONION, proxy);
+    ui->proxyReachTor->setChecked(has_proxy && proxy.proxy == ui_proxy);
 }
 
 ProxyAddressValidator::ProxyAddressValidator(QObject *parent) :
@@ -543,7 +591,10 @@ QValidator(parent)
 QValidator::State ProxyAddressValidator::validate(QString &input, int &pos) const
 {
     Q_UNUSED(pos);
-    // Validate the proxy
+    uint16_t port{0};
+    std::string hostname;
+    if (!SplitHostPort(input.toStdString(), port, hostname) || port != 0) return QValidator::Invalid;
+
     CService serv(LookupNumeric(input.toStdString(), DEFAULT_GUI_PROXY_PORT));
     Proxy addrProxy = Proxy(serv, true);
     if (addrProxy.IsValid())

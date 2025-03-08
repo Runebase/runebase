@@ -4,7 +4,7 @@
 #include <rpc/server.h>
 #include <rpc/contract_util.h>
 #include <util/moneystr.h>
-#include <util/system.h>
+#include <common/system.h>
 #include <util/signstr.h>
 #include <util/tokenstr.h>
 #include <wallet/rpc/util.h>
@@ -15,6 +15,7 @@
 #include <runebase/runebasedelegation.h>
 #include <validation.h>
 #include <wallet/rpc/contract.h>
+#include <common/args.h>
 
 #include <univalue.h>
 
@@ -32,7 +33,7 @@ bool SetDefaultPayForContractAddress(const CWallet& wallet, CCoinControl & coinC
     for (const COutput& out : vecOutputs) {
         CTxDestination destAdress;
         const CScript& scriptPubKey = out.txout.scriptPubKey;
-        bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress)
+        bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true)
                 && IsValidContractSenderAddress(destAdress);
 
         if (!fValidAddress)
@@ -56,7 +57,7 @@ bool SetDefaultSignSenderAddress(const CWallet& wallet, CTxDestination& destAdre
 
     for (const COutput& out : vecOutputs) {
         const CScript& scriptPubKey = out.txout.scriptPubKey;
-        bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress)
+        bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true)
                 && IsValidContractSenderAddress(destAdress);
 
         if (!fValidAddress)
@@ -121,12 +122,12 @@ RPCHelpMan createcontract()
                 HELP_REQUIRING_PASSPHRASE,
                 {
                     {"bytecode", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "contract bytcode."},
-                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_CREATE)+", max: "+i64tostr(blockGasLimit)},
-                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasPrice RUNEBASE price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
-                    {"senderaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED_NAMED_ARG, "The runebase address that will be used to create the contract."},
+                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_CREATE)+", max: "+i64tostr(blockGasLimit)},
+                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasPrice RUNEBASE price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                    {"senderaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED, "The runebase address that will be used to create the contract."},
                     {"broadcast", RPCArg::Type::BOOL, RPCArg::Default{true}, "Whether to broadcast the transaction or not."},
                     {"changetosender", RPCArg::Type::BOOL, RPCArg::Default{true}, "Return the change to the sender."},
-                    {"psbt", RPCArg::Type::BOOL, RPCArg::Optional::OMITTED_NAMED_ARG, "Create partially signed transaction."},
+                    {"psbt", RPCArg::Type::BOOL, RPCArg::Optional::OMITTED, "Create partially signed transaction."},
                 },
                 {
                     RPCResult{"if broadcast is set to true",
@@ -237,7 +238,7 @@ RPCHelpMan createcontract()
         for (const COutput& out : vecOutputs) {
             CTxDestination destAdress;
             const CScript& scriptPubKey = out.txout.scriptPubKey;
-            bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress);
+            bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true);
 
             if (!fValidAddress || senderAddress != destAdress)
                 continue;
@@ -317,12 +318,11 @@ RPCHelpMan createcontract()
 
     // Create and send the transaction
     std::vector<CRecipient> vecSend;
-    int nChangePosRet = -1;
-    CRecipient recipient = {scriptPubKey, 0, false};
+    CRecipient recipient = {CNoDestination(scriptPubKey), 0, false};
     vecSend.push_back(recipient);
 
     bool sign = !fPsbt;
-    auto res = CreateTransaction(*pwallet, vecSend, nChangePosRet, coinControl, sign, nGasFee, true, signSenderAddress);
+    auto res = CreateTransaction(*pwallet, vecSend,  std::nullopt, coinControl, sign, nGasFee, true, signSenderAddress);
     if (!res) {
         throw JSONRPCError(RPC_WALLET_ERROR, util::ErrorString(res).original);
     }
@@ -357,7 +357,7 @@ RPCHelpMan createcontract()
         }
 
         // Serialize the PSBT
-        CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+        DataStream ssTx;
         ssTx << psbtx;
         result.pushKV("psbt", EncodeBase64(ssTx.str()));
 
@@ -381,7 +381,8 @@ RPCHelpMan createcontract()
 
     std::vector<unsigned char> SHA256TxVout(32);
     std::vector<unsigned char> contractAddress(20);
-    std::vector<unsigned char> txIdAndVout(tx->GetHash().begin(), tx->GetHash().end());
+    uint256 txHash = tx->GetHash().ToUint256();
+    std::vector<unsigned char> txIdAndVout(txHash.begin(), txHash.end());
     uint32_t voutNumber=0;
     for (const CTxOut& txout : tx->vout) {
         if(txout.scriptPubKey.HasOpCreate()){
@@ -397,7 +398,7 @@ RPCHelpMan createcontract()
     CRIPEMD160().Write(SHA256TxVout.data(), SHA256TxVout.size()).Finalize(contractAddress.data());
     result.pushKV("address", HexStr(contractAddress));
     }else{
-    std::string strHex = EncodeHexTx(*tx, RPCSerializationFlags());
+    std::string strHex = EncodeHexTx(*tx);
     result.pushKV("raw transaction", strHex);
     }
     return result;
@@ -498,7 +499,7 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
 
             CTxDestination destAdress;
             const CScript& scriptPubKey = out.txout.scriptPubKey;
-            bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress);
+            bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true);
 
             if (!fValidAddress || senderAddress != destAdress)
                 continue;
@@ -579,12 +580,11 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
 
     // Create and send the transaction
     std::vector<CRecipient> vecSend;
-    int nChangePosRet = -1;
-    CRecipient recipient = {scriptPubKey, nAmount, false};
+    CRecipient recipient = {CNoDestination(scriptPubKey), nAmount, false};
     vecSend.push_back(recipient);
 
     bool sign = !fPsbt;
-    auto res = CreateTransaction(wallet, vecSend, nChangePosRet, coinControl, sign, nGasFee, true, signSenderAddress);
+    auto res = CreateTransaction(wallet, vecSend,  std::nullopt, coinControl, sign, nGasFee, true, signSenderAddress);
     if (!res) {
         throw JSONRPCError(RPC_WALLET_ERROR, util::ErrorString(res).original);
     }
@@ -620,7 +620,7 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
         }
 
         // Serialize the PSBT
-        CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+        DataStream ssTx;
         ssTx << psbtx;
         result.pushKV("psbt", EncodeBase64(ssTx.str()));
 
@@ -642,7 +642,7 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
         result.pushKV("sender", EncodeDestination(txSenderAdress));
         result.pushKV("hash160", HexStr(valtype(keyid.begin(),keyid.end())));
     }else{
-        std::string strHex = EncodeHexTx(*tx, RPCSerializationFlags());
+        std::string strHex = EncodeHexTx(*tx);
         result.pushKV("raw transaction", strHex);
     }
 
@@ -812,13 +812,13 @@ RPCHelpMan sendtocontract()
                     {
                         {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address that will receive the funds and data."},
                         {"datahex", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "data to send."},
-                        {"amount", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The amount in " + CURRENCY_UNIT + " to send. eg 0.1, default: 0"},
-                        {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
-                        {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasPrice Runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
-                        {"senderaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED_NAMED_ARG, "The runebase address that will be used as sender."},
+                        {"amount", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The amount in " + CURRENCY_UNIT + " to send. eg 0.1, default: 0"},
+                        {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
+                        {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasPrice Runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                        {"senderaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED, "The runebase address that will be used as sender."},
                         {"broadcast", RPCArg::Type::BOOL, RPCArg::Default{true}, "Whether to broadcast the transaction or not."},
                         {"changetosender", RPCArg::Type::BOOL, RPCArg::Default{true}, "Return the change to the sender."},
-                        {"psbt", RPCArg::Type::BOOL, RPCArg::Optional::OMITTED_NAMED_ARG, "Create partially signed transaction."},
+                        {"psbt", RPCArg::Type::BOOL, RPCArg::Optional::OMITTED, "Create partially signed transaction."},
                     },
                     {
                         RPCResult{"if broadcast is set to true",
@@ -873,8 +873,8 @@ RPCHelpMan removedelegationforaddress()
                     HELP_REQUIRING_PASSPHRASE,
                     {
                         {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The runebase address to remove delegation, the address will be used as sender too."},
-                        {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
-                        {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasPrice Runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                        {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
+                        {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasPrice RUNES price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
                     },
                     RPCResult{
                         RPCResult::Type::OBJ, "", "",
@@ -934,8 +934,8 @@ RPCHelpMan setdelegateforaddress()
                         {"staker", RPCArg::Type::STR, RPCArg::Optional::NO, "The runebase address for the staker."},
                         {"fee", RPCArg::Type::NUM, RPCArg::Optional::NO, "Percentage of the reward that will be paid to the staker."},
                         {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The runebase address that contain the coins that will be delegated to the staker, the address will be used as sender too."},
-                        {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_CREATE)+", max: "+i64tostr(blockGasLimit)},
-                        {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "gasPrice Runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                        {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasLimit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_CREATE)+", max: "+i64tostr(blockGasLimit)},
+                        {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "gasPrice RUNES price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
                     },
                     RPCResult{
                         RPCResult::Type::OBJ, "", "",
@@ -1051,8 +1051,8 @@ RPCHelpMan qrc20approve()
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
                     {"spenderaddress", RPCArg::Type::STR, RPCArg::Optional::NO,  "The token spender runebase address."},
                     {"amount", RPCArg::Type::STR, RPCArg::Optional::NO,  "The amount of tokens. eg 0.1"},
-                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
-                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
+                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The RUNES price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
                     {"checkoutputs", RPCArg::Type::BOOL, RPCArg::Default{true}, "Check outputs before send"},
                 },
                 RPCResult{
@@ -1158,8 +1158,8 @@ RPCHelpMan qrc20transfer()
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
                     {"addressto", RPCArg::Type::STR, RPCArg::Optional::NO,  "The runebase address to send funds to."},
                     {"amount", RPCArg::Type::STR, RPCArg::Optional::NO,  "The amount of tokens to send. eg 0.1"},
-                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
-                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
+                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The RUNES price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
                     {"checkoutputs", RPCArg::Type::BOOL, RPCArg::Default{true}, "Check outputs before send"},
                 },
                 RPCResult{
@@ -1276,8 +1276,8 @@ RPCHelpMan qrc20transferfrom()
                     {"spenderaddress", RPCArg::Type::STR, RPCArg::Optional::NO,  "The token spender runebase address."},
                     {"receiveraddress", RPCArg::Type::STR, RPCArg::Optional::NO,  "The token receiver runebase address."},
                     {"amount", RPCArg::Type::STR, RPCArg::Optional::NO,  "The amount of token to send. eg 0.1"},
-                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
-                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
+                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The RUNES price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
                     {"checkoutputs", RPCArg::Type::BOOL, RPCArg::Default{true}, "Check outputs before send"},
                  },
                 RPCResult{
@@ -1393,8 +1393,8 @@ RPCHelpMan qrc20burn()
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address."},
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
                     {"amount", RPCArg::Type::STR, RPCArg::Optional::NO,  "The amount of tokens to burn. eg 0.1"},
-                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
-                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
+                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The RUNES price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
                     {"checkoutputs", RPCArg::Type::BOOL, RPCArg::Default{true}, "Check outputs before send"},
                 },
                 RPCResult{
@@ -1509,8 +1509,8 @@ RPCHelpMan qrc20burnfrom()
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
                     {"spenderaddress", RPCArg::Type::STR, RPCArg::Optional::NO,  "The token spender runebase address."},
                     {"amount", RPCArg::Type::STR, RPCArg::Optional::NO,  "The amount of token to burn. eg 0.1"},
-                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
-                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED_NAMED_ARG, "The runebase price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
+                    {"gaslimit", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The gas limit, default: "+i64tostr(DEFAULT_GAS_LIMIT_OP_SEND)+", max: "+i64tostr(blockGasLimit)},
+                    {"gasprice", RPCArg::Type::AMOUNT, RPCArg::Optional::OMITTED, "The RUNES price per gas unit, default: "+FormatMoney(nGasPrice)+", min:"+FormatMoney(minGasPrice)},
                     {"checkoutputs", RPCArg::Type::BOOL, RPCArg::Default{true}, "Check outputs before send"},
                  },
                 RPCResult{

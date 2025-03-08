@@ -58,17 +58,9 @@
         <translation type="unfinished">Izvēlēties</translation>
     </message>
     <message>
-        <source>Sending addresses</source>
-        <translation type="unfinished">Adrešu nosūtīšana</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation type="unfinished">Adrešu saņemšana</translation>
-    </message>
-    <message>
         <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation type="unfinished">Šīs ir jūsu Runebase adreses, kuras izmantojamas maksājumu veikšanai. Vienmēr pārbaudiet summu un saņēmēja adresi pirms monētu nosūtīšanas.</translation>
-   </message>
+    </message>
     <message>
         <source>&amp;Copy Address</source>
         <translation type="unfinished">&amp;Kopēt adresi</translation>
@@ -265,37 +257,6 @@
     </message>
     </context>
 <context>
-    <name>bitcoin-core</name>
-    <message>
-        <source>Done loading</source>
-        <translation type="unfinished">Ielāde pabeigta</translation>
-    </message>
-    <message>
-        <source>Error loading block database</source>
-        <translation type="unfinished">Kļūda ielādējot bloku datubāzi</translation>
-    </message>
-    <message>
-        <source>Insufficient funds</source>
-        <translation type="unfinished">Nepietiek bitkoinu</translation>
-    </message>
-    <message>
-        <source>Signing transaction failed</source>
-        <translation type="unfinished">Transakcijas parakstīšana neizdevās</translation>
-    </message>
-    <message>
-        <source>Transaction amount too small</source>
-        <translation type="unfinished">Transakcijas summa ir pārāk maza</translation>
-    </message>
-    <message>
-        <source>Transaction too large</source>
-        <translation type="unfinished">Transakcija ir pārāk liela</translation>
-    </message>
-    <message>
-        <source>Unknown network specified in -onlynet: '%s'</source>
-        <translation type="unfinished">-onlynet komandā norādīts nepazīstams tīkls: '%s'</translation>
-    </message>
-    </context>
-<context>
     <name>BitcoinGUI</name>
     <message>
         <source>&amp;Overview</source>
@@ -326,10 +287,6 @@
         <translation type="unfinished">&amp;Par %1</translation>
     </message>
     <message>
-        <source>Show information about %1</source>
-        <translation type="unfinished">Rādīt informāciju par %1</translation>
-    </message>
-    <message>
         <source>About &amp;Qt</source>
         <translation type="unfinished">Par &amp;Qt</translation>
     </message>
@@ -348,7 +305,7 @@
     <message>
         <source>Send coins to a Runebase address</source>
         <translation type="unfinished">Nosūtīt bitkoinus uz Runebase adresi</translation>
-   </message>
+    </message>
     <message>
         <source>Backup wallet to another location</source>
         <translation type="unfinished">Izveidot maciņa rezerves kopiju citur</translation>
@@ -376,7 +333,7 @@
     <message>
         <source>Sign messages with your Runebase addresses to prove you own them</source>
         <translation type="unfinished">Parakstīt ziņojumus ar savām Runebase adresēm lai pierādītu ka tās pieder tev</translation>
-   </message>
+    </message>
     <message>
         <source>Verify messages to ensure they were signed with specified Runebase addresses</source>
         <translation type="unfinished">Pārbaudīt ziņojumus lai pārliecinātos, ka tie tika parakstīti ar norādītajām Runebase adresēm</translation>
@@ -446,7 +403,7 @@
         <translation type="unfinished">&amp;Logs</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Runebase network.</source> 
+        <source>%n active connection(s) to Runebase network.</source>
         <extracomment>A substring of the tooltip.</extracomment>
         <translation type="unfinished">
             <numerusform />
@@ -715,8 +672,8 @@
         <translation type="unfinished">&amp;Tērēt neapstiprinātu atlikumu</translation>
     </message>
     <message>
-        <source>Automatically open the runebase client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation type="unfinished">Uz rūtera automātiski atvērt runebase klienta portu. Tas strādā tikai tad, ja rūteris atbalsta UPnP un tas ir ieslēgts.</translation>
+        <source>Automatically open the Runebase client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation type="unfinished">Uz rūtera automātiski atvērt Runebase klienta portu. Tas strādā tikai tad, ja rūteris atbalsta UPnP un tas ir ieslēgts.</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
@@ -768,7 +725,7 @@
     </message>
     <message>
         <source>Whether to show coin control features or not.</source>
-        <translation type="unfinished">Vai rādīt runebase kontroles funkcijas vai nē.</translation>
+        <translation type="unfinished">Vai rādīt Runebase kontroles funkcijas vai nē.</translation>
     </message>
     <message>
         <source>&amp;OK</source>
@@ -854,10 +811,6 @@
     </context>
 <context>
     <name>PSBTOperationsDialog</name>
-    <message>
-        <source>Dialog</source>
-        <translation type="unfinished">Dialogs</translation>
-    </message>
     <message>
         <source>Copy to Clipboard</source>
         <translation type="unfinished">Nokopēt</translation>
@@ -1199,7 +1152,7 @@
     <message>
         <source>Sign the message to prove you own this Runebase address</source>
         <translation type="unfinished">Parakstīt ziņojumu lai pierādītu, ka esi šīs Runebase adreses īpašnieks.</translation>
-  </message>
+    </message>
     <message>
         <source>Sign &amp;Message</source>
         <translation type="unfinished">Parakstīt &amp;Ziņojumu</translation>
@@ -1324,6 +1277,37 @@
     <message>
         <source>Export the data in the current tab to a file</source>
         <translation type="unfinished">Datus no tekošā ieliktņa eksportēt uz failu</translation>
+    </message>
+    </context>
+<context>
+    <name>bitcoin-core</name>
+    <message>
+        <source>Done loading</source>
+        <translation type="unfinished">Ielāde pabeigta</translation>
+    </message>
+    <message>
+        <source>Error loading block database</source>
+        <translation type="unfinished">Kļūda ielādējot bloku datubāzi</translation>
+    </message>
+    <message>
+        <source>Insufficient funds</source>
+        <translation type="unfinished">Nepietiek bitkoinu</translation>
+    </message>
+    <message>
+        <source>Signing transaction failed</source>
+        <translation type="unfinished">Transakcijas parakstīšana neizdevās</translation>
+    </message>
+    <message>
+        <source>Transaction amount too small</source>
+        <translation type="unfinished">Transakcijas summa ir pārāk maza</translation>
+    </message>
+    <message>
+        <source>Transaction too large</source>
+        <translation type="unfinished">Transakcija ir pārāk liela</translation>
+    </message>
+    <message>
+        <source>Unknown network specified in -onlynet: '%s'</source>
+        <translation type="unfinished">-onlynet komandā norādīts nepazīstams tīkls: '%s'</translation>
     </message>
     </context>
 </TS>

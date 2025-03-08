@@ -1,11 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The Bitcoin Core developers
+// Copyright (c) 2009-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_NODE_MINER_H
 #define BITCOIN_NODE_MINER_H
 
+#include <policy/policy.h>
 #include <primitives/block.h>
 #include <txmempool.h>
 #include <validation.h>
@@ -14,13 +15,18 @@
 #include <optional>
 #include <stdint.h>
 
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/indexed_by.hpp>
 #include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/tag.hpp>
 #include <boost/multi_index_container.hpp>
 
-class ChainstateManager;
+class ArgsManager;
 class CBlockIndex;
 class CChainParams;
 class CScript;
+class Chainstate;
+class ChainstateManager;
 #ifdef ENABLE_WALLET
 namespace wallet { class CWallet; };
 #endif
@@ -35,6 +41,8 @@ static const bool DEFAULT_STAKE = true;
 static const bool DEFAULT_STAKE_CACHE = true;
 
 static const bool DEFAULT_SUPER_STAKE = false;
+
+static const bool ENABLE_HARDWARE_STAKE = false;
 
 //How many seconds to look ahead and prepare a block for staking
 //Look ahead up to 3 "timeslots" in the future, 48 seconds
@@ -146,11 +154,11 @@ struct CompareModifiedEntry {
             // high gas limit but a low gas price which has a child with a low gas limit but a high gas price
             // Without this condition that transaction chain would get priority in being included into the block.
             // The two next checks are to see if all our ancestors have been added.
-            if(a.nSizeWithAncestors == a.iter->GetTxSize() && b.nSizeWithAncestors != b.iter->GetTxSize()) {
+            if((int64_t) a.nSizeWithAncestors == a.iter->GetTxSize() && (int64_t) b.nSizeWithAncestors != b.iter->GetTxSize()) {
                 return true;
             }
 
-            if(b.nSizeWithAncestors == b.iter->GetTxSize() && a.nSizeWithAncestors != a.iter->GetTxSize()) {
+            if((int64_t) b.nSizeWithAncestors == b.iter->GetTxSize() && (int64_t) a.nSizeWithAncestors != a.iter->GetTxSize()) {
                 return false;
             }
 
@@ -231,16 +239,12 @@ private:
     // The constructed block template
     std::unique_ptr<CBlockTemplate> pblocktemplate;
 
-    // Configuration parameters for the block size
-    unsigned int nBlockMaxWeight;
-    CFeeRate blockMinFeeRate;
-
     // Information on the current status of the block
     uint64_t nBlockWeight;
     uint64_t nBlockTx;
     uint64_t nBlockSigOpsCost;
     CAmount nFees;
-    CTxMemPool::setEntries inBlock;
+    std::unordered_set<Txid, SaltedTxidHasher> inBlock;
 
     // Chain context for the block
     int nHeight;
@@ -255,9 +259,11 @@ private:
 
 public:
     struct Options {
-        Options();
-        size_t nBlockMaxWeight;
-        CFeeRate blockMinFeeRate;
+        // Configuration parameters for the block size
+        mutable size_t nBlockMaxWeight{DEFAULT_BLOCK_MAX_WEIGHT};
+        CFeeRate blockMinFeeRate{DEFAULT_BLOCK_MIN_TX_FEE};
+        // Whether to call TestBlockValidity() at the end of CreateNewBlock().
+        bool test_block_validity{true};
     };
 
     explicit BlockAssembler(Chainstate& chainstate, const CTxMemPool* mempool);
@@ -288,6 +294,8 @@ public:
     inline static std::optional<int64_t> m_last_block_weight{};
 
 private:
+    const Options m_options;
+
     // utility functions
     /** Clear the block's state and prepare for assembling a new block */
     void resetBlock();
@@ -320,7 +328,7 @@ private:
 
 #ifdef ENABLE_WALLET
 /** Generate a new block, without valid proof-of-work */
-void StakeRunebases(bool fStake, wallet::CWallet *pwallet, boost::thread_group*& stakeThread);
+void StakeRunebases(bool fStake, wallet::CWallet *pwallet);
 void RefreshDelegates(wallet::CWallet *pwallet, bool myDelegates, bool stakerDelegates);
 #endif
 
@@ -328,6 +336,9 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
 
 /** Update an old GenerateCoinbaseCommitment from CreateNewBlock after the block txs have changed */
 void RegenerateCommitments(CBlock& block, ChainstateManager& chainman);
+
+/** Apply -blockmintxfee and -blockmaxweight options from ArgsManager to BlockAssembler options. */
+void ApplyArgsManOptions(const ArgsManager& gArgs, BlockAssembler::Options& options);
 
 /** Check if staking is enabled */
 bool CanStake();

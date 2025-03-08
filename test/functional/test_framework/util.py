@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2021 The Bitcoin Core developers
+# Copyright (c) 2014-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Helpful routines for regression testing."""
@@ -13,14 +13,15 @@ import inspect
 import json
 import logging
 import os
-import random
+import pathlib
+import platform
 import re
 import time
-import unittest
 
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 from .runebaseconfig import COINBASE_MATURITY
 logger = logging.getLogger("TestFramework.utils")
@@ -212,15 +213,8 @@ def check_json_precision():
         raise RuntimeError("JSON encode/decode loses precision")
 
 
-def EncodeDecimal(o):
-    if isinstance(o, Decimal):
-        return str(o)
-    raise TypeError(repr(o) + " is not JSON serializable")
-
-
 def count_bytes(hex_string):
     return len(bytearray.fromhex(hex_string))
-
 
 def hex_str_to_bytes(hex_str):
     return unhexlify(hex_str.encode('ascii'))
@@ -228,7 +222,6 @@ def hex_str_to_bytes(hex_str):
 
 def bytes_to_hex_str(byte_str):
     return hexlify(byte_str).decode('ascii')
-
 
 def str_to_b64str(string):
     return b64encode(string.encode('utf-8')).decode('ascii')
@@ -256,7 +249,7 @@ def satoshi_round(amount):
     return Decimal(amount).quantize(Decimal('0.00000001'), rounding=ROUND_DOWN)
 
 
-def wait_until_helper(predicate, *, attempts=float('inf'), timeout=float('inf'), lock=None, timeout_factor=1.0):
+def wait_until_helper_internal(predicate, *, attempts=float('inf'), timeout=float('inf'), lock=None, timeout_factor=1.0):
     """Sleep until the predicate resolves to be True.
 
     Warning: Note that this method is not recommended to be used in tests as it is
@@ -302,12 +295,6 @@ def sha256sum_file(filename):
     return h.digest()
 
 
-# TODO: Remove and use random.randbytes(n) instead, available in Python 3.9
-def random_bytes(n):
-    """Return a random bytes object of length n."""
-    return bytes(random.getrandbits(8) for i in range(n))
-
-
 # RPC/P2P connection constants and functions
 ############################################
 
@@ -324,7 +311,7 @@ class PortSeed:
     n = None
 
 
-def get_rpc_proxy(url: str, node_number: int, *, timeout: int=None, coveragedir: str=None) -> coverage.AuthServiceProxyWrapper:
+def get_rpc_proxy(url: str, node_number: int, *, timeout: Optional[int]=None, coveragedir: Optional[str]=None) -> coverage.AuthServiceProxyWrapper:
     """
     Args:
         url: URL of the RPC server to call
@@ -400,6 +387,8 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
             f.write("[{}]\n".format(chain_name_conf_section))
         f.write("port=" + str(p2p_port(n)) + "\n")
         f.write("rpcport=" + str(rpc_port(n)) + "\n")
+        # Disable server-side timeouts to avoid intermittent issues
+        f.write("rpcservertimeout=99000\n")
         f.write("rpcdoccheck=1\n")
         f.write("fallbackfee=0.0002\n")
         f.write("server=1\n")
@@ -417,6 +406,7 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
         f.write("upnp=0\n")
         f.write("natpmp=0\n")
         f.write("shrinkdebugfile=0\n")
+        f.write("deprecatedrpc=create_bdb\n")  # Required to run the tests
         # To improve SQLite wallet performance so that the tests don't timeout, use -unsafesqlitesync
         f.write("unsafesqlitesync=1\n")
         if disable_autoconnect:
@@ -425,7 +415,23 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
 
 
 def get_datadir_path(dirname, n):
-    return os.path.join(dirname, "node" + str(n))
+    return pathlib.Path(dirname) / f"node{n}"
+
+
+def get_temp_default_datadir(temp_dir: pathlib.Path) -> tuple[dict, pathlib.Path]:
+    """Return os-specific environment variables that can be set to make the
+    GetDefaultDataDir() function return a datadir path under the provided
+    temp_dir, as well as the complete path it would return."""
+    if platform.system() == "Windows":
+        env = dict(APPDATA=str(temp_dir))
+        datadir = temp_dir / "Runebase"
+    else:
+        env = dict(HOME=str(temp_dir))
+        if platform.system() == "Darwin":
+            datadir = temp_dir / "Library/Application Support/Runebase"
+        else:
+            datadir = temp_dir / ".runebase"
+    return env, datadir
 
 
 def append_config(datadir, options):
@@ -485,19 +491,6 @@ def check_node_connections(*, node, num_in, num_out):
 # Transaction/Block functions
 #############################
 
-
-def find_output(node, txid, amount, *, blockhash=None):
-    """
-    Return index to output of txid with value amount
-    Raises exception if there is none.
-    """
-    txdata = node.getrawtransaction(txid, 1, blockhash)
-    for i in range(len(txdata["vout"])):
-        if txdata["vout"][i]["value"] == amount:
-            return i
-    raise RuntimeError("find_output txid %s : %s not found" % (txid, str(amount)))
-
-
 def sync_blocks(rpc_connections, *, wait=1, timeout=60):
     """
     Wait until everybody has the same tip.
@@ -515,28 +508,6 @@ def sync_blocks(rpc_connections, *, wait=1, timeout=60):
         assert (all([len(x.getpeerinfo()) for x in rpc_connections]))
         time.sleep(wait)
     raise AssertionError("Block sync timed out:{}".format("".join("\n  {!r}".format(b) for b in best_hash)))
-
-
-def chain_transaction(node, parent_txids, vouts, value, fee, num_outputs):
-    """Build and send a transaction that spends the given inputs (specified
-    by lists of parent_txid:vout each), with the desired total value and fee,
-    equally divided up to the desired number of outputs.
-
-    Returns a tuple with the txid and the amount sent per output.
-    """
-    send_value = satoshi_round((value - fee)/num_outputs)
-    inputs = []
-    for (txid, vout) in zip(parent_txids, vouts):
-        inputs.append({'txid' : txid, 'vout' : vout})
-    outputs = {}
-    for _ in range(num_outputs):
-        outputs[node.getnewaddress()] = send_value
-    rawtx = node.createrawtransaction(inputs, outputs, 0, True)
-    signedtx = node.signrawtransactionwithwallet(rawtx)
-    txid = node.sendrawtransaction(signedtx['hex'])
-    fulltx = node.getrawtransaction(txid, 1)
-    assert len(fulltx['vout']) == num_outputs  # make sure we didn't generate a change output
-    return (txid, send_value)
 
 
 # Create large OP_RETURN txouts that can be appended to a transaction
@@ -586,33 +557,3 @@ def find_vout_for_address(node, txid, addr):
         if addr == tx["vout"][i]["scriptPubKey"]["address"]:
             return i
     raise RuntimeError("Vout not found for address: txid=%s, addr=%s" % (txid, addr))
-
-def modinv(a, n):
-    """Compute the modular inverse of a modulo n using the extended Euclidean
-    Algorithm. See https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm#Modular_integers.
-    """
-    # TODO: Change to pow(a, -1, n) available in Python 3.8
-    t1, t2 = 0, 1
-    r1, r2 = n, a
-    while r2 != 0:
-        q = r1 // r2
-        t1, t2 = t2, t1 - q * t2
-        r1, r2 = r2, r1 - q * r2
-    if r1 > 1:
-        return None
-    if t1 < 0:
-        t1 += n
-    return t1
-
-class TestFrameworkUtil(unittest.TestCase):
-    def test_modinv(self):
-        test_vectors = [
-            [7, 11],
-            [11, 29],
-            [90, 13],
-            [1891, 3797],
-            [6003722857, 77695236973],
-        ]
-
-        for a, n in test_vectors:
-            self.assertEqual(modinv(a, n), pow(a, n-2, n))

@@ -12,10 +12,13 @@ import subprocess
 pp = pprint.PrettyPrinter()
 
 class RunebaseEVMConstantinopleOpcodesTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
-        self.extra_args = [['-txindex=1', '-logevents=1', '-constantinopleheight=1000000', '-muirglacierheight=1000000', '-londonheight=1000000', '-shanghaiheight=1000000']]
+        self.extra_args = [['-txindex=1', '-logevents=1', '-constantinopleheight=1000000', '-muirglacierheight=1000000', '-londonheight=1000000', '-shanghaiheight=1000000', '-cancunheight=100000']]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()

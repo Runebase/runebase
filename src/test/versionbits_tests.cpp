@@ -1,11 +1,13 @@
-// Copyright (c) 2014-2021 The Bitcoin Core developers
+// Copyright (c) 2014-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <chain.h>
 #include <chainparams.h>
 #include <consensus/params.h>
+#include <test/util/random.h>
 #include <test/util/setup_common.h>
+#include <util/chaintype.h>
 #include <versionbits.h>
 
 #include <boost/test/unit_test.hpp>
@@ -13,7 +15,7 @@
 /* Define a virtual block time, one block per 10 minutes after Nov 14 2014, 0:55:36am */
 static int32_t TestTime(int nHeight) { return 1415926536 + 600 * nHeight; }
 
-static const std::string StateName(ThresholdState state)
+static std::string StateName(ThresholdState state)
 {
     switch (state) {
     case ThresholdState::DEFINED:   return "DEFINED";
@@ -417,12 +419,12 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
 
     // check that any deployment on any chain can conceivably reach both
     // ACTIVE and FAILED states in roughly the way we expect
-    for (const auto& chain_name : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET, CBaseChainParams::SIGNET, CBaseChainParams::UNITTEST}) {
-        const auto chainParams = CreateChainParams(*m_node.args, chain_name);
+    for (const auto& chain_type: {ChainType::MAIN, ChainType::TESTNET, ChainType::SIGNET, ChainType::UNITTEST}) {
+        const auto chainParams = CreateChainParams(*m_node.args, chain_type);
         uint32_t chain_all_vbits{0};
         for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; ++i) {
             const auto dep = static_cast<Consensus::DeploymentPos>(i);
-            // Check that no bits are re-used (within the same chain). This is
+            // Check that no bits are reused (within the same chain). This is
             // disallowed because the transition to FAILED (on timeout) does
             // not take precedence over STARTED/LOCKED_IN. So all softforks on
             // the same bit might overlap, even when non-overlapping start-end
@@ -439,7 +441,7 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
         // deployment that's not always/never active
         ArgsManager args;
         args.ForceSetArg("-vbparams", "testdummy:1199145601:1230767999"); // January 1, 2008 - December 31, 2008
-        const auto chainParams = CreateChainParams(args, CBaseChainParams::UNITTEST);
+        const auto chainParams = CreateChainParams(args, ChainType::UNITTEST);
         check_computeblockversion(vbcache, chainParams->GetConsensus(), Consensus::DEPLOYMENT_TESTDUMMY);
     }
 
@@ -449,7 +451,7 @@ BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
         // live deployment
         ArgsManager args;
         args.ForceSetArg("-vbparams", "testdummy:1199145601:1230767999:401760"); // January 1, 2008 - December 31, 2008, min act height 401760
-        const auto chainParams = CreateChainParams(args, CBaseChainParams::UNITTEST);
+        const auto chainParams = CreateChainParams(args, ChainType::UNITTEST);
         check_computeblockversion(vbcache, chainParams->GetConsensus(), Consensus::DEPLOYMENT_TESTDUMMY);
     }
 }

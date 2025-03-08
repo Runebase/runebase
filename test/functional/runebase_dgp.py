@@ -14,6 +14,9 @@ import time
 
 
 class RunebaseDGPTest(BitcoinTestFramework):
+    def add_options(self, parser):
+        self.add_wallet_options(parser)
+
     def set_test_params(self, split=False):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -909,7 +912,7 @@ class RunebaseDGPTest(BitcoinTestFramework):
         state.current_on_vote_address_proposals[1][1] = state.gov_keys[-1]
         state.assert_state()
 
-        # Now make sure that accepting one proposal has the desired affect on the the other proposals
+        # Now make sure that accepting one proposal has the desired affect on the other proposals
         # Accepting a proposal for removing keys should reset the addAddressProposals
         state.send_remove_address_proposal(state.admin_keys[-1], 0, keyhash_to_p2pkh(hex_str_to_bytes(state.admin_keys[1])))
         self.node.generate(1)

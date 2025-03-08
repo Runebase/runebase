@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2021 The Bitcoin Core developers
+// Copyright (c) 2011-2022 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -32,7 +32,6 @@ QT_END_NAMESPACE
 
 enum class BlockSource {
     NONE,
-    REINDEX,
     DISK,
     NETWORK
 };
@@ -59,6 +58,8 @@ public:
     explicit ClientModel(interfaces::Node& node, OptionsModel *optionsModel, QObject *parent = nullptr);
     ~ClientModel();
 
+    void stop();
+
     interfaces::Node& node() const { return m_node; }
     OptionsModel *getOptionsModel();
     PeerTableModel *getPeerTableModel();
@@ -72,8 +73,8 @@ public:
     int getHeaderTipHeight() const;
     int64_t getHeaderTipTime() const;
 
-    //! Returns enum BlockSource of the current importing/syncing state
-    enum BlockSource getBlockSource() const;
+    //! Returns the block source of the current importing/syncing state
+    BlockSource getBlockSource() const;
     //! Return warnings to be displayed in status bar
     QString getStatusBarWarnings() const;
 
@@ -93,21 +94,15 @@ public:
 
     Mutex m_cached_tip_mutex;
     uint256 m_cached_tip_blocks GUARDED_BY(m_cached_tip_mutex){};
-    bool fBatchProcessingMode;
+    bool fBatchProcessingMode{true};
 
 private:
     interfaces::Node& m_node;
-    std::unique_ptr<interfaces::Handler> m_handler_show_progress;
-    std::unique_ptr<interfaces::Handler> m_handler_notify_num_connections_changed;
-    std::unique_ptr<interfaces::Handler> m_handler_notify_network_active_changed;
-    std::unique_ptr<interfaces::Handler> m_handler_notify_alert_changed;
-    std::unique_ptr<interfaces::Handler> m_handler_banned_list_changed;
-    std::unique_ptr<interfaces::Handler> m_handler_notify_block_tip;
-    std::unique_ptr<interfaces::Handler> m_handler_notify_header_tip;
+    std::vector<std::unique_ptr<interfaces::Handler>> m_event_handlers;
     OptionsModel *optionsModel;
-    PeerTableModel *peerTableModel;
+    PeerTableModel* peerTableModel{nullptr};
     PeerTableSortProxy* m_peer_table_sort_proxy{nullptr};
-    BanTableModel *banTableModel;
+    BanTableModel* banTableModel{nullptr};
 
     //! A thread to interact with m_node asynchronously
     QThread* const m_thread;
@@ -131,7 +126,6 @@ Q_SIGNALS:
 
     // Show progress dialog e.g. for verifychain
     void showProgress(const QString &title, int nProgress);
-
 public Q_SLOTS:
     void updateTip();
 };

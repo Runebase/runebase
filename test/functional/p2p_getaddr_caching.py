@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 The Bitcoin Core developers
+# Copyright (c) 2020-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test addr response caching"""
 
 import time
 
-from test_framework.messages import msg_getaddr
 from test_framework.p2p import (
     P2PInterface,
     p2p_lock
@@ -20,6 +19,7 @@ from test_framework.util import (
 # As defined in net_processing.
 MAX_ADDR_TO_SEND = 1000
 MAX_PCT_ADDR_TO_SEND = 23
+
 
 class AddrReceiver(P2PInterface):
 
@@ -60,7 +60,7 @@ class AddrTest(BitcoinTestFramework):
 
         # Need to make sure we hit MAX_ADDR_TO_SEND records in the addr response later because
         # only a fraction of all known addresses can be cached and returned.
-        assert(len(self.nodes[0].getnodeaddresses(0)) > int(MAX_ADDR_TO_SEND / (MAX_PCT_ADDR_TO_SEND / 100)))
+        assert len(self.nodes[0].getnodeaddresses(0)) > int(MAX_ADDR_TO_SEND / (MAX_PCT_ADDR_TO_SEND / 100))
 
         last_response_on_local_bind = None
         last_response_on_onion_bind1 = None
@@ -70,11 +70,8 @@ class AddrTest(BitcoinTestFramework):
         cur_mock_time = int(time.time())
         for i in range(N):
             addr_receiver_local = self.nodes[0].add_p2p_connection(AddrReceiver())
-            addr_receiver_local.send_and_ping(msg_getaddr())
             addr_receiver_onion1 = self.nodes[0].add_p2p_connection(AddrReceiver(), dstport=self.onion_port1)
-            addr_receiver_onion1.send_and_ping(msg_getaddr())
             addr_receiver_onion2 = self.nodes[0].add_p2p_connection(AddrReceiver(), dstport=self.onion_port2)
-            addr_receiver_onion2.send_and_ping(msg_getaddr())
 
             # Trigger response
             cur_mock_time += 5 * 60
@@ -85,9 +82,9 @@ class AddrTest(BitcoinTestFramework):
 
             if i > 0:
                 # Responses from different binds should be unique
-                assert(last_response_on_local_bind != addr_receiver_onion1.get_received_addrs())
-                assert(last_response_on_local_bind != addr_receiver_onion2.get_received_addrs())
-                assert(last_response_on_onion_bind1 != addr_receiver_onion2.get_received_addrs())
+                assert last_response_on_local_bind != addr_receiver_onion1.get_received_addrs()
+                assert last_response_on_local_bind != addr_receiver_onion2.get_received_addrs()
+                assert last_response_on_onion_bind1 != addr_receiver_onion2.get_received_addrs()
                 # Responses on from the same bind should be the same
                 assert_equal(last_response_on_local_bind, addr_receiver_local.get_received_addrs())
                 assert_equal(last_response_on_onion_bind1, addr_receiver_onion1.get_received_addrs())
@@ -105,11 +102,8 @@ class AddrTest(BitcoinTestFramework):
 
         self.log.info('After time passed, see a new response to addr request')
         addr_receiver_local = self.nodes[0].add_p2p_connection(AddrReceiver())
-        addr_receiver_local.send_and_ping(msg_getaddr())
         addr_receiver_onion1 = self.nodes[0].add_p2p_connection(AddrReceiver(), dstport=self.onion_port1)
-        addr_receiver_onion1.send_and_ping(msg_getaddr())
         addr_receiver_onion2 = self.nodes[0].add_p2p_connection(AddrReceiver(), dstport=self.onion_port2)
-        addr_receiver_onion2.send_and_ping(msg_getaddr())
 
         # Trigger response
         cur_mock_time += 5 * 60
@@ -119,9 +113,10 @@ class AddrTest(BitcoinTestFramework):
         addr_receiver_onion2.wait_until(addr_receiver_onion2.addr_received)
 
         # new response is different
-        assert(set(last_response_on_local_bind) != set(addr_receiver_local.get_received_addrs()))
-        assert(set(last_response_on_onion_bind1) != set(addr_receiver_onion1.get_received_addrs()))
-        assert(set(last_response_on_onion_bind2) != set(addr_receiver_onion2.get_received_addrs()))
+        assert set(last_response_on_local_bind) != set(addr_receiver_local.get_received_addrs())
+        assert set(last_response_on_onion_bind1) != set(addr_receiver_onion1.get_received_addrs())
+        assert set(last_response_on_onion_bind2) != set(addr_receiver_onion2.get_received_addrs())
+
 
 if __name__ == '__main__':
     AddrTest().main()

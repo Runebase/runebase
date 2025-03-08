@@ -7,7 +7,7 @@
 #include <qt/execrpccommand.h>
 #include <qt/walletmodel.h>
 #include <util/strencodings.h>
-#include <util/system.h>
+#include <common/system.h>
 #include <runebase/runebaseledger.h>
 #include <chainparams.h>
 #include <outputtype.h>
@@ -29,7 +29,9 @@ static const QString PARAM_REQUESTS = "requests";
 static const QString PARAM_PSBT = "psbt";
 static const QString PARAM_HEXTX = "hextx";
 static const QString PARAM_MAXFEERATE = "maxfeerate";
+static const QString PARAM_MAXBURNAMOUNT = "maxburnamount";
 static const QString PARAM_SHOWCONTRACTDATA = "showcontractdata";
+static const QString PARAM_ADDRESS = "address";
 static const QString LOAD_FORMAT = ":/ledger/%1_load";
 static const QString DELETE_FORMAT = ":/ledger/%1_delete";
 static const QString RC_PATH_FORMAT = ":/ledger";
@@ -45,12 +47,15 @@ public:
         cmdRescan = new ExecRPCCommand("rescanblockchain", QStringList(), optionalRescan,  QMap<QString, QString>(), parent);
         QStringList mandatoryImport = QStringList() << PARAM_REQUESTS;
         cmdImport = new ExecRPCCommand("importmulti", mandatoryImport, QStringList(),  QMap<QString, QString>(), parent);
+        cmdImportDesc = new ExecRPCCommand("importdescriptors", mandatoryImport, QStringList(),  QMap<QString, QString>(), parent);
         QStringList mandatoryFinalize = QStringList() << PARAM_PSBT;
         cmdFinalize = new ExecRPCCommand("finalizepsbt", mandatoryFinalize, QStringList(),  QMap<QString, QString>(), parent);
-        QStringList mandatorySend = QStringList() << PARAM_HEXTX << PARAM_MAXFEERATE << PARAM_SHOWCONTRACTDATA;
+        QStringList mandatorySend = QStringList() << PARAM_HEXTX << PARAM_MAXFEERATE << PARAM_MAXBURNAMOUNT << PARAM_SHOWCONTRACTDATA;
         cmdSend = new ExecRPCCommand("sendrawtransaction", mandatorySend, QStringList(),  QMap<QString, QString>(), parent);
         QStringList mandatoryDecode = QStringList() << PARAM_PSBT;
         cmdDecode = new ExecRPCCommand("decodepsbt", mandatoryDecode, QStringList(),  QMap<QString, QString>(), parent);
+        QStringList mandatoryAddressInfo = QStringList() << PARAM_ADDRESS;
+        cmdAddressInfo = new ExecRPCCommand("getaddressinfo", mandatoryAddressInfo, QStringList(),  QMap<QString, QString>(), parent);
     }
 
     std::atomic<bool> fStarted{false};
@@ -62,9 +67,11 @@ public:
 
     ExecRPCCommand* cmdRescan = 0;
     ExecRPCCommand* cmdImport = 0;
+    ExecRPCCommand* cmdImportDesc = 0;
     ExecRPCCommand* cmdFinalize = 0;
     ExecRPCCommand* cmdSend = 0;
     ExecRPCCommand* cmdDecode = 0;
+    ExecRPCCommand* cmdAddressInfo = 0;
     WalletModel* model = 0;
 };
 
@@ -155,7 +162,7 @@ bool RunebaseHwiTool::getKeyPool(const QString &fingerprint, int type, const QSt
     {
         strPath += internal ? "/1/*" : "/0/*";
     }
-    bool ret = RunebaseLedger::instance().getKeyPool(strFingerprint, type, strPath, internal, d->from, d->to, strDesc);
+    bool ret = RunebaseLedger::instance().getKeyPool(strFingerprint, type, strPath, internal, d->from, d->to, isDescriptorWallet(), strDesc);
     desc = QString::fromStdString(strDesc);
     if(ret)
     {
@@ -269,6 +276,18 @@ bool RunebaseHwiTool::signDelegate(const QString &fingerprint, QString &psbt)
     return true;
 }
 
+bool RunebaseHwiTool::displayAddress(const QString &fingerprint, const QString &desc, QString &address)
+{
+    LOCK(cs_ledger);
+    std::string strFingerprint = fingerprint.toStdString();
+    std::string strDesc = desc.toStdString();
+    std::string strAddress;
+    bool ret = RunebaseLedger::instance().displayAddress(strFingerprint, strDesc, strAddress);
+    address = QString::fromStdString(strAddress);
+    if(!ret) d->strError = QString::fromStdString(RunebaseLedger::instance().errorMessage());
+    return ret;
+}
+
 QString RunebaseHwiTool::errorMessage()
 {
     // Get the last error message
@@ -340,7 +359,8 @@ bool RunebaseHwiTool::importAddresses(const QString &desc)
     ExecRPCCommand::appendParam(lstParams, PARAM_REQUESTS, desc);
 
     // Exec RPC
-    if(!execRPC(d->cmdImport, lstParams, result, resultJson))
+    ExecRPCCommand* cmd = isDescriptorWallet() ? d->cmdImportDesc : d->cmdImport;
+    if(!execRPC(cmd, lstParams, result, resultJson))
         return false;
 
     // Parse results
@@ -400,6 +420,7 @@ bool RunebaseHwiTool::sendRawTransaction(const QString &hexTx, QVariantMap& vari
     QString resultStr;
     ExecRPCCommand::appendParam(lstParams, PARAM_HEXTX, hexTx);
     ExecRPCCommand::appendParam(lstParams, PARAM_MAXFEERATE, "null");
+    ExecRPCCommand::appendParam(lstParams, PARAM_MAXBURNAMOUNT, "null");
     ExecRPCCommand::appendParam(lstParams, PARAM_SHOWCONTRACTDATA, "true");
 
     // Exec RPC
@@ -440,6 +461,27 @@ bool RunebaseHwiTool::decodePsbt(const QString &psbt, QString &decoded)
     return true;
 }
 
+bool RunebaseHwiTool::getAddressDesc(const QString &address, QString &desc)
+{
+    if(!d->model) return false;
+
+    // Add params for RPC
+    QMap<QString, QString> lstParams;
+    QVariant result;
+    QString resultJson;
+    ExecRPCCommand::appendParam(lstParams, PARAM_ADDRESS, address);
+
+    // Exec RPC
+    if(!execRPC(d->cmdAddressInfo, lstParams, result, resultJson))
+        return false;
+
+    // Parse results
+    QVariantMap variantMap = result.toMap();
+    desc = variantMap.value("desc").toString();
+
+    return !desc.isEmpty();
+}
+
 void RunebaseHwiTool::setModel(WalletModel *model)
 {
     d->model = model;
@@ -459,6 +501,12 @@ void RunebaseHwiTool::addError(const QString &error)
     if(d->strError != "")
         d->strError += "\n";
     d->strError += error;
+}
+
+bool RunebaseHwiTool::isDescriptorWallet()
+{
+    if(!d->model) return false;
+    return d->model->wallet().hasDescriptors();
 }
 
 QString RunebaseHwiTool::derivationPathPKH()

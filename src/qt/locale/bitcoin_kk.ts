@@ -58,17 +58,9 @@
         <translation type="unfinished">Т&amp;аңдау</translation>
     </message>
     <message>
-        <source>Sending addresses</source>
-        <translation type="unfinished">Жіберуші мекенжайлар</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation type="unfinished">Қабылдаушы мекенжайлар</translation>
-    </message>
-    <message>
         <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation type="unfinished">Бұл сіздің төлем жіберетін Runebase мекенжайларыңыз. Тиын жібермес бұрын, әрқашан сома мен алушы мекенжайды тексеріңіз.</translation> 
-   </message>
+        <translation type="unfinished">Бұл сіздің төлем жіберетін Runebase мекенжайларыңыз. Тиын жібермес бұрын, әрқашан сома мен алушы мекенжайды тексеріңіз.</translation>
+    </message>
     <message>
         <source>&amp;Copy Address</source>
         <translation type="unfinished">&amp;Мекенжайды көшіру</translation>
@@ -160,7 +152,7 @@
     <message>
         <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR RUNEBASES&lt;/b&gt;!</source>
         <translation type="unfinished">Ескерту: әмияныңызды шифрлап, құпиясөйлеміңізден айырылып қалсаңыз, &lt;b&gt;БАРЛЫҚ RUNEBASE-ІҢІЗДЕН ДЕ АЙЫРЫЛАСЫЗ&lt;/b&gt;!</translation>
-   </message>
+    </message>
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
         <translation type="unfinished">Әмияныңызды шифрлағыңыз келе ме?</translation>
@@ -178,7 +170,7 @@
         <translation type="unfinished">Әмияныңыздың ескі құпиясөйлемі мен жаңа құпиясөйлемін енгізіңіз.</translation>
     </message>
     <message>
-        <source>Remember that encrypting your wallet cannot fully protect your runebases from being stolen by malware infecting your computer.</source> 
+        <source>Remember that encrypting your wallet cannot fully protect your runebases from being stolen by malware infecting your computer.</source>
         <translation type="unfinished">Шифрлау биткоиніңізді компьютер жұқтырған зиянды БЖ-дан толығымен қорғай алмайтынын есіңізде сақтаңыз.</translation>
     </message>
     <message>
@@ -243,14 +235,6 @@
 <context>
     <name>QObject</name>
     <message>
-        <source>Error: Specified data directory "%1" does not exist.</source>
-        <translation type="unfinished">Қате: берілген "%1" дерек директориясы жоқ.</translation>
-    </message>
-    <message>
-        <source>Error: Cannot parse configuration file: %1.</source>
-        <translation type="unfinished">Қате: конфигурация файлы талданбайды: %1.</translation>
-    </message>
-    <message>
         <source>Error: %1</source>
         <translation type="unfinished">Қате: %1</translation>
     </message>
@@ -307,25 +291,6 @@
             <numerusform />
             <numerusform />
         </translation>
-    </message>
-    </context>
-<context>
-    <name>bitcoin-core</name>
-    <message>
-        <source>Invalid amount for -fallbackfee=&lt;amount&gt;: '%s'</source>
-        <translation type="unfinished">-fallbackfee=&lt;amount&gt; үшін қате сан: "%s"</translation>
-    </message>
-    <message>
-        <source>Transaction amount too small</source>
-        <translation type="unfinished">Транзакция өте кішкентай</translation>
-    </message>
-    <message>
-        <source>Transaction too large</source>
-        <translation type="unfinished">Транзакция өте үлкен</translation>
-    </message>
-    <message>
-        <source>Verifying wallet(s)…</source>
-        <translation type="unfinished">Әмиян(дар) тексерілуде…</translation>
     </message>
     </context>
 <context>
@@ -394,7 +359,7 @@
     <message>
         <source>Send coins to a Runebase address</source>
         <translation type="unfinished">Runebase мекенжайына тиын жіберу</translation>
-   </message>
+    </message>
     <message>
         <source>Backup wallet to another location</source>
         <translation type="unfinished">Басқа локацияға әмиянның резервтік көшірмесін жасау</translation>
@@ -438,15 +403,15 @@
     <message>
         <source>Sign messages with your Runebase addresses to prove you own them</source>
         <translation type="unfinished">Хатқа Runebase мекенжайларын қосып, олар сізге тиесілі екенін дәлелдеу</translation>
-   </message>
+    </message>
     <message>
         <source>&amp;Verify message…</source>
         <translation type="unfinished">&amp;Хат тексеру…</translation>
     </message>
     <message>
         <source>Verify messages to ensure they were signed with specified Runebase addresses</source>
-        <translation type="unfinished">Хат тексеріп, берілген Runebase мекенжайлары қосылғанына көз жеткізу</translation> 
-   </message>
+        <translation type="unfinished">Хат тексеріп, берілген Runebase мекенжайлары қосылғанына көз жеткізу</translation>
+    </message>
     <message>
         <source>&amp;Load PSBT from file…</source>
         <translation type="unfinished">&amp;Файлдан PSBT жүктеу…</translation>
@@ -496,11 +461,7 @@
         <translation type="unfinished">Дискідегі блоктар инедекстелуде...</translation>
     </message>
     <message>
-        <source>Reindexing blocks on disk…</source>
-        <translation type="unfinished">Дискідегі блоктар қайта индекстелуде…</translation>
-    </message>
-    <message>
-        <source>Request payments (generates QR codes and runebase: URIs)</source> 
+        <source>Request payments (generates QR codes and runebase: URIs)</source>
         <translation type="unfinished">Төлем талап ету (QR кодтары мен биткоин құрады: URI)</translation>
     </message>
     <message>
@@ -520,7 +481,7 @@
     </message>
     <message>
         <source>%1 behind</source>
-        <translation type="unfinished">%1 қалмады</translation>
+        <translation type="unfinished">%1 артта</translation>
     </message>
     <message>
         <source>Catching up…</source>
@@ -528,7 +489,7 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">қате</translation>
+        <translation type="unfinished">Қате</translation>
     </message>
     <message>
         <source>Warning</source>
@@ -536,7 +497,7 @@
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished">Информация</translation>
+        <translation type="unfinished">Ақпарат</translation>
     </message>
     <message>
         <source>Up to date</source>
@@ -559,7 +520,7 @@
         <translation type="unfinished">&amp;Терезе</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Runebase network.</source> 
+        <source>%n active connection(s) to Runebase network.</source>
         <extracomment>A substring of the tooltip.</extracomment>
         <translation type="unfinished">
             <numerusform />
@@ -582,10 +543,6 @@
         <translation type="unfinished">Комиссия</translation>
     </message>
     <message>
-        <source>Dust:</source>
-        <translation type="unfinished">Шаң</translation>
-    </message>
-    <message>
         <source>After Fee:</source>
         <translation type="unfinished">Комиссия алу кейін</translation>
     </message>
@@ -604,10 +561,6 @@
     <message>
         <source>Confirmed</source>
         <translation type="unfinished">Растық</translation>
-    </message>
-    <message>
-        <source>yes</source>
-        <translation type="unfinished">Иа</translation>
     </message>
     <message>
         <source>(no label)</source>
@@ -646,7 +599,7 @@
 <context>
     <name>Intro</name>
     <message>
-        <source>Runebase</source> 
+        <source>Runebase</source>
         <translation type="unfinished">Биткоин</translation>
     </message>
     <message numerus="yes">
@@ -684,7 +637,7 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">қате</translation>
+        <translation type="unfinished">Қате</translation>
     </message>
     <message>
         <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
@@ -715,7 +668,7 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">қате</translation>
+        <translation type="unfinished">Қате</translation>
     </message>
     </context>
 <context>
@@ -802,10 +755,6 @@
     <message>
         <source>After Fee:</source>
         <translation type="unfinished">Комиссия алу кейін</translation>
-    </message>
-    <message>
-        <source>Dust:</source>
-        <translation type="unfinished">Шаң</translation>
     </message>
     <message numerus="yes">
         <source>Estimated to begin confirmation within %n block(s).</source>
@@ -910,7 +859,7 @@
     </message>
     <message>
         <source>Error</source>
-        <translation type="unfinished">қате</translation>
+        <translation type="unfinished">Қате</translation>
     </message>
     </context>
 <context>
@@ -922,6 +871,21 @@
     <message>
         <source>Export the data in the current tab to a file</source>
         <translation type="unfinished">Қазіргі қойыншадағы деректерді файлға экспорттау</translation>
+    </message>
+    </context>
+<context>
+    <name>bitcoin-core</name>
+    <message>
+        <source>Transaction amount too small</source>
+        <translation type="unfinished">Транзакция өте кішкентай</translation>
+    </message>
+    <message>
+        <source>Transaction too large</source>
+        <translation type="unfinished">Транзакция өте үлкен</translation>
+    </message>
+    <message>
+        <source>Verifying wallet(s)…</source>
+        <translation type="unfinished">Әмиян(дар) тексерілуде…</translation>
     </message>
     </context>
 </TS>

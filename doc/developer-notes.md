@@ -109,6 +109,12 @@ code.
   - `++i` is preferred over `i++`.
   - `nullptr` is preferred over `NULL` or `(void*)0`.
   - `static_assert` is preferred over `assert` where possible. Generally; compile-time checking is preferred over run-time checking.
+  - Use a named cast or functional cast, not a C-Style cast. When casting
+    between integer types, use functional casts such as `int(x)` or `int{x}`
+    instead of `(int) x`. When casting between more complex types, use `static_cast`.
+    Use `reinterpret_cast` and `const_cast` as appropriate.
+  - Prefer [`list initialization ({})`](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Res-list) where possible.
+    For example `int x{0};` instead of `int x = 0;` or `int x(0);`
 
 For function calls a namespace should be specified explicitly, unless such functions have been declared within it.
 Otherwise, [argument-dependent lookup](https://en.cppreference.com/w/cpp/language/adl), also known as ADL, could be
@@ -134,7 +140,7 @@ int main()
 
 Block style example:
 ```c++
-int g_count = 0;
+int g_count{0};
 
 namespace foo {
 class Class
@@ -146,7 +152,7 @@ public:
     {
         // Comment summarising what this section of code does
         for (int i = 0; i < n; ++i) {
-            int total_sum = 0;
+            int total_sum{0};
             // When something fails, return early
             if (!Something()) return false;
             ...
@@ -214,9 +220,10 @@ Then, pass clang as compiler to configure, and use bear to produce the `compile_
 
 ```sh
 ./autogen.sh && ./configure CC=clang CXX=clang++
-make clean && bear make -j $(nproc)     # For bear 2.x
-make clean && bear -- make -j $(nproc)  # For bear 3.x
+make clean && bear --config src/.bear-tidy-config -- make -j $(nproc)
 ```
+
+The output is denoised of errors from external dependencies.
 
 To run clang-tidy on all source files:
 
@@ -483,7 +490,9 @@ To enable LCOV report generation during test runs:
 make
 make cov
 
-# A coverage report will now be accessible at `./test_bitcoin.coverage/index.html`.
+# A coverage report will now be accessible at `./test_bitcoin.coverage/index.html`,
+# which covers unit tests, and `./total.coverage/index.html`, which covers
+# unit and functional tests.
 ```
 
 ### Performance profiling with perf
@@ -556,13 +565,17 @@ address sanitizer, libtsan for the thread sanitizer, and libubsan for the
 undefined sanitizer. If you are missing required libraries, the configure script
 will fail with a linker error when testing the sanitizer flags.
 
-The test suite should pass cleanly with the `thread` and `undefined` sanitizers,
-but there are a number of known problems when using the `address` sanitizer. The
-address sanitizer is known to fail in
-[sha256_sse4::Transform](/src/crypto/sha256_sse4.cpp) which makes it unusable
-unless you also use `--disable-asm` when running configure. We would like to fix
-sanitizer issues, so please send pull requests if you can fix any errors found
-by the address sanitizer (or any other sanitizer).
+The test suite should pass cleanly with the `thread` and `undefined` sanitizers. You
+may need to use a suppressions file, see `test/sanitizer_suppressions`. They may be
+used as follows:
+```bash
+export LSAN_OPTIONS="suppressions=$(pwd)/test/sanitizer_suppressions/lsan"
+export TSAN_OPTIONS="suppressions=$(pwd)/test/sanitizer_suppressions/tsan:halt_on_error=1:second_deadlock_stack=1"
+export UBSAN_OPTIONS="suppressions=$(pwd)/test/sanitizer_suppressions/ubsan:print_stacktrace=1:halt_on_error=1:report_error_type=1"
+```
+
+See the CI config for more examples, and upstream documentation for more information
+about any additional options.
 
 Not all sanitizer options can be enabled at the same time, e.g. trying to build
 with `--with-sanitizers=address,thread` will fail in the configure script as
@@ -605,8 +618,9 @@ Threads
   : Started from `main()` in `bitcoind.cpp`. Responsible for starting up and
   shutting down the application.
 
-- [ThreadImport (`b-loadblk`)](https://doxygen.bitcoincore.org/namespacenode.html#ab4305679079866f0f420f7dbf278381d)
-  : Loads blocks from `blk*.dat` files or `-loadblock=<file>` on startup.
+- [Init load (`b-initload`)](https://doxygen.bitcoincore.org/namespacenode.html#ab4305679079866f0f420f7dbf278381d)
+  : Performs various loading tasks that are part of init but shouldn't block the node from being started: external block import,
+   reindex, reindex-chainstate, main chain activation, spawn indexes background sync threads and mempool load.
 
 - [CCheckQueue::Loop (`b-scriptch.x`)](https://doxygen.bitcoincore.org/class_c_check_queue.html#a6e7fa51d3a25e7cb65446d4b50e6a987)
   : Parallel script validation threads for transactions in blocks.
@@ -706,6 +720,47 @@ General Bitcoin Core
   - *Explanation*: If the test suite is to be updated for a change, this has to
     be done first.
 
+Logging
+-------
+
+The macros `LogInfo`, `LogDebug`, `LogTrace`, `LogWarning` and `LogError` are available for
+logging messages. They should be used as follows:
+
+- `LogDebug(BCLog::CATEGORY, fmt, params...)` is what you want
+  most of the time, and it should be used for log messages that are
+  useful for debugging and can reasonably be enabled on a production
+  system (that has sufficient free storage space). They will be logged
+  if the program is started with `-debug=category` or `-debug=1`.
+  Note that `LogPrint(BCLog::CATEGORY, fmt, params...)` is a deprecated
+  alias for `LogDebug`.
+
+- `LogInfo(fmt, params...)` should only be used rarely, e.g. for startup
+  messages or for infrequent and important events such as a new block tip
+  being found or a new outbound connection being made. These log messages
+  are unconditional, so care must be taken that they can't be used by an
+  attacker to fill up storage. Note that `LogPrintf(fmt, params...)` is
+  a deprecated alias for `LogInfo`.
+
+- `LogError(fmt, params...)` should be used in place of `LogInfo` for
+  severe problems that require the node (or a subsystem) to shut down
+  entirely (e.g., insufficient storage space).
+
+- `LogWarning(fmt, params...)` should be used in place of `LogInfo` for
+  severe problems that the node admin should address, but are not
+  severe enough to warrant shutting down the node (e.g., system time
+  appears to be wrong, unknown soft fork appears to have activated).
+
+- `LogTrace(BCLog::CATEGORY, fmt, params...)` should be used in place of
+  `LogDebug` for log messages that would be unusable on a production
+  system, e.g. due to being too noisy in normal use, or too resource
+  intensive to process. These will be logged if the startup
+  options `-debug=category -loglevel=category:trace` or `-debug=1
+  -loglevel=trace` are selected.
+
+Note that the format strings and parameters of `LogDebug` and `LogTrace`
+are only evaluated if the logging category is enabled, so you must be
+careful to avoid side-effects in those expressions.
+
 Wallet
 -------
 
@@ -721,12 +776,6 @@ Common misconceptions are clarified in those sections:
 
 - Passing (non-)fundamental types in the [C++ Core
   Guideline](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#Rf-conventional).
-
-- Assertions should not have side-effects.
-
-  - *Rationale*: Even though the source code is set to refuse to compile
-    with assertions disabled, having side-effects in assertions is unexpected and
-    makes the code harder to understand.
 
 - If you use the `.h`, you must link the `.cpp`.
 
@@ -842,12 +891,12 @@ Strings and formatting
     buffer overflows, and surprises with `\0` characters. Also, some C string manipulations
     tend to act differently depending on platform, or even the user locale.
 
-- Use `ParseInt32`, `ParseInt64`, `ParseUInt32`, `ParseUInt64`, `ParseDouble` from `utilstrencodings.h` for number parsing.
+- Use `ToIntegral` from [`strencodings.h`](/src/util/strencodings.h) for number parsing. In legacy code you might also find `ParseInt*` family of functions, `ParseDouble` or `LocaleIndependentAtoi`.
 
   - *Rationale*: These functions do overflow checking and avoid pesky locale issues.
 
 - Avoid using locale dependent functions if possible. You can use the provided
-  [`lint-locale-dependence.sh`](/test/lint/lint-locale-dependence.sh)
+  [`lint-locale-dependence.py`](/test/lint/lint-locale-dependence.py)
   to check for accidental use of locale dependent functions.
 
   - *Rationale*: Unnecessary locale dependence can cause bugs that are very tricky to isolate and fix.
@@ -874,7 +923,7 @@ Strings and formatting
     `wcstoll`, `wcstombs`, `wcstoul`, `wcstoull`, `wcstoumax`, `wcswidth`,
     `wcsxfrm`, `wctob`, `wctomb`, `wctrans`, `wctype`, `wcwidth`, `wprintf`
 
-- For `strprintf`, `LogPrint`, `LogPrintf` formatting characters don't need size specifiers.
+- For `strprintf`, `LogInfo`, `LogDebug`, etc formatting characters don't need size specifiers.
 
   - *Rationale*: Bitcoin Core uses tinyformat, which is type safe. Leave them out to avoid confusion.
 
@@ -886,7 +935,7 @@ Strings and formatting
 
     - *Rationale*: Although this is guaranteed to be safe starting with C++11, `.data()` communicates the intent better.
 
-  - Do not use it when passing strings to `tfm::format`, `strprintf`, `LogPrint[f]`.
+  - Do not use it when passing strings to `tfm::format`, `strprintf`, `LogInfo`, `LogDebug`, etc.
 
     - *Rationale*: This is redundant. Tinyformat handles strings.
 
@@ -937,7 +986,9 @@ Threads and synchronization
     internal to a class (private or protected) rather than public.
 
   - Combine annotations in function declarations with run-time asserts in
-    function definitions:
+    function definitions (`AssertLockNotHeld()` can be omitted if `LOCK()` is
+    called unconditionally after it because `LOCK()` does the same check as
+    `AssertLockNotHeld()` internally, for non-recursive mutexes):
 
 ```C++
 // txmempool.h
@@ -1391,7 +1442,7 @@ A few guidelines for introducing and reviewing new RPC interfaces:
 
   - *Rationale*: User-facing consistency.
 
-- Use `fs::path::u8string()` and `fs::u8path()` functions when converting path
+- Use `fs::path::u8string()`/`fs::path::utf8string()` and `fs::u8path()` functions when converting path
   to JSON strings, not `fs::PathToString` and `fs::PathFromString`
 
   - *Rationale*: JSON strings are Unicode strings, not byte strings, and

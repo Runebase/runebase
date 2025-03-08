@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2021 The Bitcoin Core developers
+# Copyright (c) 2015-2022 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 '''
@@ -8,9 +8,8 @@ Exit status will be 0 if successful, and the program will be silent.
 Otherwise the exit status will be 1 and it will log which executables failed which checks.
 '''
 import sys
-from typing import List
 
-import lief #type:ignore
+import lief
 
 def check_ELF_RELRO(binary) -> bool:
     '''
@@ -34,7 +33,7 @@ def check_ELF_RELRO(binary) -> bool:
         flags = binary.get(lief.ELF.DYNAMIC_TAGS.FLAGS)
         if flags.value & lief.ELF.DYNAMIC_FLAGS.BIND_NOW:
             have_bindnow = True
-    except:
+    except Exception:
         have_bindnow = False
 
     return have_gnu_relro and have_bindnow
@@ -113,7 +112,7 @@ def check_ELF_control_flow(binary) -> bool:
     main = binary.get_function_address('main')
     content = binary.get_content_from_virtual_address(main, 4, lief.Binary.VA_TYPES.AUTO)
 
-    if content == [243, 15, 30, 250]: # endbr64
+    if content.tolist() == [243, 15, 30, 250]: # endbr64
         return True
     return False
 
@@ -142,9 +141,15 @@ def check_PE_control_flow(binary) -> bool:
 
     content = binary.get_content_from_virtual_address(virtual_address, 4, lief.Binary.VA_TYPES.VA)
 
-    if content == [243, 15, 30, 250]: # endbr64
+    if content.tolist() == [243, 15, 30, 250]: # endbr64
         return True
     return False
+
+def check_PE_Canary(binary) -> bool:
+    '''
+    Check for use of stack canary
+    '''
+    return binary.has_symbol('__stack_chk_fail')
 
 def check_MACHO_NOUNDEFS(binary) -> bool:
     '''
@@ -152,12 +157,11 @@ def check_MACHO_NOUNDEFS(binary) -> bool:
     '''
     return binary.header.has(lief.MachO.HEADER_FLAGS.NOUNDEFS)
 
-def check_MACHO_LAZY_BINDINGS(binary) -> bool:
+def check_MACHO_FIXUP_CHAINS(binary) -> bool:
     '''
-    Check for no lazy bindings.
-    We don't use or check for MH_BINDATLOAD. See #18295.
+    Check for use of chained fixups.
     '''
-    return binary.dyld_info.lazy_bind == (0,0)
+    return binary.has_dyld_chained_fixups
 
 def check_MACHO_Canary(binary) -> bool:
     '''
@@ -184,7 +188,17 @@ def check_MACHO_control_flow(binary) -> bool:
     '''
     content = binary.get_content_from_virtual_address(binary.entrypoint, 4, lief.Binary.VA_TYPES.AUTO)
 
-    if content == [243, 15, 30, 250]: # endbr64
+    if content.tolist() == [243, 15, 30, 250]: # endbr64
+        return True
+    return False
+
+def check_MACHO_branch_protection(binary) -> bool:
+    '''
+    Check for branch protection instrumentation
+    '''
+    content = binary.get_content_from_virtual_address(binary.entrypoint, 4, lief.Binary.VA_TYPES.AUTO)
+
+    if content.tolist() == [95, 36, 3, 213]: # bti
         return True
     return False
 
@@ -203,12 +217,13 @@ BASE_PE = [
     ('NX', check_NX),
     ('RELOC_SECTION', check_PE_RELOC_SECTION),
     ('CONTROL_FLOW', check_PE_control_flow),
+    ('Canary', check_PE_Canary),
 ]
 
 BASE_MACHO = [
     ('NOUNDEFS', check_MACHO_NOUNDEFS),
-    ('LAZY_BINDINGS', check_MACHO_LAZY_BINDINGS),
     ('Canary', check_MACHO_Canary),
+    ('FIXUP_CHAINS', check_MACHO_FIXUP_CHAINS),
 ]
 
 CHECKS = {
@@ -226,7 +241,7 @@ CHECKS = {
         lief.ARCHITECTURES.X86: BASE_MACHO + [('PIE', check_PIE),
                                               ('NX', check_NX),
                                               ('CONTROL_FLOW', check_MACHO_control_flow)],
-        lief.ARCHITECTURES.ARM64: BASE_MACHO,
+        lief.ARCHITECTURES.ARM64: BASE_MACHO + [('BRANCH_PROTECTION', check_MACHO_branch_protection)],
     }
 }
 
@@ -249,7 +264,7 @@ if __name__ == '__main__':
                 retval = 1
                 continue
 
-            failed: List[str] = []
+            failed: list[str] = []
             for (name, func) in CHECKS[etype][arch]:
                 if not func(binary):
                     failed.append(name)

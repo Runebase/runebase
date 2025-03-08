@@ -73,7 +73,7 @@ public:
     // returns schedule for the fork active at the given block
     // may include additional individually activated EIPs on top of the last fork block
     EVMSchedule const& scheduleForBlockNumber(u256 const& _blockNumber) const;
-    // returns schedule according to the the fork rules active at the given block
+    // returns schedule according to the fork rules active at the given block
     // doesn't include additional individually activated EIPs
     EVMSchedule const& forkScheduleForBlockNumber(u256 const& _blockNumber) const;
     u256 blockReward(EVMSchedule const& _schedule) const;
@@ -100,6 +100,7 @@ public:
     u256 lastForkBlock = c_infiniteBlockNumber;
     u256 qip6ForkBlock = c_infiniteBlockNumber;
     u256 shanghaiForkBlock = c_infiniteBlockNumber;
+    u256 cancunForkBlock = c_infiniteBlockNumber;
     AdditionalEIPs lastForkAdditionalEIPs;
     int chainID = 0;    // Distinguishes different chains (mainnet, Ropsten, etc).
     int networkID = 0;  // Distinguishes different sub protocols.

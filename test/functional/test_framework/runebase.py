@@ -21,7 +21,7 @@ def generatesynchronized(node, numblocks, address=None, sync_with_nodes=[], mock
     blockhashes = []
     for i in range(0, max(numblocks//16, 0)):
         blockhashes += node.generatetoaddress(16, address)
-        wait_until_helper(lambda: all(n.getbestblockhash() == node.getbestblockhash() for n in sync_with_nodes))
+        wait_until_helper_internal(lambda: all(n.getbestblockhash() == node.getbestblockhash() for n in sync_with_nodes))
 
         # If more than 60 seconds elapses during the block generation, the nodes will disconnect since
         # the inactivity check for networking mix mocked and non-mocked time.
@@ -29,7 +29,7 @@ def generatesynchronized(node, numblocks, address=None, sync_with_nodes=[], mock
  
     if numblocks % 16:
         blockhashes += node.generatetoaddress(numblocks % 16, address)
-        wait_until_helper(lambda: all(n.getbestblockhash() == node.getbestblockhash() for n in sync_with_nodes))
+        wait_until_helper_internal(lambda: all(n.getbestblockhash() == node.getbestblockhash() for n in sync_with_nodes))
     return blockhashes
 
 def generateinitial(node, numblocks, address=None, sync_with_nodes=[]):
@@ -99,7 +99,7 @@ def convert_btc_address_to_runebase(addr, main=False):
 
 def convert_btc_bech32_address_to_runebase(addr, main=False, encoding=Encoding.BECH32):
     encoding, hdr, data = bech32_decode(addr)
-    return bech32_encode(encoding, 'qcrt', data)
+    return bech32_encode(encoding, 'qcrt' if not main else 'qc', data)
 
 
 def p2pkh_to_hex_hash(address):

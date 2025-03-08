@@ -25,7 +25,7 @@ def check_shellcheck_install():
         sys.exit(0)
 
 def get_files(command):
-    output = subprocess.run(command, stdout=subprocess.PIPE, universal_newlines=True)
+    output = subprocess.run(command, stdout=subprocess.PIPE, text=True)
     files = output.stdout.split('\n')
 
     # remove whitespace element
@@ -67,9 +67,13 @@ def main():
         '*.sh',
     ]
     files = get_files(files_cmd)
-    # remove everything that doesn't match this regex
     reg = re.compile(r'src/[leveldb,secp256k1,minisketch]')
-    files[:] = [file for file in files if not reg.match(file)]
+
+    def should_exclude(fname: str) -> bool:
+        return bool(reg.match(fname))
+
+    # remove everything that doesn't match this regex
+    files[:] = [file for file in files if not should_exclude(file)]
 
     # build the `shellcheck` command
     shellcheck_cmd = [
