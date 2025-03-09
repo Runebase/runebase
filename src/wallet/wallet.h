@@ -108,13 +108,13 @@ std::unique_ptr<WalletDatabase> MakeWalletDatabase(const std::string& name, cons
 //! -paytxfee default
 constexpr CAmount DEFAULT_PAY_TX_FEE = 0;
 //! -fallbackfee default
-static const CAmount DEFAULT_FALLBACK_FEE = 20000;
+static const CAmount DEFAULT_FALLBACK_FEE = 2000000;
 //! -discardfee default
-static const CAmount DEFAULT_DISCARD_FEE = 10000;
+static const CAmount DEFAULT_DISCARD_FEE = 1000000;
 //! -mintxfee default
-static const CAmount DEFAULT_TRANSACTION_MINFEE = 400000;
+static const CAmount DEFAULT_TRANSACTION_MINFEE = 40000000;
 //! -consolidatefeerate default
-static const CAmount DEFAULT_CONSOLIDATE_FEERATE{10000}; // 10 sat/vbyte
+static const CAmount DEFAULT_CONSOLIDATE_FEERATE{1000000}; // 1000 sat/vbyte
 /**
  * maximum fee increase allowed to do partial spend avoidance, even for nodes with this feature disabled by default
  *
@@ -124,9 +124,9 @@ static const CAmount DEFAULT_CONSOLIDATE_FEERATE{10000}; // 10 sat/vbyte
  */
 static const CAmount DEFAULT_MAX_AVOIDPARTIALSPEND_FEE = 0;
 //! discourage APS fee higher than this amount
-constexpr CAmount HIGH_APS_FEE{COIN / 10000};
+constexpr CAmount HIGH_APS_FEE{COIN / 100};
 //! minimum recommended increment for replacement txs
-static const CAmount WALLET_INCREMENTAL_RELAY_FEE = 10000;
+static const CAmount WALLET_INCREMENTAL_RELAY_FEE = 1000000;
 //! Default for -spendzeroconfchange
 static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
 //! Default for zero balance address token
@@ -143,19 +143,19 @@ static const bool DEFAULT_WALLETCROSSCHAIN = false;
 static const bool DEFAULT_USE_CHANGE_ADDRESS = true;
 static const CAmount DEFAULT_RESERVE_BALANCE = 0;
 //! -maxtxfee default
-constexpr CAmount DEFAULT_TRANSACTION_MAXFEE{1 * COIN};
+constexpr CAmount DEFAULT_TRANSACTION_MAXFEE{100 * COIN};
 //! Discourage users to set fees higher than this amount (in satoshis) per kB
-constexpr CAmount HIGH_TX_FEE_PER_KB{1 * COIN};
+constexpr CAmount HIGH_TX_FEE_PER_KB{100 * COIN};
 //! -maxtxfee will warn if called with a higher fee than this amount (in satoshis)
-constexpr CAmount HIGH_MAX_TX_FEE{100 * HIGH_TX_FEE_PER_KB};
+constexpr CAmount HIGH_MAX_TX_FEE{10000 * HIGH_TX_FEE_PER_KB};
 //! Pre-calculated constants for input size estimation in *virtual size*
 static constexpr size_t DUMMY_NESTED_P2WPKH_INPUT_SIZE = 91;
 
 //! -stakingminfee default
-static const uint8_t DEFAULT_STAKING_MIN_FEE = 10;
+static const uint8_t DEFAULT_STAKING_MIN_FEE = 1000;
 
 //! -minstakerutxosize default
-static const CAmount DEFAULT_STAKER_MIN_UTXO_SIZE{COIN/10};
+static const CAmount DEFAULT_STAKER_MIN_UTXO_SIZE{COIN*10};
 
 //! -maxstakerutxoscriptcache default
 static const int32_t DEFAULT_STAKER_MAX_UTXO_SCRIPT_CACHE = 200000;
