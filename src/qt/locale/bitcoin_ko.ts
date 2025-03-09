@@ -434,12 +434,12 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">거래 기록 조회</translation>
     </message>
     <message>
-        <source>&amp;QRC Tokens</source>
-        <translation type="unfinished">QRC 토큰</translation>
+        <source>&amp;RRC Tokens</source>
+        <translation type="unfinished">RRC 토큰</translation>
     </message>
     <message>
-        <source>QRC Tokens (send, receive or add Tokens in list)</source>
-        <translation type="unfinished">QRC 토큰 (입출금 또는 리스트에 추가)</translation>
+        <source>RRC Tokens (send, receive or add Tokens in list)</source>
+        <translation type="unfinished">RRC 토큰 (입출금 또는 리스트에 추가)</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
