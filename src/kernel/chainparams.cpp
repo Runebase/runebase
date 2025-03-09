@@ -131,8 +131,8 @@ public:
         // Replace 0xffffc0 with the activation block number
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 1324512;
 
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000008f368d7c786ca0f6855"); // 4300000
-        consensus.defaultAssumeValid = uint256S("0x556a47a2f6a2ad230eb9276595303475c8319757508b7c813130dbe65bf8b914"); // 4300000
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000911c098fd4b3a7b0fe5"); // 1347735
+        consensus.defaultAssumeValid = uint256S("0xfe2ddad8464dae6e5d392ad1fd27b85912d66dc0cfc5e5399bd32efa916654a9"); // 1347735
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -186,6 +186,7 @@ public:
                 { 1306824, uint256S("a3de7dba1aaa9c132b2fa2b9fdf55c0c59757f002761d10de01d19af38fcd10e")},
                 { 1310070, uint256S("e337e6fe9f0e5558015f9ed423e06b762cf2177e14d13ff1576ce3d4f619cf13")},
                 { 1324600, uint256S("556a47a2f6a2ad230eb9276595303475c8319757508b7c813130dbe65bf8b914")},
+                { 1347735, uint256S("fe2ddad8464dae6e5d392ad1fd27b85912d66dc0cfc5e5399bd32efa916654a9")},
             }
         };
 
@@ -194,9 +195,9 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data as of block cd130baf8762afbebc10ceff9fe13ecb09f7e4bb579508a7e5f13a83ffe1e64d (height 4300000)
-            .nTime    = 1740781328, // * UNIX timestamp of last known number of transactions
-            .nTxCount = 2663280, // * total number of transactions between genesis and that timestamp
+            // Data as of block 9744ba38789fc0b4e7421abcca321c9ca59caf6829fde80323555a02d1b01c1f (height 1347756)
+            .nTime    = 1741522580, // * UNIX timestamp of last known number of transactions
+            .nTxCount = 2709605, // * total number of transactions between genesis and that timestamp
             .dTxRate  = 0.07664262206369668, // * estimated number of transactions per second after that timestamp
         };
 
@@ -252,7 +253,7 @@ public:
         consensus.nMuirGlacierHeight = 5200;
         consensus.nLondonHeight = 20160;
         consensus.nShanghaiHeight = 35000;
-        consensus.nCancunHeight = 4510000;
+        consensus.nCancunHeight = 55000;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -308,7 +309,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x37, 0x82, 0xbf};
         base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x37, 0x84, 0xa4};
 
-        bech32_hrp = "tq";
+        bech32_hrp = "tr";
 
         vFixedSeeds = std::vector<uint8_t>(std::begin(chainparams_seed_test), std::end(chainparams_seed_test));
 
@@ -471,7 +472,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        bech32_hrp = "tq";
+        bech32_hrp = "tr";
 
         fDefaultConsistencyChecks = false;
         fMineBlocksOnDemand = false;
@@ -653,7 +654,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        bech32_hrp = "qcrt";
+        bech32_hrp = "rcrt";
     }
 };
 

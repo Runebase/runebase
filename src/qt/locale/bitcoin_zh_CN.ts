@@ -430,12 +430,12 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">查看交易历史</translation>
     </message>
     <message>
-        <source>&amp;QRC Tokens</source>
-        <translation type="unfinished">QRCtoken</translation>
+        <source>&amp;RRC Tokens</source>
+        <translation type="unfinished">RRCtoken</translation>
     </message>
     <message>
-        <source>QRC Tokens (send, receive or add Tokens in list)</source>
-        <translation type="unfinished">QRCtoken（在列表内发送、接收或添加token）</translation>
+        <source>RRC Tokens (send, receive or add Tokens in list)</source>
+        <translation type="unfinished">RRCtoken（在列表内发送、接收或添加token）</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
