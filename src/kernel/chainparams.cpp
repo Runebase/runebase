@@ -253,7 +253,7 @@ public:
         consensus.nMuirGlacierHeight = 5200;
         consensus.nLondonHeight = 20160;
         consensus.nShanghaiHeight = 35000;
-        consensus.nCancunHeight = 4510000;
+        consensus.nCancunHeight = 55000;
         consensus.powLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.posLimit = uint256S("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"); // The new POS-limit activated after QIP9
@@ -309,7 +309,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x05, 0x37, 0x82, 0xbf};
         base58Prefixes[EXT_SECRET_KEY] = {0x05, 0x37, 0x84, 0xa4};
 
-        bech32_hrp = "tq";
+        bech32_hrp = "tr";
 
         vFixedSeeds = std::vector<uint8_t>(std::begin(chainparams_seed_test), std::end(chainparams_seed_test));
 
@@ -472,7 +472,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        bech32_hrp = "tq";
+        bech32_hrp = "tr";
 
         fDefaultConsistencyChecks = false;
         fMineBlocksOnDemand = false;
@@ -654,7 +654,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
 
-        bech32_hrp = "qcrt";
+        bech32_hrp = "rcrt";
     }
 };
 
