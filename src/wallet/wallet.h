@@ -152,7 +152,7 @@ constexpr CAmount HIGH_MAX_TX_FEE{10000 * HIGH_TX_FEE_PER_KB};
 static constexpr size_t DUMMY_NESTED_P2WPKH_INPUT_SIZE = 91;
 
 //! -stakingminfee default
-static const uint16_t DEFAULT_STAKING_MIN_FEE = 1000;
+static const uint8_t DEFAULT_STAKING_MIN_FEE = 10;
 
 //! -minstakerutxosize default
 static const CAmount DEFAULT_STAKER_MIN_UTXO_SIZE{COIN*10};
@@ -836,7 +836,7 @@ public:
     CAmount m_staking_min_utxo_value{DEFAULT_STAKING_MIN_UTXO_VALUE};
     CAmount m_staker_min_utxo_size{DEFAULT_STAKER_MIN_UTXO_SIZE};
     int32_t m_staker_max_utxo_script_cache{DEFAULT_STAKER_MAX_UTXO_SCRIPT_CACHE};
-    uint16_t m_staking_min_fee{DEFAULT_STAKING_MIN_FEE};
+    uint8_t m_staking_min_fee{DEFAULT_STAKING_MIN_FEE};
     std::atomic<bool> m_stop_staking_thread{false};
     std::atomic<bool> m_is_staking_thread_stopped{false};
 
