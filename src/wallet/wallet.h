@@ -836,7 +836,7 @@ public:
     CAmount m_staking_min_utxo_value{DEFAULT_STAKING_MIN_UTXO_VALUE};
     CAmount m_staker_min_utxo_size{DEFAULT_STAKER_MIN_UTXO_SIZE};
     int32_t m_staker_max_utxo_script_cache{DEFAULT_STAKER_MAX_UTXO_SCRIPT_CACHE};
-    uint8_t m_staking_min_fee{DEFAULT_STAKING_MIN_FEE};
+    uint16_t m_staking_min_fee{DEFAULT_STAKING_MIN_FEE};
     std::atomic<bool> m_stop_staking_thread{false};
     std::atomic<bool> m_is_staking_thread_stopped{false};
 
