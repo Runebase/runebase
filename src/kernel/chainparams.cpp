@@ -131,8 +131,8 @@ public:
         // Replace 0xffffc0 with the activation block number
         consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 1324512;
 
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000008f368d7c786ca0f6855"); // 4300000
-        consensus.defaultAssumeValid = uint256S("0x556a47a2f6a2ad230eb9276595303475c8319757508b7c813130dbe65bf8b914"); // 4300000
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000911c098fd4b3a7b0fe5"); // 1347735
+        consensus.defaultAssumeValid = uint256S("0xfe2ddad8464dae6e5d392ad1fd27b85912d66dc0cfc5e5399bd32efa916654a9"); // 1347735
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -195,9 +195,9 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data as of block cd130baf8762afbebc10ceff9fe13ecb09f7e4bb579508a7e5f13a83ffe1e64d (height 4300000)
-            .nTime    = 1740781328, // * UNIX timestamp of last known number of transactions
-            .nTxCount = 2663280, // * total number of transactions between genesis and that timestamp
+            // Data as of block 9744ba38789fc0b4e7421abcca321c9ca59caf6829fde80323555a02d1b01c1f (height 1347756)
+            .nTime    = 1741522580, // * UNIX timestamp of last known number of transactions
+            .nTxCount = 2709605, // * total number of transactions between genesis and that timestamp
             .dTxRate  = 0.07664262206369668, // * estimated number of transactions per second after that timestamp
         };
 
