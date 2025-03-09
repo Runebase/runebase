@@ -152,7 +152,7 @@ constexpr CAmount HIGH_MAX_TX_FEE{10000 * HIGH_TX_FEE_PER_KB};
 static constexpr size_t DUMMY_NESTED_P2WPKH_INPUT_SIZE = 91;
 
 //! -stakingminfee default
-static const uint16_t DEFAULT_STAKING_MIN_FEE = 1000;
+static const uint8_t DEFAULT_STAKING_MIN_FEE = 10;
 
 //! -minstakerutxosize default
 static const CAmount DEFAULT_STAKER_MIN_UTXO_SIZE{COIN*10};
