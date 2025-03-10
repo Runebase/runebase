@@ -1236,7 +1236,7 @@ public:
     /* Start staking RUNES */
     void StartStake();
 
-    /* Stop staking runebases */
+    /* Stop staking RUNES */
     void StopStake();
 
     /* Is staking closing */

@@ -918,7 +918,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
 
         dev::u256 sumGas = dev::u256(0);
         dev::u256 gasAllTxs = dev::u256(0);
-        for(RunebaseTransaction runebaseTransaction : runebaseTransactions){
+        for(const RunebaseTransaction& runebaseTransaction : runebaseTransactions){
             sumGas += runebaseTransaction.gas() * runebaseTransaction.gasPrice();
 
             if(sumGas > dev::u256(INT64_MAX)) {
@@ -2663,10 +2663,20 @@ bool CheckSenderScript(const CCoinsViewCache& view, const CTransaction& tx){
 }
 
 std::vector<ResultExecute> CallContract(const dev::Address& addrContract, std::vector<unsigned char> opcode, Chainstate& chainstate, const dev::Address& sender, uint64_t gasLimit, CAmount nAmount){
+    CBlockIndex* pblockindex = &(chainstate.m_blockman.m_block_index[chainstate.m_chain.Tip()->GetBlockHash()]);
+    return CallContract(addrContract, opcode, chainstate, pblockindex, sender, gasLimit, nAmount);
+}
+
+std::vector<ResultExecute> CallContract(const dev::Address& addrContract, std::vector<unsigned char> opcode, Chainstate& chainstate, int blockHeight, const dev::Address& sender, uint64_t gasLimit, CAmount nAmount) {
+    CBlockIndex* pblockindex = &(chainstate.m_blockman.m_block_index[chainstate.m_chain[blockHeight]->GetBlockHash()]);
+    return CallContract(addrContract, opcode, chainstate, pblockindex, sender, gasLimit, nAmount);
+}
+
+std::vector<ResultExecute> CallContract(const dev::Address& addrContract, std::vector<unsigned char> opcode, Chainstate& chainstate, CBlockIndex* pblockindex, const dev::Address& sender, uint64_t gasLimit, CAmount nAmount)
+{
     CBlock block;
     CMutableTransaction tx;
 
-    CBlockIndex* pblockindex = &(chainstate.m_blockman.m_block_index[chainstate.m_chain.Tip()->GetBlockHash()]);
     chainstate.m_blockman.ReadBlockFromDisk(block, *pblockindex);
     block.nTime = GetAdjustedTimeSeconds();
 
@@ -2676,7 +2686,7 @@ std::vector<ResultExecute> CallContract(const dev::Address& addrContract, std::v
     	block.vtx.erase(block.vtx.begin()+1,block.vtx.end());
 
     RunebaseDGP runebaseDGP(globalState.get(), chainstate, fGettingValuesDGP);
-    uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(chainstate.m_chain.Tip()->nHeight + 1);
+    uint64_t blockGasLimit = runebaseDGP.getBlockGasLimit(pblockindex->nHeight + 1);
 
     if(gasLimit == 0){
         gasLimit = blockGasLimit - 1;
@@ -2685,7 +2695,7 @@ std::vector<ResultExecute> CallContract(const dev::Address& addrContract, std::v
     tx.vout.push_back(CTxOut(nAmount, CScript() << OP_DUP << OP_HASH160 << senderAddress.asBytes() << OP_EQUALVERIFY << OP_CHECKSIG));
     block.vtx.push_back(MakeTransactionRef(CTransaction(tx)));
     dev::u256 nonce = globalState->getNonce(senderAddress);
- 
+
     RunebaseTransaction callTransaction;
     if(addrContract == dev::Address())
     {
@@ -2698,7 +2708,7 @@ std::vector<ResultExecute> CallContract(const dev::Address& addrContract, std::v
     callTransaction.forceSender(senderAddress);
     callTransaction.setVersion(VersionVM::GetEVMDefault());
 
-    
+
     ByteCodeExec exec(block, std::vector<RunebaseTransaction>(1, callTransaction), blockGasLimit, pblockindex, chainstate.m_chain);
     exec.performByteCode(dev::eth::Permanence::Reverted);
     return exec.getResult();
@@ -2781,7 +2791,7 @@ bool CheckReward(const CBlock& block, BlockValidationState& state, int nHeight, 
         std::vector<CTxOut> mposOutputList;
         if(!GetMPoSOutputs(mposOutputList, splitReward, nPrevHeight, consensusParams, chain, blockman))
             return error("CheckReward(): cannot create the list of MPoS outputs");
-      
+
         for(size_t i = 0; i < mposOutputList.size(); i++){
             it=std::find(vTempVouts.begin(), vTempVouts.end(), mposOutputList[i]);
             if(it==vTempVouts.end()){
@@ -2865,7 +2875,7 @@ UniValue vmLogToJSON(const ResultExecute& execRes, const CTransaction& tx, const
     }
     UniValue logEntries(UniValue::VARR);
     dev::eth::LogEntries logs = execRes.txRec.log();
-    for(dev::eth::LogEntry log : logs){
+    for(const dev::eth::LogEntry& log : logs){
         UniValue logEntrie(UniValue::VOBJ);
         logEntrie.pushKV("address", log.address.hex());
         UniValue topics(UniValue::VARR);
@@ -2904,7 +2914,7 @@ void writeVMlog(const std::vector<ResultExecute>& res, CChain& chain, const CTra
             ss << "]}";
         }
     }
-    
+
     std::ofstream file(PathToString(runebaseDir), std::ios::in | std::ios::out);
     file.seekp(-2, std::ios::end);
     file << ss.str();
@@ -2961,7 +2971,11 @@ bool ByteCodeExec::performByteCode(dev::eth::Permanence type){
         if(!tx.isCreation() && !globalState->addressInUse(tx.receiveAddress())){
             dev::eth::ExecutionResult execRes;
             execRes.excepted = dev::eth::TransactionException::Unknown;
-            result.push_back(ResultExecute{execRes, RunebaseTransactionReceipt(dev::h256(), dev::h256(), dev::u256(), dev::eth::LogEntries()), CTransaction()});
+            result.push_back(ResultExecute{
+                execRes,
+                RunebaseTransactionReceipt(dev::h256(), dev::h256(), dev::u256(), dev::eth::LogEntries(), {}, {}),
+                CTransaction()
+            });
             continue;
         }
         result.push_back(globalState->execute(envInfo, *globalSealEngine.get(), tx, chain, type, OnOpFunc()));
@@ -3558,7 +3572,7 @@ bool Chainstate::ConnectBlock(const CBlock& block, BlockValidationState& state, 
         {
             if (tx.IsCoinStake())
                 nActualStakeReward = tx.GetValueOut()-view.GetValueIn(tx);
-                    
+
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
             TxValidationState tx_state;
@@ -3713,6 +3727,8 @@ bool Chainstate::ConnectBlock(const CBlock& block, BlockValidationState& state, 
                         resultExec[k].txRec.bloom(),
                         resultExec[k].txRec.stateRoot(),
                         resultExec[k].txRec.utxoRoot(),
+                        resultExec[k].txRec.createdContracts(),
+                        resultExec[k].txRec.destructedContracts()
                     });
                 }
 
@@ -3723,7 +3739,7 @@ bool Chainstate::ConnectBlock(const CBlock& block, BlockValidationState& state, 
             if(blockGasUsed > blockGasLimit){
                 return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-blk-gaslimit", "ConnectBlock(): Block exceeds gas limit");
             }
-            for(CTxOut refundVout : bcer.refundOutputs){
+            for(const CTxOut& refundVout : bcer.refundOutputs){
                 gasRefunds += refundVout.nValue;
             }
             checkVouts.insert(checkVouts.end(), bcer.refundOutputs.begin(), bcer.refundOutputs.end());
@@ -5681,7 +5697,7 @@ bool Chainstate::UpdateHashProof(const CBlock& block, BlockValidationState& stat
     //reject proof of work at height consensusParams.nLastPOWBlock
     if (block.IsProofOfWork() && nHeight > consensusParams.nLastPOWBlock)
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "reject-pow", strprintf("UpdateHashProof() : reject proof-of-work at height %d", nHeight));
-    
+
     // Check coinstake timestamp
     if (block.IsProofOfStake() && !CheckCoinStakeTimestamp(block.GetBlockTime(), nHeight, consensusParams))
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "timestamp-invalid", strprintf("UpdateHashProof() : coinstake timestamp violation nTimeBlock=%d", block.GetBlockTime()));
@@ -5700,13 +5716,13 @@ bool Chainstate::UpdateHashProof(const CBlock& block, BlockValidationState& stat
             return error("UpdateHashProof() : check proof-of-stake failed for block %s", hash.ToString());
         }
     }
-    
+
     // PoW is checked in CheckBlock()
     if (block.IsProofOfWork())
     {
         hashProof = block.GetHash();
     }
-    
+
     // Record proof hash value
     pindex->hashProof = hashProof;
     return true;
