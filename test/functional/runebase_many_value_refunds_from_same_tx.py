@@ -33,7 +33,7 @@ class RunebaseManyValueRefundsFromSameTxTest(BitcoinTestFramework):
         contract_address = self.node.createcontract(contract_bytecode)['address']
         self.generate(self.node, 1)
         tx = CTransaction()
-        tx.vin = [make_vin(self.node, int(2*(COIN + RUNEBASE_MIN_GAS_PRICE*100000)))]
+        tx.vin = [make_vin(self.node, int(2*(COIN + RUNEBASE_MIN_GAS_PRICE*100000) + 20000000))]
         tx.vout = []
         tx.vout.append(CTxOut(int(COIN), CScript([b"\x04", CScriptNum(100000), CScriptNum(RUNEBASE_MIN_GAS_PRICE), hex_str_to_bytes("00"), hex_str_to_bytes(contract_address), OP_CALL])))
         tx.vout.append(CTxOut(int(COIN), CScript([b"\x04", CScriptNum(100000), CScriptNum(RUNEBASE_MIN_GAS_PRICE), hex_str_to_bytes("00"), hex_str_to_bytes(contract_address), OP_CALL])))

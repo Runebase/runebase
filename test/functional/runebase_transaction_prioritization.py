@@ -169,9 +169,9 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
     # Expected transaction ordering in the block should thus be tx1, tx2, tx3, tx4
     def verify_ancestor_chain_with_contract_txs_test(self, with_restart=False, use_staking=False):
         contract_address = list(self.node.listcontracts().keys())[0]
-        tx1 = self.send_transaction_with_fee(0.01)
-        tx2 = self.send_transaction_with_fee(0.005)
-        tx3 = self.send_transaction_with_fee(0.001)
+        tx1 = self.send_transaction_with_fee(0.18)
+        tx2 = self.send_transaction_with_fee(0.13)
+        tx3 = self.send_transaction_with_fee(0.09)
 
         # Create a contract tx (4) that spends tx3
         tx4 = self.send_op_call_transaction_with_gas_price(contract_address, 0.001, spends_txid=tx2, spends_vout=0)

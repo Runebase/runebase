@@ -51,7 +51,7 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
             staking_prevout = COutPoint(int(last_coinbase, 16), 0)
             tx = CTransaction()
             tx.vin = [CTxIn(staking_prevout)]
-            tx.vout = [CTxOut(int((INITIAL_BLOCK_REWARD-0.01)*COIN), CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(p2pkh_to_hex_hash(self.nodes[0].getnewaddress())), OP_EQUALVERIFY, OP_CHECKSIG]))]
+            tx.vout = [CTxOut(int((INITIAL_BLOCK_REWARD-0.1)*COIN), CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(p2pkh_to_hex_hash(self.nodes[0].getnewaddress())), OP_EQUALVERIFY, OP_CHECKSIG]))]
             txs.append(rpc_sign_transaction(self.nodes[0], tx))
 
         print("blkcnt", self.nodes[0].getblockcount())
@@ -97,7 +97,7 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
         print('node#0 %d; blockcount=%d' % (0, self.nodes[0].getblockcount()))
         print('node#1 %d; blockcount=%d' % (0, self.nodes[1].getblockcount()))
         # Now we should have a balance equal to 
-        assert_equal(int(self.nodes[0].getbalance()*COIN), int((19*(INITIAL_BLOCK_REWARD-0.01)+INITIAL_BLOCK_REWARD)*COIN))
+        assert_equal(int(self.nodes[0].getbalance()*COIN), int((19*(INITIAL_BLOCK_REWARD-0.1)+INITIAL_BLOCK_REWARD)*COIN))
         assert_equal(self.nodes[0].getbestblockhash(), self.nodes[1].getbestblockhash())
 if __name__ == '__main__':
     RunebasePOSConflictingStakingMempoolTxTest(__file__).main()

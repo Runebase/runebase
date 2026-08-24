@@ -36,7 +36,7 @@ class RunebasePrematureCoinstakeSpendTest(BitcoinTestFramework):
 
         tx = CTransaction()
         tx.vin = [CTxIn(COutPoint(int(spend_coinstake_txid, 16), 1))]
-        tx.vout = [CTxOut(int(float(str(spend_coinstake_txout['value']))*COIN - 1000000), scriptPubKey=CScript([OP_TRUE]))]
+        tx.vout = [CTxOut(int(float(str(spend_coinstake_txout['value']))*COIN - 10000000), scriptPubKey=CScript([OP_TRUE]))]
         tx = rpc_sign_transaction(self.node, tx)
         
         if should_accept:

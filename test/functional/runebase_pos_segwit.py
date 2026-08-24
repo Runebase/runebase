@@ -97,7 +97,7 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
         # Create a tx that will be spent by the segwit parent tx
         tx = CTransaction()
         tx.vin = [make_vin(self.node, 2*COIN)]
-        tx.vout = [CTxOut(2*COIN - 100000, CScript([OP_TRUE]))]
+        tx.vout = [CTxOut(2*COIN - 10000000, CScript([OP_TRUE]))]
         tx.rehash()
         tx_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']
         txid = self.node.sendrawtransaction(tx_hex)
@@ -115,7 +115,7 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
         scriptPubKey = CScript([OP_0, ser_uint256(witness_hash)])
 
         prevout = COutPoint(int(txid, 16), 0)
-        value = 2*COIN - 100000
+        value = 2*COIN - 10000000
 
         parent_tx = CTransaction()
         parent_tx.vin.append(CTxIn(prevout, b""))

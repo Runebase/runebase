@@ -56,7 +56,9 @@ class RunebaseSoftMinerGasRelatedLimitsTest(BitcoinTestFramework):
 
 
     def send_raw_to_contract(self, node, contract_address, gas_limit, gas_price, num_outputs=1):
-        unspent = node.listunspent()[0]
+        # Runebase's block reward is 100, not Qtum's 20000, so listunspent()[0] is often
+        # too small to cover gas_limit*gas_price; pick the largest utxo instead.
+        unspent = max(node.listunspent(), key=lambda u: u['amount'])
         tx = CTransaction()
         tx.vin = [CTxIn(COutPoint(int(unspent['txid'], 16), unspent['vout']), nSequence=0)]
         amount = int((float(str(unspent['amount']))*COIN)) // num_outputs -  gas_price*gas_limit

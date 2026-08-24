@@ -23,7 +23,7 @@ class RunebaseNullSenderTest(BitcoinTestFramework):
         self.node = self.nodes[0]
         self.generate(self.node, 10+COINBASE_MATURITY)
         tx = CTransaction()
-        tx.vin = [make_vin(self.node, COIN + 1000000)]
+        tx.vin = [make_vin(self.node, COIN + 10000000)]
         tx.vout = [CTxOut(int(COIN), CScript([OP_TRUE]*21))]
         tx_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']
         parent_tx_id = self.node.sendrawtransaction(tx_hex)
