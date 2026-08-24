@@ -33,10 +33,10 @@ from test_framework.segwit_addr import (
 )
 
 
-ADDRESS_BCRT1_UNSPENDABLE = 'qcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqen882c'
-ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = 'addr(qcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqen882c)#uc8x94y3'
+ADDRESS_BCRT1_UNSPENDABLE = 'rcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq5tftuu'
+ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = 'addr(rcrt1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq5tftuu)#08mzrm02'
 # Coins sent to this address can be spent with a witness stack of just OP_TRUE
-ADDRESS_BCRT1_P2WSH_OP_TRUE = 'qcrt1qft5p2uhsdcdc3l2ua4ap5qqfg4pjaqlp250x7us7a8qqhrxrxfsqcvxxf7'
+ADDRESS_BCRT1_P2WSH_OP_TRUE = 'rcrt1qft5p2uhsdcdc3l2ua4ap5qqfg4pjaqlp250x7us7a8qqhrxrxfsq45g2l6'
 
 
 class AddressType(enum.Enum):
@@ -60,7 +60,7 @@ def create_deterministic_address_bcrt1_p2tr_op_true(explicit_internal_key=None):
     taproot_info = taproot_construct(internal_key, [("only-path", CScript([OP_TRUE]))])
     address = output_key_to_p2tr(taproot_info.output_pubkey)
     if explicit_internal_key is None:
-        assert_equal(address, 'qcrt1p9yfmy5h72durp7zrhlw9lf7jpwjgvwdg0jr0lqmmjtgg83266lqs3rx7ch')
+        assert_equal(address, 'rcrt1p9yfmy5h72durp7zrhlw9lf7jpwjgvwdg0jr0lqmmjtgg83266lqsumgjwn')
     return (address, taproot_info)
 
 
@@ -169,7 +169,7 @@ def program_to_witness(version, program, main=False):
     assert 0 <= version <= 16
     assert 2 <= len(program) <= 40
     assert version > 0 or len(program) in [20, 32]
-    return encode_segwit_address("qc" if main else "qcrt", version, program)
+    return encode_segwit_address("rc" if main else "rcrt", version, program)
 
 def script_to_p2wsh(script, main=False):
     script = check_script(script)
@@ -208,7 +208,7 @@ def check_script(script):
 
 def bech32_to_bytes(address):
     hrp = address.split('1')[0]
-    if hrp not in ['qc', 'tq', 'qcrt']:
+    if hrp not in ['rc', 'tr', 'rcrt']:
         return (None, None)
     version, payload = decode_segwit_address(hrp, address)
     if version is None:
@@ -252,7 +252,7 @@ class TestFrameworkScript(unittest.TestCase):
 
     def test_bech32_decode(self):
         def check_bech32_decode(payload, version):
-            hrp = "tq"
+            hrp = "tr"
             self.assertEqual(bech32_to_bytes(encode_segwit_address(hrp, version, payload)), (version, payload))
 
         check_bech32_decode(bytes.fromhex('36e3e2a33f328de12e4b43c515a75fba2632ecc3'), 0)
