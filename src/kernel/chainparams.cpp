@@ -208,7 +208,7 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data as of block 06782ec373d58f4053d8c2057844ecd0c73044bfda17d062b7e7dbc906b97f75 (height 5239696)
+            // Data as of block 9744ba38789fc0b4e7421abcca321c9ca59caf6829fde80323555a02d1b01c1f (height 1347756)
             .nTime    = 1741522580, // * UNIX timestamp of last known number of transactions
             .tx_count = 2709605, // * total number of transactions between genesis and that timestamp
             .dTxRate  = 0.07664262206369668, // * estimated number of transactions per second after that timestamp
@@ -345,7 +345,8 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data as of block 63550518c2d591277be255c8169d2f9255d1ba2d7e06f9887ed5a7098e571d2e (height 5282486)
+            // Runebase testnet3. The block reference was never recorded (27.1 carried a
+            // stale Qtum one); refresh with getchaintxstats before release.
             .nTime    = 1739905863,
             .tx_count = 6703,
             .dTxRate  = 0.06299127541669518,
@@ -485,7 +486,7 @@ public:
         };
 
         chainTxData = ChainTxData{
-            // Data from RPC: getchaintxstats 4096 0000000000003ed4f08dbdf6f7d6b271a6bcffce25675cb40aa9fa43179a89f3
+            // Runebase testnet4 has no chain yet; populate with getchaintxstats after launch.
             .nTime    = 0,
             .tx_count = 0,
             .dTxRate  = 0,
