@@ -257,7 +257,7 @@ This modularization represents an advancement in Runebase Core's architecture, o
 ## References
 
 - **Cap’n Proto RPC protocol description**: https://capnproto.org/rpc.html
-- **libmultiprocess project page**: https://github.com/runebase-core/libmultiprocess
+- **libmultiprocess project page**: https://github.com/bitcoin-core/libmultiprocess
 
 ## Acknowledgements
 
