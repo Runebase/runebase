@@ -29,3 +29,15 @@ if ENABLE_REDUCED_BLOCK_TIME:
 	MAX_BLOCK_SIGOPS //= FACTOR_REDUCED_BLOCK_TIME
 
 MAX_BLOCK_SIGOPS_WEIGHT = MAX_BLOCK_SIGOPS * 4
+def block_subsidy_at(height):
+	"""Mirror of GetBlockSubsidy() in src/validation.cpp, in whole RUNES.
+
+	Runebase pays the full reward up to nLastBigReward (LAST_POW_BLOCK) and the
+	downscaled reward after it, so a single constant cannot serve both. Tests
+	that build blocks must use this rather than INITIAL_BLOCK_REWARD*.
+	"""
+	if height == 1:
+		return 40000000
+	if height <= LAST_POW_BLOCK:
+		return INITIAL_BLOCK_REWARD
+	return INITIAL_BLOCK_REWARD_POS

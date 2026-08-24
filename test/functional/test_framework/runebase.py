@@ -423,7 +423,7 @@ def create_unsigned_pos_block(node, staking_prevouts, nTime=None):
 
     txout = node.gettxout(hex(block.prevoutStake.hash)[2:].zfill(64), block.prevoutStake.n)
     # input value + block reward
-    out_value = int((float(str(txout['value'])) + INITIAL_BLOCK_REWARD_POS) * COIN) // 2
+    out_value = int((float(str(txout['value'])) + block_subsidy_at(tip['height']+1)) * COIN) // 2
 
     # create a new private key used for block signing.
     block_sig_key = ECKey()
@@ -453,7 +453,7 @@ def create_unsigned_mpos_block(node, staking_prevouts, nTime=None, block_fees=0)
     tip = node.getblock(node.getbestblockhash())
 
     # The block reward is constant for regtest
-    stake_per_participant = int(INITIAL_BLOCK_REWARD_POS*COIN+block_fees) // MPOS_PARTICIPANTS
+    stake_per_participant = int(block_subsidy_at(tip['height']+1)*COIN+block_fees) // MPOS_PARTICIPANTS
 
     for i in range(MPOS_PARTICIPANTS-1):
         partipant_block = node.getblock(node.getblockhash(tip['height']-500-i))
@@ -594,7 +594,7 @@ def create_delegated_pos_block(staker, staker_eckey, staker_prevout, delegator_a
     if not tmp:
         return None
 
-    block_subsidy = INITIAL_BLOCK_REWARD_POS if use_pos_reward else INITIAL_BLOCK_REWARD
+    block_subsidy = block_subsidy_at(staker.getblockcount()+1) if use_pos_reward else INITIAL_BLOCK_REWARD
 
     block, k = tmp
     # change the vin from the staker input to the delegator input

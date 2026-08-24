@@ -51,8 +51,13 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
 
         stake_tx_unsigned.vin.append(CTxIn(coinstake_prevout))
         stake_tx_unsigned.vout.append(CTxOut())
-        stake_tx_unsigned.vout.append(CTxOut(int(10002*COIN), scriptPubKey))
-        stake_tx_unsigned.vout.append(CTxOut(int(10002*COIN), scriptPubKey))
+        # input value + block subsidy, split across two outputs. Was hardcoded to
+        # 10002 each, i.e. Qtum's 20000 stake + 4 reward; Runebase's differ and are
+        # height-dependent, so derive them.
+        coinstake_txout = self.node.gettxout(hex(coinstake_prevout.hash)[2:].zfill(64), coinstake_prevout.n)
+        stake_out_value = int((float(str(coinstake_txout['value'])) + block_subsidy_at(block_height+1)) * COIN) // 2
+        stake_tx_unsigned.vout.append(CTxOut(stake_out_value, scriptPubKey))
+        stake_tx_unsigned.vout.append(CTxOut(stake_out_value, scriptPubKey))
 
         stake_tx_signed_raw_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(stake_tx_unsigned.serialize()))['hex']
         f = io.BytesIO(hex_str_to_bytes(stake_tx_signed_raw_hex))
@@ -129,7 +134,7 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
         child_tx = CTransaction()
         for i in range(NUM_OUTPUTS):
             child_tx.vin.append(CTxIn(COutPoint(parent_tx.sha256, i), b""))
-        child_tx.vout = [CTxOut(value - 100000, CScript([OP_TRUE]))]
+        child_tx.vout = [CTxOut(value - 10000000, CScript([OP_TRUE]))]
         for i in range(NUM_OUTPUTS):
             child_tx.wit.vtxinwit.append(CTxInWitness())
             child_tx.wit.vtxinwit[-1].scriptWitness.stack = [b'a'*195]*(2*NUM_DROPS) + [witness_program]

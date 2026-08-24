@@ -48,7 +48,7 @@ class RunebasePrematureCoinstakeSpendTest(BitcoinTestFramework):
 
         next_block_time = (tip['time'] + 0x30) & 0xfffffff0
         self.node.setmocktime(next_block_time)
-        block, sig_key = create_unsigned_mpos_block(self.node, self.staking_prevouts, next_block_time, 1000000)
+        block, sig_key = create_unsigned_mpos_block(self.node, self.staking_prevouts, next_block_time, 10000000)
         block.vtx.append(tx)
         block.hashMerkleRoot = block.calc_merkle_root()
         block.rehash()
