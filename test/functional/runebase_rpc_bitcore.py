@@ -33,14 +33,14 @@ class RunebaseBitcoreTest(BitcoinTestFramework):
         script_pubkey = CScript([CScriptOp(OP_16), sha256(b"\x00")])
         tx = CTransaction()
         tx.vin = [CTxIn(COutPoint(int(unspent['txid'], 16), unspent['vout']), b"")]
-        tx.vout = [CTxOut(int(unspent['amount']*100000000 - 100000), script_pubkey)]
+        tx.vout = [CTxOut(int(unspent['amount']*100000000 - 10000000), script_pubkey)]
         tx = rpc_sign_transaction(self.nodes[0], tx)
         self.nodes[0].sendrawtransaction(bytes_to_hex_str(tx.serialize()))
 
         tx.rehash()
         tx2 = CTransaction()
         tx2.vin = [CTxIn(COutPoint(tx.sha256, 0), b"")]
-        tx2.vout = [CTxOut(int(unspent['amount']*100000000 - 200000), script_pubkey)]
+        tx2.vout = [CTxOut(int(unspent['amount']*100000000 - 20000000), script_pubkey)]
         tx.rehash()
         tip = self.nodes[0].getblock(self.nodes[0].getbestblockhash())
         block = create_block(int(self.nodes[0].getbestblockhash(), 16), create_coinbase(self.nodes[0].getblockcount()+1), tip['time'])

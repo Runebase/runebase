@@ -126,7 +126,7 @@ class RunebaseEVMGlobalsTest(BitcoinTestFramework):
         
         # block.chainid
         print('  block.chainid')
-        assert_equal(8890, int(self.get_contract_call_output("cd84980e"), 16))
+        assert_equal(531802, int(self.get_contract_call_output("cd84980e"), 16))
 
         # msg.gas
         print('  msg.gas')

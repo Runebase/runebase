@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from test_framework.script import *
@@ -51,11 +52,11 @@ class RunebaseIgnoreMPOSParticipantRewardTest(BitcoinTestFramework):
         activate_mpos(self.node)
 
         self.staking_prevouts = collect_prevouts(self.node)
-        # Only have staking outputs with nValue == 20000.0
+        # Only have staking outputs with nValue == INITIAL_BLOCK_REWARD
         # Since the rest of the code relies on this
         i = 0
         while i < len(self.staking_prevouts):
-            if self.staking_prevouts[i][1] != 20000*COIN:
+            if self.staking_prevouts[i][1] != INITIAL_BLOCK_REWARD*COIN:
                 self.staking_prevouts.pop(i)
             i += 1
 

@@ -139,7 +139,7 @@ def rpc_sign_transaction(node, tx):
     tx_signed.deserialize(f)
     return tx_signed
 
-def make_vin_from_unspent(node, unspents=None, value=2000000000000, address=None):
+def make_vin_from_unspent(node, unspents=None, value=INITIAL_BLOCK_REWARD*COIN, address=None):
     if not unspents:
         unspents = node.listunspent()
     for i in range(len(unspents)):

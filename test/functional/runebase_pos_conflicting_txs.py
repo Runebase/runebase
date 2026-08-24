@@ -51,7 +51,7 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
             staking_prevout = COutPoint(int(last_coinbase, 16), 0)
             tx = CTransaction()
             tx.vin = [CTxIn(staking_prevout)]
-            tx.vout = [CTxOut(int((20000-0.01)*COIN), CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(p2pkh_to_hex_hash(self.nodes[0].getnewaddress())), OP_EQUALVERIFY, OP_CHECKSIG]))]
+            tx.vout = [CTxOut(int((INITIAL_BLOCK_REWARD-0.01)*COIN), CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(p2pkh_to_hex_hash(self.nodes[0].getnewaddress())), OP_EQUALVERIFY, OP_CHECKSIG]))]
             txs.append(rpc_sign_transaction(self.nodes[0], tx))
 
         print("blkcnt", self.nodes[0].getblockcount())

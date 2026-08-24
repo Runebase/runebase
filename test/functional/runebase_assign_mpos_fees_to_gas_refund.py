@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from test_framework.script import *
@@ -37,7 +38,7 @@ class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
         address = self.node.createcontract(bytecode)['address']
         self.generate(self.node, 1)
 
-        staking_prevouts = collect_prevouts(self.node, amount=20000)
+        staking_prevouts = collect_prevouts(self.node, amount=INITIAL_BLOCK_REWARD)
         tip = self.node.getblock(self.node.getbestblockhash())
         t = (tip['time'] + 0x30) & 0xfffffff0
         self.node.setmocktime(t)
@@ -45,7 +46,7 @@ class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
         block.hashUTXORoot = int(tip['hashUTXORoot'], 16)
         block.hashStateRoot = int(tip['hashStateRoot'], 16)
 
-        unspents = [unspent for unspent in self.node.listunspent()[::-1] if unspent['amount'] == 20000]
+        unspents = [unspent for unspent in self.node.listunspent()[::-1] if unspent["amount"] == INITIAL_BLOCK_REWARD]
         unspent = unspents.pop(0)
 
         tx_all_fees = CTransaction()

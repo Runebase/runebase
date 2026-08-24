@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from test_framework.runebaseconfig import INITIAL_BLOCK_REWARD
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 from test_framework.script import *
@@ -90,7 +91,7 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
         gas_limit = 100000
         if not spends_txid:
             for unspent in self.node.listunspent():
-                if unspent['amount'] == 20000:
+                if unspent['amount'] == INITIAL_BLOCK_REWARD:
                     spends_txid = unspent['txid']
                     spends_vout = unspent['vout']
                     break
@@ -226,7 +227,7 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
             expected_tx_order.append((expected_tx_index, unspent['txid']))
 
         for unspent in self.node.listunspent():
-            if unspent['amount'] == 20000 and unspent['address'] != address:
+            if unspent['amount'] == INITIAL_BLOCK_REWARD and unspent['address'] != address:
                 break
 
         # The list of tuples specifies (expected position in block txs, gas_price)

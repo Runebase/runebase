@@ -30,7 +30,7 @@ class Runebase8MBBlock(BitcoinTestFramework):
 
         tx = CTransaction()
         tx.vin = [make_vin(self.node, 2*COIN)]
-        tx.vout = [CTxOut(2*COIN - 100000, CScript([OP_TRUE]))]
+        tx.vout = [CTxOut(2*COIN - 10000000, CScript([OP_TRUE]))]
         tx.rehash()
         tx_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']
         txid = self.node.sendrawtransaction(tx_hex)
@@ -47,7 +47,7 @@ class Runebase8MBBlock(BitcoinTestFramework):
         scriptPubKey = CScript([OP_0, ser_uint256(witness_hash)])
 
         prevout = COutPoint(int(txid, 16), 0)
-        value = 2*COIN - 100000
+        value = 2*COIN - 10000000
 
         parent_tx = CTransaction()
         parent_tx.vin.append(CTxIn(prevout, b""))
@@ -61,7 +61,7 @@ class Runebase8MBBlock(BitcoinTestFramework):
         child_tx = CTransaction()
         for i in range(NUM_OUTPUTS):
             child_tx.vin.append(CTxIn(COutPoint(parent_tx.sha256, i), b""))
-        child_tx.vout = [CTxOut(value - 100000, CScript([OP_TRUE]))]
+        child_tx.vout = [CTxOut(value - 10000000, CScript([OP_TRUE]))]
         for i in range(NUM_OUTPUTS):
             child_tx.wit.vtxinwit.append(CTxInWitness())
             child_tx.wit.vtxinwit[-1].scriptWitness.stack = [b'a'*195]*(2*NUM_DROPS) + [witness_program]
