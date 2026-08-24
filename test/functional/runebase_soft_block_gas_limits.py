@@ -56,12 +56,20 @@ class RunebaseSoftMinerGasRelatedLimitsTest(BitcoinTestFramework):
 
 
     def send_raw_to_contract(self, node, contract_address, gas_limit, gas_price, num_outputs=1):
-        # Runebase's block reward is 100, not Qtum's 20000, so listunspent()[0] is often
-        # too small to cover gas_limit*gas_price; pick the largest utxo instead.
-        unspent = max(node.listunspent(), key=lambda u: u['amount'])
+        # Runebase's block reward is 100 RUNES, not Qtum's 20000, so a single coinbase
+        # cannot cover gas_limit*gas_price (up to 800 RUNES here). Select enough
+        # utxos to cover the gas for every output, largest first.
+        needed = num_outputs * gas_price * gas_limit
+        selected, total_in = [], 0
+        for u in sorted(node.listunspent(), key=lambda u: -u['amount']):
+            selected.append(u)
+            total_in += int(float(str(u['amount'])) * COIN)
+            if total_in > needed:
+                break
+        assert total_in > needed, f'not enough funds: have {total_in}, need > {needed}'
         tx = CTransaction()
-        tx.vin = [CTxIn(COutPoint(int(unspent['txid'], 16), unspent['vout']), nSequence=0)]
-        amount = int((float(str(unspent['amount']))*COIN)) // num_outputs -  gas_price*gas_limit
+        tx.vin = [CTxIn(COutPoint(int(u['txid'], 16), u['vout']), nSequence=0) for u in selected]
+        amount = total_in // num_outputs - gas_price*gas_limit
 
         tx.vout = [CTxOut(amount, scriptPubKey=CScript([b"\x04", CScriptNum(gas_limit), CScriptNum(gas_price), b"\x00", hex_str_to_bytes(contract_address), OP_CALL])) for i in range(num_outputs)]
         tx_hex_signed = node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']

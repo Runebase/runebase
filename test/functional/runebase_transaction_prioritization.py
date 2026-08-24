@@ -48,9 +48,12 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
             return self.generate(self.node, 1)[0]
 
     def send_transaction_with_fee(self, fee):
-        for unspent in self.node.listunspent():
-            if unspent['amount'] >= 10000:
-                break
+        # These outputs are later spent by op_call txs whose gas can cost up to
+        # 1000 RUNES, and Runebase coinbases are only 100, so fund a large
+        # enough output rather than hunting for one in listunspent().
+        _txid, _vout = self._funding_output(2000)
+        unspent = {'txid': _txid, 'vout': _vout,
+                   'amount': self.node.decoderawtransaction(self.node.gettransaction(_txid)['hex'])['vout'][_vout]['value']}
         addr = self.node.getnewaddress()
         haddr = p2pkh_to_hex_hash(addr)
         tx = CTransaction()
@@ -60,13 +63,26 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
         tx_hex_signed = self.node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']
         return self.node.sendrawtransaction(tx_hex_signed)
 
+    # Runebase's block reward is 100 RUNES, not Qtum's 20000, so a single coinbase
+    # cannot cover gas_price*gas_limit (up to 1000 RUNES in this test). Pre-fund a
+    # pool of large outputs in one mined tx, then hand them out; funding must not
+    # land in the mempool because this test asserts exact mempool sizes.
+    def _funding_output(self, needed_runes):
+        if not getattr(self, '_fund_pool', None):
+            addrs = [self.node.getnewaddress() for _ in range(8)]
+            txid = self.node.sendmany("", {a: 2500 for a in addrs})
+            self.generate(self.node, 1)
+            raw = self.node.decoderawtransaction(self.node.gettransaction(txid)['hex'])
+            self._fund_pool = [(txid, o['n']) for o in raw['vout']
+                               if o['scriptPubKey'].get('address') in addrs]
+        assert self._fund_pool, 'funding pool exhausted'
+        return self._fund_pool.pop(0)
+
     # Creates and op_call tx that calls the fallback function of the only contract that should be in existance
     def send_op_call_transaction_with_gas_price(self, contract_address, gas_price, spends_txid=None, spends_vout=None):
         gas_limit = 1000000
         if not spends_txid:
-            unspent = self.node.listunspent()[0]
-            spends_txid = unspent['txid']
-            spends_vout = unspent['vout']
+            spends_txid, spends_vout = self._funding_output(gas_price * gas_limit)
 
         # Fetch the amount of the vout of the txid that we are spending
         spends_tx = self.node.decoderawtransaction(self.node.gettransaction(spends_txid)['hex'])
@@ -90,11 +106,7 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
     def send_op_call_outputs_with_gas_price(self, contract_address, gas_prices, spends_txid=None, spends_vout=None):
         gas_limit = 100000
         if not spends_txid:
-            for unspent in self.node.listunspent():
-                if unspent['amount'] == INITIAL_BLOCK_REWARD:
-                    spends_txid = unspent['txid']
-                    spends_vout = unspent['vout']
-                    break
+            spends_txid, spends_vout = self._funding_output(sum(gas_prices) * gas_limit)
 
         # Fetch the amount of the vout of the txid that we are spending
         spends_tx = self.node.decoderawtransaction(self.node.gettransaction(spends_txid)['hex'])
