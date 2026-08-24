@@ -1,6 +1,6 @@
 IDI_ICON1 ICON DISCARDABLE "icons/bitcoin.ico"
 IDI_ICON2 ICON DISCARDABLE "icons/bitcoin_testnet.ico"
-IDI_ICON3 ICON DISCARDABLE "icons/bitcoin_signet.ico"
+IDI_ICON3 ICON DISCARDABLE "icons/bitcoin_testnet.ico" // signet
 IDI_ICON4 ICON DISCARDABLE "icons/bitcoin_testnet.ico" // testnet4
 
 #include <windows.h>             // needed for VERSIONINFO
@@ -21,7 +21,7 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        CLIENT_NAME " project"
+            VALUE "CompanyName",        "Runebase"
             VALUE "FileDescription",    CLIENT_NAME " (GUI node for Runebase)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "runebase-qt"
