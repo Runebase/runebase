@@ -158,7 +158,7 @@ public:
         pchMessageStart[3] = 0xa6;
         nDefaultPort = 9947;
         nPruneAfterHeight = 100000;
-        m_assumed_blockchain_size = 25;
+        m_assumed_blockchain_size = 24;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1572854661, 355217, 0x1f00ffff, 1, 50 * COIN);
@@ -305,7 +305,7 @@ public:
         pchMessageStart[3] = 0x2d;
         nDefaultPort = 19947;
         nPruneAfterHeight = 1000;
-        m_assumed_blockchain_size = 11;
+        m_assumed_blockchain_size = 10;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1578091191, 111552, 0x1f00ffff, 1, 50 * COIN);
@@ -364,7 +364,7 @@ public:
                                     consensus.nCoinbaseMaturity;
         consensus.nLastMPoSBlock = 5050;
 
-        consensus.nFixUTXOCacheHFHeight = 84500;
+        consensus.nFixUTXOCacheHFHeight = 0;
         consensus.nEnableHeaderSignatureHeight = 5099;
         consensus.nCheckpointSpan = consensus.nCoinbaseMaturity;
         consensus.nRBTCheckpointSpan = consensus.nRBTCoinbaseMaturity;
