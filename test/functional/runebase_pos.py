@@ -129,7 +129,7 @@ class RunebasePOSTest(BitcoinTestFramework):
 
 
         # 2 A block that with a too high reward
-        (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, outNValue=150)  # 1.5x the valid reward, must be rejected
+        (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, rewardFactor=1.5)  # 1.5x the valid reward, must be rejected
         self.tip.sign_block(block_sig_key)
         self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
@@ -345,7 +345,7 @@ class RunebasePOSTest(BitcoinTestFramework):
 
 
 
-    def create_unsigned_pos_block(self, staking_prevouts, nTime=None, outNValue=None, signStakeTx=True, bestBlockHash=None, coinStakePrevout=None):
+    def create_unsigned_pos_block(self, staking_prevouts, nTime=None, outNValue=None, signStakeTx=True, bestBlockHash=None, coinStakePrevout=None, rewardFactor=1.0):
         if not nTime:
             current_time = int(time.time()) + TIMESTAMP_MASK
             nTime = current_time & (0xffffffff - TIMESTAMP_MASK)
@@ -386,14 +386,20 @@ class RunebasePOSTest(BitcoinTestFramework):
             # default was 10002, i.e. half of Qtum's 20000 stake + 4 reward.
             # Derive it: (prevout value + subsidy at this height) split in two.
             _txid = hex(coinStakePrevout.hash)[2:].zfill(64)
-            _txout = self.node.gettxout(_txid, coinStakePrevout.n, True)
-            if _txout is None:
-                # unconfirmed / already-spent prevout: read the value from the tx itself
-                _raw = self.node.decoderawtransaction(self.node.gettransaction(_txid)['hex'])
-                _value = _raw['vout'][coinStakePrevout.n]['value']
-            else:
-                _value = _txout['value']
-            outNValue = (float(str(_value)) + block_subsidy_at(self.node.getblockcount()+1)) / 2
+            _value = 0
+            try:
+                _txout = self.node.gettxout(_txid, coinStakePrevout.n, True)
+                if _txout is None:
+                    # unconfirmed / already-spent prevout: read it from the tx itself
+                    _raw = self.node.decoderawtransaction(self.node.gettransaction(_txid)['hex'])
+                    _value = _raw['vout'][coinStakePrevout.n]['value']
+                else:
+                    _value = _txout['value']
+            except Exception:
+                # deliberately-invalid prevouts (bad_vout_staking_prevouts): the
+                # block is expected to be rejected, so any value will do
+                _value = 0
+            outNValue = (float(str(_value)) + block_subsidy_at(self.node.getblockcount()+1)) / 2 * rewardFactor
         stake_tx_unsigned.vout.append(CTxOut(int(outNValue*COIN), scriptPubKey))
         stake_tx_unsigned.vout.append(CTxOut(int(outNValue*COIN), scriptPubKey))
 
