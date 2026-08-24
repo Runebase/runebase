@@ -45,7 +45,7 @@ void CWalletTx::updateState(interfaces::Chain& chain)
     };
     if (auto* conf = state<TxStateConfirmed>()) {
         lookup_block(conf->confirmed_block_hash, conf->confirmed_block_height, conf->has_delegation, m_state);
-    } else if (auto* conf = state<TxStateConflicted>()) {
+    } else if (auto* conf = state<TxStateBlockConflicted>()) {
         bool has_delegation = false;
         lookup_block(conf->conflicting_block_hash, conf->conflicting_block_height, has_delegation, m_state);
     }

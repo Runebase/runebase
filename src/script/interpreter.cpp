@@ -12,6 +12,7 @@
 #include <script/script.h>
 #include <uint256.h>
 
+
 namespace {
 
 inline bool set_success(ScriptError* ret)
@@ -49,8 +50,8 @@ bool CastToBool(const valtype& vch)
  * Script is a stack machine (like Forth) that evaluates a predicate
  * returning a bool indicating valid or not.  There are no loops.
  */
-#define stacktop(i)  (stack.at(stack.size()+(i)))
-#define altstacktop(i)  (altstack.at(altstack.size()+(i)))
+#define stacktop(i) (stack.at(size_t(int64_t(stack.size()) + int64_t{i})))
+#define altstacktop(i) (altstack.at(size_t(int64_t(altstack.size()) + int64_t{i})))
 static inline void popstack(std::vector<valtype>& stack)
 {
     if (stack.empty())
@@ -1329,7 +1330,7 @@ public:
         // Serialize the nSequence
         if (nInput != nIn && (fHashSingle || fHashNone))
             // let the others update at will
-            ::Serialize(s, int{0});
+            ::Serialize(s, int32_t{0});
         else
             ::Serialize(s, txTo.vin[nInput].nSequence);
     }
@@ -1347,8 +1348,8 @@ public:
     /** Serialize txTo */
     template<typename S>
     void Serialize(S &s) const {
-        // Serialize nVersion
-        ::Serialize(s, txTo.nVersion);
+        // Serialize version
+        ::Serialize(s, txTo.version);
         // Serialize vin
         unsigned int nInputs = fAnyoneCanPay ? 1 : txTo.vin.size();
         ::WriteCompactSize(s, nInputs);
@@ -1584,7 +1585,7 @@ bool SignatureHashSchnorr(uint256& hash_out, ScriptExecutionData& execdata, cons
     ss << hash_type;
 
     // Transaction level data
-    ss << tx_to.nVersion;
+    ss << tx_to.version;
     ss << tx_to.nLockTime;
     if (input_type != SIGHASH_ANYONECANPAY) {
         ss << cache.m_prevouts_single_hash;
@@ -1637,7 +1638,7 @@ bool SignatureHashSchnorr(uint256& hash_out, ScriptExecutionData& execdata, cons
 }
 
 template <class T>
-uint256 SignatureHashOutput(const CScript& scriptCode, const T& txTo, unsigned int nOut, int nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache)
+uint256 SignatureHashOutput(const CScript& scriptCode, const T& txTo, unsigned int nOut, int32_t nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache)
 {
     assert(nOut < txTo.vout.size());
 
@@ -1672,7 +1673,7 @@ uint256 SignatureHashOutput(const CScript& scriptCode, const T& txTo, unsigned i
     HashWriter ss{};
 
     // Version
-    ss << txTo.nVersion;
+    ss << txTo.version;
     // Input prevouts/nSequence (none/first/all, depending on flags)
     ss << hashPrevouts;
     ss << hashSequence;
@@ -1690,8 +1691,11 @@ uint256 SignatureHashOutput(const CScript& scriptCode, const T& txTo, unsigned i
     return ss.GetHash();
 }
 
+template uint256 SignatureHashOutput<CTransaction>(const CScript& scriptCode, const CTransaction& txTo, unsigned int nOut, int32_t nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache);
+template uint256 SignatureHashOutput<CMutableTransaction>(const CScript& scriptCode, const CMutableTransaction& txTo, unsigned int nOut, int32_t nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache);
+
 template <class T>
-uint256 SignatureHash(const CScript& scriptCode, const T& txTo, unsigned int nIn, int nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache)
+uint256 SignatureHash(const CScript& scriptCode, const T& txTo, unsigned int nIn, int32_t nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache)
 {
     assert(nIn < txTo.vin.size());
 
@@ -1720,7 +1724,7 @@ uint256 SignatureHash(const CScript& scriptCode, const T& txTo, unsigned int nIn
 
         HashWriter ss{};
         // Version
-        ss << txTo.nVersion;
+        ss << txTo.version;
         // Input prevouts/nSequence (none/all, depending on flags)
         ss << hashPrevouts;
         ss << hashSequence;
@@ -1869,7 +1873,7 @@ bool GenericTransactionSignatureChecker<T>::CheckSequence(const CScriptNum& nSeq
 
     // Fail if the transaction's version number is not set high
     // enough to trigger BIP 68 rules.
-    if (static_cast<uint32_t>(txTo->nVersion) < 2)
+    if (txTo->version < 2)
         return false;
 
     // Sequence numbers with their most significant bit set are not
@@ -2101,6 +2105,8 @@ static bool VerifyWitnessProgram(const CScriptWitness& witness, int witversion, 
             }
             return set_success(serror);
         }
+    } else if (!is_p2sh && CScript::IsPayToAnchor(witversion, program)) {
+        return true;
     } else {
         if (flags & SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM) {
             return set_error(serror, SCRIPT_ERR_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM);

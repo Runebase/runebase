@@ -21,12 +21,14 @@
 #include <stdexcept>
 #include <vector>
 
+using util::SplitString;
+
 void ReadSigNetArgs(const ArgsManager& args, CChainParams::SigNetOptions& options)
 {
-    if (args.IsArgSet("-signetseednode")) {
+    if (!args.GetArgs("-signetseednode").empty()) {
         options.seeds.emplace(args.GetArgs("-signetseednode"));
     }
-    if (args.IsArgSet("-signetchallenge")) {
+    if (!args.GetArgs("-signetchallenge").empty()) {
         const auto signet_challenge = args.GetArgs("-signetchallenge");
         if (signet_challenge.size() != 1) {
             throw std::runtime_error("-signetchallenge cannot be multiple values.");
@@ -42,6 +44,7 @@ void ReadSigNetArgs(const ArgsManager& args, CChainParams::SigNetOptions& option
 void ReadRegTestArgs(const ArgsManager& args, CChainParams::RegTestOptions& options)
 {
     if (auto value = args.GetBoolArg("-fastprune")) options.fastprune = *value;
+    if (HasTestOption(args, "bip94")) options.enforce_bip94 = true;
 
     for (const std::string& arg : args.GetArgs("-testactivationheight")) {
         const auto found{arg.find('@')};
@@ -62,8 +65,6 @@ void ReadRegTestArgs(const ArgsManager& args, CChainParams::RegTestOptions& opti
             throw std::runtime_error(strprintf("Invalid name (%s) for -testactivationheight=name@height.", arg));
         }
     }
-
-    if (!args.IsArgSet("-vbparams")) return;
 
     for (const std::string& strDeployment : args.GetArgs("-vbparams")) {
         std::vector<std::string> vDeploymentParams = SplitString(strDeployment, ':');
@@ -113,6 +114,8 @@ std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, c
         return CChainParams::Main();
     case ChainType::TESTNET:
         return CChainParams::TestNet();
+    case ChainType::TESTNET4:
+        return CChainParams::TestNet4();
     case ChainType::SIGNET: {
         auto opts = CChainParams::SigNetOptions{};
         ReadSigNetArgs(args, opts);
@@ -138,47 +141,9 @@ void SelectParams(const ChainType chain)
     globalChainParams = CreateChainParams(gArgs, chain);
 }
 
-std::string CChainParams::EVMGenesisInfo() const
-{
-    dev::eth::EVMConsensus evmConsensus;
-    evmConsensus.QIP6Height = consensus.QIP6Height;
-    evmConsensus.QIP7Height = consensus.QIP7Height;
-    evmConsensus.nMuirGlacierHeight = consensus.nMuirGlacierHeight;
-    evmConsensus.nLondonHeight = consensus.nLondonHeight;
-    evmConsensus.nShanghaiHeight = consensus.nShanghaiHeight;
-    evmConsensus.nCancunHeight = consensus.nCancunHeight;
-    return dev::eth::genesisInfoRunebase(GetEVMNetwork(), evmConsensus);
-}
-
-std::string CChainParams::EVMGenesisInfo(int nHeight) const
-{
-    dev::eth::EVMConsensus evmConsensus(nHeight);
-    return dev::eth::genesisInfoRunebase(GetEVMNetwork(), evmConsensus);
-}
-
-std::string CChainParams::EVMGenesisInfo(const dev::eth::EVMConsensus& evmConsensus) const
-{
-    return dev::eth::genesisInfoRunebase(GetEVMNetwork(), evmConsensus);
-}
-
-dev::eth::Network CChainParams::GetEVMNetwork() const
-{
-    return dev::eth::Network::runebaseNetwork;
-}
-
-void CChainParams::UpdateOpSenderBlockHeight(int nHeight)
-{
-    consensus.QIP5Height = nHeight;
-}
-
 void UpdateOpSenderBlockHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateOpSenderBlockHeight(nHeight);
-}
-
-void CChainParams::UpdateBtcEcrecoverBlockHeight(int nHeight)
-{
-    consensus.QIP6Height = nHeight;
 }
 
 void UpdateBtcEcrecoverBlockHeight(int nHeight)
@@ -186,33 +151,9 @@ void UpdateBtcEcrecoverBlockHeight(int nHeight)
     const_cast<CChainParams*>(globalChainParams.get())->UpdateBtcEcrecoverBlockHeight(nHeight);
 }
 
-void CChainParams::UpdateConstantinopleBlockHeight(int nHeight)
-{
-    consensus.QIP7Height = nHeight;
-}
-
 void UpdateConstantinopleBlockHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateConstantinopleBlockHeight(nHeight);
-}
-
-void CChainParams::UpdateDifficultyChangeBlockHeight(int nHeight)
-{
-    consensus.nSubsidyHalvingInterval = 525960000; // runebase halving every 4 years
-    consensus.nSubsidyHalvingIntervalV2 = consensus.nBlocktimeDownscaleFactor*525960000; // runebase halving every 4 years (nSubsidyHalvingInterval * nBlocktimeDownscaleFactor)
-    consensus.posLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-    consensus.QIP9PosLimit = uint256S("0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff");
-    consensus.RBTPosLimit = uint256S("0000000000003fffffffffffffffffffffffffffffffffffffffffffffffffff");
-    consensus.QIP9Height = nHeight;
-    consensus.fPowAllowMinDifficultyBlocks = false;
-    consensus.fPowNoRetargeting = true;
-    consensus.fPoSNoRetargeting = false;
-    consensus.nLastPOWBlock = 5000;
-    consensus.nMPoSRewardRecipients = 10;
-    consensus.nFirstMPoSBlock = consensus.nLastPOWBlock + 
-                                consensus.nMPoSRewardRecipients + 
-                                consensus.nCoinbaseMaturity;
-    consensus.nLastMPoSBlock = 0;
 }
 
 void UpdateDifficultyChangeBlockHeight(int nHeight)
@@ -220,19 +161,9 @@ void UpdateDifficultyChangeBlockHeight(int nHeight)
     const_cast<CChainParams*>(globalChainParams.get())->UpdateDifficultyChangeBlockHeight(nHeight);
 }
 
-void CChainParams::UpdateOfflineStakingBlockHeight(int nHeight)
-{
-    consensus.nOfflineStakeHeight = nHeight;
-}
-
 void UpdateOfflineStakingBlockHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateOfflineStakingBlockHeight(nHeight);
-}
-
-void CChainParams::UpdateDelegationsAddress(const uint160& address)
-{
-    consensus.delegationsAddress = address;
 }
 
 void UpdateDelegationsAddress(const uint160& address)
@@ -240,19 +171,9 @@ void UpdateDelegationsAddress(const uint160& address)
     const_cast<CChainParams*>(globalChainParams.get())->UpdateDelegationsAddress(address);
 }
 
-void CChainParams::UpdateLastMPoSBlockHeight(int nHeight)
-{
-    consensus.nLastMPoSBlock = nHeight;
-}
-
 void UpdateLastMPoSBlockHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateLastMPoSBlockHeight(nHeight);
-}
-
-void CChainParams::UpdateReduceBlocktimeHeight(int nHeight)
-{
-    consensus.nReduceBlocktimeHeight = nHeight;
 }
 
 void UpdateReduceBlocktimeHeight(int nHeight)
@@ -260,19 +181,9 @@ void UpdateReduceBlocktimeHeight(int nHeight)
     const_cast<CChainParams*>(globalChainParams.get())->UpdateReduceBlocktimeHeight(nHeight);
 }
 
-void CChainParams::UpdatePowAllowMinDifficultyBlocks(bool fValue)
-{
-    consensus.fPowAllowMinDifficultyBlocks = fValue;
-}
-
 void UpdatePowAllowMinDifficultyBlocks(bool fValuet)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdatePowAllowMinDifficultyBlocks(fValuet);
-}
-
-void CChainParams::UpdatePowNoRetargeting(bool fValue)
-{
-    consensus.fPowNoRetargeting = fValue;
 }
 
 void UpdatePowNoRetargeting(bool fValuet)
@@ -280,19 +191,9 @@ void UpdatePowNoRetargeting(bool fValuet)
     const_cast<CChainParams*>(globalChainParams.get())->UpdatePowNoRetargeting(fValuet);
 }
 
-void CChainParams::UpdatePoSNoRetargeting(bool fValue)
-{
-    consensus.fPoSNoRetargeting = fValue;
-}
-
 void UpdatePoSNoRetargeting(bool fValuet)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdatePoSNoRetargeting(fValuet);
-}
-
-void CChainParams::UpdateMuirGlacierHeight(int nHeight)
-{
-    consensus.nMuirGlacierHeight = nHeight;
 }
 
 void UpdateMuirGlacierHeight(int nHeight)
@@ -300,29 +201,9 @@ void UpdateMuirGlacierHeight(int nHeight)
     const_cast<CChainParams*>(globalChainParams.get())->UpdateMuirGlacierHeight(nHeight);
 }
 
-void CChainParams::UpdateLondonHeight(int nHeight)
-{
-    consensus.nLondonHeight = nHeight;
-}
-
 void UpdateLondonHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateLondonHeight(nHeight);
-}
-
-void CChainParams::UpdateTaprootHeight(int nHeight)
-{
-    if(nHeight == 0)
-    {
-        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = Consensus::BIP9Deployment::ALWAYS_ACTIVE;
-        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
-    }
-    else
-    {
-        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nStartTime = 0;
-        // Min block number for activation, the number must be divisible with 144
-        consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = nHeight;
-    }
 }
 
 void UpdateTaprootHeight(int nHeight)
@@ -330,22 +211,17 @@ void UpdateTaprootHeight(int nHeight)
     const_cast<CChainParams*>(globalChainParams.get())->UpdateTaprootHeight(nHeight);
 }
 
-void CChainParams::UpdateShanghaiHeight(int nHeight)
-{
-    consensus.nShanghaiHeight = nHeight;
-}
-
 void UpdateShanghaiHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateShanghaiHeight(nHeight);
 }
 
-void CChainParams::UpdateCancunHeight(int nHeight)
-{
-    consensus.nCancunHeight = nHeight;
-}
-
 void UpdateCancunHeight(int nHeight)
 {
     const_cast<CChainParams*>(globalChainParams.get())->UpdateCancunHeight(nHeight);
+}
+
+void UpdatePectraHeight(int nHeight)
+{
+    const_cast<CChainParams*>(globalChainParams.get())->UpdatePectraHeight(nHeight);
 }

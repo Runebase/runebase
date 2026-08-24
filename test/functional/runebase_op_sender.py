@@ -62,7 +62,7 @@ def SignatureHashOutput(scriptCode, txTo, nOut, hashtype, amount):
         hashOutputs = uint256_from_str(hash256(serialize_outputs))
 
     ss = bytes()
-    ss += struct.pack("<i", txTo.nVersion)
+    ss += struct.pack("<i", txTo.version)
     ss += ser_uint256(hashPrevouts)
     ss += ser_uint256(hashSequence)
     ss += GetOutputWithoutSenderSig(txTo.vout[nOut]).serialize()
@@ -167,7 +167,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
         for hashtype in HASHTYPES:
             self.create_op_sender_tx([key], [output], [hashtype], 40000000)
 
-        self.nodes[0].generate(10)
+        self.generate(self.nodes[0], 10)
         self.sync_all()
         assert_equal(len(self.nodes[0].listcontracts().keys()), num_contracts+len(HASHTYPES))
         assert_equal(self.nodes[0].listcontracts(), self.nodes[1].listcontracts())
@@ -182,7 +182,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
         for hashtype in HASHTYPES:
             self.create_op_sender_tx([key], [output], [hashtype], 40000000)
 
-        self.nodes[0].generate(10)
+        self.generate(self.nodes[0], 10)
         self.sync_all()
         assert_equal(self.nodes[0].listcontracts()[contract_address], len(HASHTYPES))
 
@@ -200,7 +200,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
             outputs.append(output)
 
         self.create_op_sender_tx(keys, outputs, HASHTYPES, len(outputs)*40000000)
-        self.nodes[0].generate(10)
+        self.generate(self.nodes[0], 10)
         assert_equal(self.nodes[0].listcontracts()[contract_address], old_balance+len(outputs))
 
     """
@@ -215,7 +215,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
             output = CTxOut(COIN, CScript([CScriptNum(1), hash160(key.get_pubkey().get_bytes()), b'', OP_SENDER, 
                     b'\x04', CScriptNum(1000000), CScriptNum(40), hex_str_to_bytes("00"), hex_str_to_bytes(contract_address), OP_CALL]))
             old_tx, input_txout = self.create_op_sender_tx([key], [output], [hashtype], 40000000, publish=True)
-            self.nodes[0].generate(1)
+            self.generate(self.nodes[0], 1)
 
             unspent = self.unspents.pop()
             amount = COIN
@@ -232,7 +232,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
             assert_raises_rpc_error(-26, 'sender-output-script-verify-failed', self.nodes[0].sendrawtransaction, bytes_to_hex_str(tx.serialize()))
 
     def mixed_opsender_and_non_op_sender_tx_and_refund_verification_test(self):
-        self.nodes[0].generate(1)
+        self.generate(self.nodes[0], 1)
         assert_equal(self.nodes[0].getrawmempool(), [])
         old_contracts = self.nodes[0].listcontracts().keys()
         """
@@ -269,7 +269,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
             CTxOut(0, CScript([b'\x04', CScriptNum(1000000), CScriptNum(40), hex_str_to_bytes(bytecode), OP_CREATE]))
         ]
         tx, input_txout = self.create_op_sender_tx([key], outputs, [SIGHASH_ALL], 2*40000000)
-        block_hash = self.nodes[0].generate(1)[0]
+        block_hash = self.generate(self.nodes[0], 1)[0]
         new_contracts = list(set(self.nodes[0].listcontracts().keys()) - set(old_contracts))
         assert_equal(len(new_contracts), 2)
 
@@ -298,7 +298,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
             CTxOut(COIN, CScript([b'\x04', CScriptNum(1000000), CScriptNum(40), hex_str_to_bytes("00"), hex_str_to_bytes(contract_address), OP_CALL]))
         ]
         tx, input_txout = self.create_op_sender_tx([key], outputs, [SIGHASH_ALL], 2*40000000)
-        self.nodes[0].generate(1)
+        self.generate(self.nodes[0], 1)
         for sender in [bytes_to_hex_str(hash160(key.get_pubkey().get_bytes())), p2pkh_to_hex_hash(input_txout['address'])]:
             balance = int(self.nodes[0].callcontract(new_contracts[0], "f8b2cb4f"+(sender.zfill(64)))['executionResult']['output'], 16)
             assert_equal(COIN, balance)
@@ -472,7 +472,7 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
         self.pre_hf_single_op_sender_op_create_tx_rejected_test()
         self.pre_hf_op_sender_in_vin_rejected_test()
         self.pre_hf_double_op_sender_in_vout_rejected_test()
-        self.nodes[0].generate(1)
+        self.generate(self.nodes[0], 1)
         self.sync_all()
 
         # Trigger the HF
@@ -491,4 +491,4 @@ class RunebaseOpSenderTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    RunebaseOpSenderTest().main()
+    RunebaseOpSenderTest(__file__).main()

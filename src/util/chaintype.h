@@ -13,6 +13,7 @@ enum class ChainType {
     TESTNET,
     SIGNET,
     REGTEST,
+    TESTNET4,
     UNITTEST,
 };
 

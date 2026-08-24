@@ -3,9 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
+#include <bitcoin-build-config.h> // IWYU pragma: keep
 
 #include <chainparams.h>
 #include <httpserver.h>
@@ -101,7 +99,7 @@ static RPCHelpMan mockscheduler()
 
     const NodeContext& node_context{EnsureAnyNodeContext(request.context)};
     CHECK_NONFATAL(node_context.scheduler)->MockForward(std::chrono::seconds{delta_seconds});
-    SyncWithValidationInterfaceQueue();
+    CHECK_NONFATAL(node_context.validation_signals)->SyncWithValidationInterfaceQueue();
     for (const auto& chain_client : node_context.chain_clients) {
         chain_client->schedulerMockForward(std::chrono::seconds(delta_seconds));
     }
@@ -227,7 +225,6 @@ static RPCHelpMan logging()
             "The valid logging categories are: " + LogInstance().LogCategoriesString() + "\n"
             "In addition, the following are available as category names with special meanings:\n"
             "  - \"all\",  \"1\" : represent all logging categories.\n"
-            "  - \"none\", \"0\" : even if other logging categories are specified, ignore all of them.\n"
             ,
                 {
                     {"include", RPCArg::Type::ARR, RPCArg::Optional::OMITTED, "The categories to add to debug logging",
@@ -251,15 +248,15 @@ static RPCHelpMan logging()
                 },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    uint64_t original_log_categories = LogInstance().GetCategoryMask();
+    BCLog::CategoryMask original_log_categories = LogInstance().GetCategoryMask();
     if (request.params[0].isArray()) {
         EnableOrDisableLogCategories(request.params[0], true);
     }
     if (request.params[1].isArray()) {
         EnableOrDisableLogCategories(request.params[1], false);
     }
-    uint64_t updated_log_categories = LogInstance().GetCategoryMask();
-    uint64_t changed_log_categories = original_log_categories ^ updated_log_categories;
+    BCLog::CategoryMask updated_log_categories = LogInstance().GetCategoryMask();
+    BCLog::CategoryMask changed_log_categories = original_log_categories ^ updated_log_categories;
 
     // Update libevent logging if BCLog::LIBEVENT has changed.
     if (changed_log_categories & BCLog::LIBEVENT) {
@@ -357,7 +354,7 @@ static UniValue SummaryToJSON(const IndexSummary&& summary, std::string index_na
     UniValue entry(UniValue::VOBJ);
     entry.pushKV("synced", summary.synced);
     entry.pushKV("best_block_height", summary.best_block_height);
-    ret_summary.pushKV(summary.name, entry);
+    ret_summary.pushKV(summary.name, std::move(entry));
     return ret_summary;
 }
 

@@ -37,6 +37,7 @@ R"E(
 		"londonForkBlock": "LONDON_STARTING_BLOCK",
 		"shanghaiForkBlock": "SHANGHAI_STARTING_BLOCK",
 		"cancunForkBlock": "CANCUN_STARTING_BLOCK",
+		"pectraForkBlock": "PECTRA_STARTING_BLOCK",
 		"networkID" : "0x81D58",
 		"chainID": "0x81D58",
 		"maximumExtraDataSize": "0x20",

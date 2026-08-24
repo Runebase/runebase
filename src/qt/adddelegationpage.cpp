@@ -106,7 +106,7 @@ void AddDelegationPage::setModel(WalletModel *_model)
 
     if (bCreateUnsigned) {
         ui->addDelegationButton->setText(tr("Cr&eate Unsigned"));
-        ui->addDelegationButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+        ui->addDelegationButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
     }
 }
 
@@ -257,7 +257,7 @@ void AddDelegationPage::on_addDelegationClicked()
         if (bCreateUnsigned) {
             questionString.append(tr("Do you want to draft this transaction?"));
             questionString.append("<br /><span style='font-size:10pt;'>");
-            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
             questionString.append("</span>");
             questionString.append(tr("<br /><br />Delegate the address to the staker<br />"));
             questionString.append(tr("<b>%1</b>?")
@@ -309,7 +309,7 @@ void AddDelegationPage::on_addDelegationClicked()
                         delegation.staker_address = stakerAddress.toStdString();
                         delegation.staker_name = stakerName.trimmed().toStdString();
                         delegation.fee = stakerFee;
-                        delegation.create_tx_hash.SetHex(txid);
+                        delegation.create_tx_hash.SetHexDeprecated(txid);
                         m_model->wallet().addDelegationEntry(delegation);
                     }
                 }

@@ -1,9 +1,8 @@
 package=boost
 $(package)_version=1.81.0
 $(package)_download_path=https://archives.boost.io/release/$($(package)_version)/source/
-$(package)_file_name=boost_$(subst .,_,$($(package)_version)).tar.bz2
-$(package)_sha256_hash=71feeed900fbccca04a3b4f2f84a7c217186f28a940ed8b7ed4725986baf99fa
-$(package)_patches=process_macos_sdk.patch
+$(package)_file_name=boost_$(subst .,_,$($(package)_version)).tar.gz
+$(package)_sha256_hash=205666dea9f6a7cfed87c7a6dfbeb52a2c1b9de55712c9c1a87735d7181452b6
 $(package)_dependencies=native_b2
 
 define $(package)_set_vars
@@ -23,7 +22,7 @@ $(package)_toolset_$(host_os)=clang
 else
 $(package)_toolset_$(host_os)=gcc
 endif
-$(package)_config_libraries=filesystem,program_options,system,thread,test,random
+$(package)_config_libraries=filesystem,program_options,thread,test
 $(package)_cxxflags=-std=c++20 -fvisibility=hidden
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_android=-fPIC
@@ -31,7 +30,6 @@ $(package)_cxxflags_x86_64_darwin=-fcf-protection=full
 endef
 
 define $(package)_preprocess_cmds
-  patch -p1 < $($(package)_patch_dir)/process_macos_sdk.patch && \
   echo "using $($(package)_toolset_$(host_os)) : : $($(package)_cxx) : <cflags>\"$($(package)_cflags)\" <cxxflags>\"$($(package)_cxxflags)\" <compileflags>\"$($(package)_cppflags)\" <linkflags>\"$($(package)_ldflags)\" <archiver>\"$($(package)_ar)\" <striper>\"$(host_STRIP)\"  <ranlib>\"$(host_RANLIB)\" <rc>\"$(host_WINDRES)\" : ;" > user-config.jam
 endef
 

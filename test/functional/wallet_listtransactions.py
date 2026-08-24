@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2022 The Bitcoin Core developers
+# Copyright (c) 2014-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the listtransactions API."""
@@ -26,9 +26,9 @@ class ListTransactionsTest(BitcoinTestFramework):
 
     def set_test_params(self):
         self.num_nodes = 3
-        # This test isn't testing txn relay/timing, so set whitelist on the
-        # peers for instant txn relay. This speeds up the test run time 2-3x.
-        self.extra_args = [["-whitelist=noban@127.0.0.1", "-walletrbf=0"]] * self.num_nodes
+        # whitelist peers to speed up tx relay / mempool sync
+        self.noban_tx_relay = True
+        self.extra_args = [["-walletrbf=0"]] * self.num_nodes
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -103,7 +103,6 @@ class ListTransactionsTest(BitcoinTestFramework):
             txid = self.nodes[1].sendtoaddress(multisig["address"], 0.1)
             self.generate(self.nodes[1], 1)
             assert_equal(len(self.nodes[0].listtransactions(label="watchonly", include_watchonly=True)), 1)
-            assert_equal(len(self.nodes[0].listtransactions(dummy="watchonly", include_watchonly=True)), 1)
             assert len(self.nodes[0].listtransactions(label="watchonly", count=100, include_watchonly=False)) == 0
             assert_array_result(self.nodes[0].listtransactions(label="watchonly", count=100, include_watchonly=True),
                                 {"category": "receive", "amount": Decimal("0.1")},
@@ -330,4 +329,4 @@ class ListTransactionsTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    ListTransactionsTest().main()
+    ListTransactionsTest(__file__).main()

@@ -25,7 +25,7 @@ class RunebaseGasLimit(BitcoinTestFramework):
 
     def run_test(self):
         self.node = self.nodes[0]
-        self.node.generate(100+COINBASE_MATURITY)
+        self.generate(self.node, 100+COINBASE_MATURITY)
         tx = CTransaction()
 
         """
@@ -36,7 +36,7 @@ class RunebaseGasLimit(BitcoinTestFramework):
             }
         """
         contract_address = self.node.createcontract("60606040523415600e57600080fd5b5b605080601c6000396000f30060606040525b3415600f57600080fd5b60225b5b60005a1115601f576013565b5b565b0000a165627a7a72305820efcd4d663aac9e7a94b44502e712d9eb63cd640efe3aebf9e79210ab63ea6ff60029")['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
         # Create a tx with 2000 outputs each with a gas stipend of 5*10^8 calling the contract.
         tx = CTransaction()
@@ -53,11 +53,11 @@ class RunebaseGasLimit(BitcoinTestFramework):
 
         print("Tx size", len(signed_tx_hex))
         t = time.time()
-        self.node.generate(1)
+        self.generate(self.node, 1)
         execution_time = time.time() - t
         print('execution time:', execution_time, 'seconds')
         assert(execution_time < 60)
 
 
 if __name__ == '__main__':
-    RunebaseGasLimit().main()
+    RunebaseGasLimit(__file__).main()

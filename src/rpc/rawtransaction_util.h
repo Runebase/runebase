@@ -12,7 +12,7 @@
 #include <optional>
 
 struct bilingual_str;
-class FillableSigningProvider;
+struct FlatSigningProvider;
 class UniValue;
 struct CMutableTransaction;
 class Coin;
@@ -47,7 +47,7 @@ void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const 
   * @param  keystore      A pointer to the temporary keystore if there is one
   * @param  coins         Map of unspent outputs - coins in mempool and current chain UTXO set, may be extended by previous txns outputs after call
   */
-void ParsePrevouts(const UniValue& prevTxsUnival, FillableSigningProvider* keystore, std::map<COutPoint, Coin>& coins);
+void ParsePrevouts(const UniValue& prevTxsUnival, FlatSigningProvider* keystore, std::map<COutPoint, Coin>& coins);
 
 /** Normalize univalue-represented inputs and add them to the transaction */
 void AddInputs(CMutableTransaction& rawTx, const UniValue& inputs_in, bool rbf);
@@ -64,7 +64,7 @@ void AddOutputs(CMutableTransaction& rawTx, const UniValue& outputs_in, IRawCont
 /** Create a transaction from univalue parameters */
 CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf, IRawContract* rawContract = nullptr);
 
-void SignTransactionOutput(CMutableTransaction& mtx, FillableSigningProvider *keystore, const UniValue& hashType, UniValue& result);
+void SignTransactionOutput(CMutableTransaction& mtx, FlatSigningProvider *keystore, const UniValue& hashType, UniValue& result);
 void SignTransactionOutputResultToJSON(CMutableTransaction& mtx, bool complete, std::map<int, std::string>& output_errors, UniValue& result);
 
 void CheckSenderSignatures(CMutableTransaction& mtx);

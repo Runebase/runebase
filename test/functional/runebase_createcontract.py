@@ -50,7 +50,7 @@ class CreatecontractTest(BitcoinTestFramework):
         assert('hash160' in ret)
         contract_address = ret['address']
         sender = str(base58_to_byte(ret['sender'], 25)[1])[2:-1]
-        self.node.generate(1)
+        self.generate(self.node, 1)
         
         ret = self.node.getaccountinfo(contract_address)
         expected_account_info = {
@@ -68,7 +68,7 @@ class CreatecontractTest(BitcoinTestFramework):
     def createcontract_with_sender_test(self):
         self.node.importprivkey("cQWxca9y9XBf4c6ohTwRQ9Kf4GZyRybhGBfzaFgkvRpw8HjbRC58")
         self.node.sendtoaddress("qabmqZk3re5b9UpUcznxDkCnCsnKdmPktT", 0.1)
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
         """
         pragma solidity ^0.4.0;
@@ -94,7 +94,7 @@ class CreatecontractTest(BitcoinTestFramework):
         assert('sender' in ret)
         assert('hash160' in ret)
         contract_address = ret['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
         
         ret = self.node.getaccountinfo(contract_address)
         expected_account_info = {
@@ -111,7 +111,7 @@ class CreatecontractTest(BitcoinTestFramework):
 
     def createcontract_no_broadcast_test(self):
         self.node.sendtoaddress("qabmqZk3re5b9UpUcznxDkCnCsnKdmPktT", 0.1)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         """
         pragma solidity ^0.4.0;
 
@@ -143,11 +143,11 @@ class CreatecontractTest(BitcoinTestFramework):
         assert(False)
 
     def run_test(self):
-        self.nodes[0].generate(COINBASE_MATURITY+50)
+        self.generate(self.nodes[0], COINBASE_MATURITY+50)
         self.node = self.nodes[0]
         self.createcontract_simple_test()
         self.createcontract_with_sender_test()
         self.createcontract_no_broadcast_test()
 
 if __name__ == '__main__':
-    CreatecontractTest().main()
+    CreatecontractTest(__file__).main()

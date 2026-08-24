@@ -9,7 +9,6 @@
 
 #include <QDialog>
 
-
 class PlatformStyle;
 class ReceiveCoinsDialog;
 class WalletModel;

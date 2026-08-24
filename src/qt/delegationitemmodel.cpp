@@ -451,7 +451,7 @@ void DelegationItemModel::updateDelegationData(const QString &hash, int status, 
 {
     // Find delegation in wallet
     uint256 updated;
-    updated.SetHex(hash.toStdString());
+    updated.SetHexDeprecated(hash.toStdString());
     interfaces::DelegationInfo delegation =walletModel->wallet().getDelegation(updated);
     showDelegation &= delegation.hash == updated;
 
@@ -549,7 +549,7 @@ void DelegationItemModel::itemChanged(QString hash, qint64 balance, qint64 stake
         return;
 
     uint256 updated;
-    updated.SetHex(hash.toStdString());
+    updated.SetHexDeprecated(hash.toStdString());
 
     // Update delegation
     for(int i = 0; i < priv->cachedDelegationItem.size(); i++)

@@ -14,9 +14,6 @@
 #include <map>
 #include <stdint.h>
 #include <string>
-#include <functional>
-#include <condition_variable>
-#include <mutex>
 
 #include <univalue.h>
 #include <common/system.h>
@@ -24,12 +21,6 @@
 class CRPCCommand;
 class ChainstateManager;
 class HTTPRequest;
-
-namespace RPCServer
-{
-    void OnStarted(std::function<void ()> slot);
-    void OnStopped(std::function<void ()> slot);
-}
 
 class JSONRPCRequestLong : public JSONRPCRequest
 {
@@ -88,7 +79,7 @@ bool RPCIsInWarmup(std::string *outStatus);
 class RPCTimerBase
 {
 public:
-    virtual ~RPCTimerBase() {}
+    virtual ~RPCTimerBase() = default;
 };
 
 /**
@@ -97,7 +88,7 @@ public:
 class RPCTimerInterface
 {
 public:
-    virtual ~RPCTimerInterface() {}
+    virtual ~RPCTimerInterface() = default;
     /** Implementation name */
     virtual const char *Name() = 0;
     /** Factory function for timers.
@@ -223,6 +214,6 @@ extern double GetEstimatedAnnualROI(ChainstateManager& chainman);
 void StartRPC();
 void InterruptRPC();
 void StopRPC();
-std::string JSONRPCExecBatch(const JSONRPCRequest& jreq, const UniValue& vReq);
+UniValue JSONRPCExec(const JSONRPCRequest& jreq, bool catch_errors);
 
 #endif // BITCOIN_RPC_SERVER_H

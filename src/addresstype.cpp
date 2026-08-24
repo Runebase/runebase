@@ -94,6 +94,10 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet,
         addressRet = tap;
         return true;
     }
+    case TxoutType::ANCHOR: {
+        addressRet = PayToAnchor();
+        return true;
+    }
     case TxoutType::WITNESS_UNKNOWN: {
         addressRet = WitnessUnknown{vSolutions[0][0], vSolutions[1]};
         return true;
@@ -208,6 +212,7 @@ valtype DataVisitor::operator()(const ScriptHash& scriptID) const { return valty
 valtype DataVisitor::operator()(const WitnessV0ScriptHash& witnessScriptHash) const { return valtype(witnessScriptHash.begin(), witnessScriptHash.end()); }
 valtype DataVisitor::operator()(const WitnessV0KeyHash& witnessKeyHash) const { return valtype(witnessKeyHash.begin(), witnessKeyHash.end()); }
 valtype DataVisitor::operator()(const WitnessV1Taproot& witnessTaproot) const { return valtype(witnessTaproot.begin(), witnessTaproot.end()); }
+valtype DataVisitor::operator()(const PayToAnchor& payToAnchor) const { return valtype(); }
 valtype DataVisitor::operator()(const WitnessUnknown&) const { return valtype(); }
 
 bool ExtractDestination(const COutPoint& prevout, const CScript& scriptPubKey, CTxDestination& addressRet, TxoutType* typeRet)
@@ -251,6 +256,11 @@ bool ExtractDestination(const COutPoint& prevout, const CScript& scriptPubKey, C
     else if(whichType == TxoutType::WITNESS_V0_SCRIPTHASH)
     {
         addressRet = WitnessV0ScriptHash(uint256(vSolutions[0]));
+        return true;
+    }
+    else if(whichType == TxoutType::ANCHOR)
+    {
+        addressRet = PayToAnchor();
         return true;
     }
     else if(whichType == TxoutType::WITNESS_V1_TAPROOT)

@@ -104,7 +104,7 @@ class RunebaseHeaderSpamTest(BitcoinTestFramework):
         self.p2p_node.send_message(msg_headers([CBlockHeader(block)]))
         time.sleep(0.05)
         assert(self.node.getblockheader(block.hash))
-        assert_raises_rpc_error(-1, "Block not found on disk", self.node.getblock, block.hash)
+        assert_raises_rpc_error(-1, "Block not available (not fully downloaded)", self.node.getblock, block.hash)
         self.p2p_node.send_message(msg_block(block))
         time.sleep(0.05)
         assert(self.node.getblockheader(block.hash))
@@ -131,9 +131,9 @@ class RunebaseHeaderSpamTest(BitcoinTestFramework):
         self.connect_nodes(0, 1)
         time.sleep(1)
         self.node.setmocktime(0)
-        self.alt_node.generate(1)
+        self.generate(self.alt_node, 1)
         self.sync_all()
         
 
 if __name__ == '__main__':
-    RunebaseHeaderSpamTest().main()
+    RunebaseHeaderSpamTest(__file__).main()

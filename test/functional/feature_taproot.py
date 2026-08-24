@@ -11,7 +11,6 @@ from test_framework.blocktools import (
     add_witness_commitment,
     MAX_BLOCK_SIGOPS_WEIGHT,
     NORMAL_GBT_REQUEST_PARAMS,
-    WITNESS_SCALE_FACTOR,
 )
 from test_framework.messages import (
     COutPoint,
@@ -21,6 +20,7 @@ from test_framework.messages import (
     CTxOut,
     SEQUENCE_FINAL,
     tx_from_hex,
+    WITNESS_SCALE_FACTOR,
 )
 from test_framework.script import (
     ANNEX_TAG,
@@ -233,7 +233,7 @@ def default_sigmsg(ctx):
             codeseppos = get(ctx, "codeseppos")
             leaf_ver = get(ctx, "leafversion")
             script = get(ctx, "script_taproot")
-            return TaprootSignatureMsg(tx, utxos, hashtype, idx, scriptpath=True, script=script, leaf_ver=leaf_ver, codeseparator_pos=codeseppos, annex=annex)
+            return TaprootSignatureMsg(tx, utxos, hashtype, idx, scriptpath=True, leaf_script=script, leaf_ver=leaf_ver, codeseparator_pos=codeseppos, annex=annex)
         else:
             return TaprootSignatureMsg(tx, utxos, hashtype, idx, scriptpath=False, annex=annex)
     elif mode == "witv0":
@@ -642,6 +642,10 @@ SIG_ADD_ZERO = {"failure": {"sign": zero_appender(default_sign)}}
 
 DUST_LIMIT = 400000
 MIN_FEE = 5000000
+
+TX_MAX_STANDARD_VERSION = 3
+TX_STANDARD_VERSIONS = [1, 2, TX_MAX_STANDARD_VERSION]
+TRUC_MAX_VSIZE = 10000 # test doesn't cover in-mempool spends, so only this limit is hit
 
 # === Actual test cases ===
 
@@ -1287,7 +1291,6 @@ class TaprootTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True
-        self.extra_args = [["-par=1"]]
 
     def block_submit(self, node, txs, msg, err_msg, cb_pubkey=None, fees=0, sigops_weight=0, witness=False, accept=False):
 
@@ -1410,10 +1413,10 @@ class TaprootTest(BitcoinTestFramework):
 
         left = done
         while left:
-            # Construct CTransaction with random nVersion, nLocktime
+            # Construct CTransaction with random version, nLocktime
             tx = CTransaction()
-            tx.nVersion = random.choice([1, 2, random.randint(-0x80000000, 0x7fffffff)])
-            min_sequence = (tx.nVersion != 1 and tx.nVersion != 0) * 0x80000000  # The minimum sequence number to disable relative locktime
+            tx.version = random.choice(TX_STANDARD_VERSIONS + [0, TX_MAX_STANDARD_VERSION + 1, random.getrandbits(32)])
+            min_sequence = (tx.version != 1 and tx.version != 0) * 0x80000000  # The minimum sequence number to disable relative locktime
             if random.choice([True, False]):
                 tx.nLockTime = random.randrange(LOCKTIME_THRESHOLD, self.lastblocktime - 7200)  # all absolute locktimes in the past
             else:
@@ -1504,8 +1507,9 @@ class TaprootTest(BitcoinTestFramework):
                 is_standard_tx = (
                     fail_input is None  # Must be valid to be standard
                     and (all(utxo.spender.is_standard for utxo in input_utxos))  # All inputs must be standard
-                    and tx.nVersion >= 1  # The tx version must be standard
-                    and tx.nVersion <= 2)
+                    and tx.version in TX_STANDARD_VERSIONS # The tx version must be standard
+                    and not (tx.version == 3 and tx.get_vsize() > TRUC_MAX_VSIZE)  # Topological standardness rules must be followed
+                )
                 tx.rehash()
                 msg = ','.join(utxo.spender.comment + ("*" if n == fail_input else "") for n, utxo in enumerate(input_utxos))
                 if is_standard_tx:
@@ -1532,7 +1536,7 @@ class TaprootTest(BitcoinTestFramework):
         # Deterministically mine coins to OP_TRUE in block 1
         assert_equal(self.nodes[0].getblockcount(), 0)
         coinbase = CTransaction()
-        coinbase.nVersion = 1
+        coinbase.version = 1
         coinbase.vin = [CTxIn(COutPoint(0, 0xffffffff), CScript([OP_1, OP_1]), SEQUENCE_FINAL)]
         coinbase.vout = [CTxOut(5000000000, CScript([OP_1]))]
         coinbase.nLockTime = 0
@@ -1624,7 +1628,7 @@ class TaprootTest(BitcoinTestFramework):
         for i, spk in enumerate(old_spks + tap_spks):
             val = 42000000 * (i + 7)
             tx = CTransaction()
-            tx.nVersion = 1
+            tx.version = 1
             tx.vin = [CTxIn(COutPoint(lasttxid, i & 1), CScript([]), SEQUENCE_FINAL)]
             tx.vout = [CTxOut(val, spk), CTxOut(amount - val, CScript([OP_1]))]
             if i & 1:
@@ -1681,7 +1685,7 @@ class TaprootTest(BitcoinTestFramework):
 
         # Construct a deterministic transaction spending all outputs created above.
         tx = CTransaction()
-        tx.nVersion = 2
+        tx.version = 2
         tx.vin = []
         inputs = []
         input_spks = [tap_spks[0], tap_spks[1], old_spks[0], tap_spks[2], tap_spks[5], old_spks[2], tap_spks[6], tap_spks[3], tap_spks[4]]
@@ -1768,4 +1772,4 @@ class TaprootTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    TaprootTest().main()
+    TaprootTest(__file__).main()

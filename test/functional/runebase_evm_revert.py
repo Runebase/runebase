@@ -22,7 +22,7 @@ class RunebaseEVMRevertTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
-        self.extra_args = [['-logevents', '-minmempoolgaslimit=21000', '-constantinopleheight=%d' % (204 + COINBASE_MATURITY), '-muirglacierheight=100000', '-londonheight=100000', '-shanghaiheight=100000', '-cancunheight=100000']]
+        self.extra_args = [['-logevents', '-minmempoolgaslimit=21000', '-constantinopleheight=%d' % (204 + COINBASE_MATURITY), '-muirglacierheight=100000', '-londonheight=100000', '-shanghaiheight=100000', '-cancunheight=100000', '-pectraheight=100000']]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -105,8 +105,8 @@ class RunebaseEVMRevertTest(BitcoinTestFramework):
         dummy_key.generate()
         dummy_address = hex_hash_to_p2pkh("12"*20)
 
-        self.nodes[0].generatetoaddress(200, self.nodes[0].getnewaddress())
-        self.nodes[0].generatetoaddress(COINBASE_MATURITY, dummy_address)
+        self.generatetoaddress(self.nodes[0], 200, self.nodes[0].getnewaddress())
+        self.generatetoaddress(self.nodes[0], COINBASE_MATURITY, dummy_address)
         """
             pragma solidity ^0.5.10;
 
@@ -121,46 +121,46 @@ class RunebaseEVMRevertTest(BitcoinTestFramework):
         """
         bytecode = "6080604052348015600f57600080fd5b50606a80601d6000396000f3fe60806040527f902ab12fc657922f9e7e1085a23c967a546ad6f8a771c0b5c7db57f7aac0076e60405160405180910390a1600080fdfea265627a7a72305820fea288c1e5cdb52afd4c9f5be9081c6199bc47960599fcc1655dd7a900e39cdc64736f6c634300050a0032"
         contract_address = self.nodes[0].createcontract(bytecode)['address']
-        self.nodes[0].generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.nodes[0], 1, dummy_address)
 
         # Run a normal revert tx, will cause a throw since REVERT is undefined before qip7/constantinople
         self.log.info('Run a normal revert tx, will cause a throw since REVERT is undefined before qip7/constantinople')
         txid = self.nodes[0].sendtocontract(contract_address, "00", 10, 100000, 0.000001)['txid']
-        self.nodes[0].generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.nodes[0], 1, dummy_address)
         self.assert_revert_state(self.nodes[0], gas=100000, gas_price=0.000001, gas_used=100000, value=10, excepted='BadInstruction')
         
-        self.nodes[0].generatetoaddress(10, dummy_address)
+        self.generatetoaddress(self.nodes[0], 10, dummy_address)
 
         # Run a normal revert tx
         self.log.info('Run a normal revert tx')
         txid = self.nodes[0].sendtocontract(contract_address, "00", 10, 100000, 0.000001)['txid']
-        self.nodes[0].generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.nodes[0], 1, dummy_address)
         self.assert_revert_state(self.nodes[0], gas=100000, gas_price=0.000001, gas_used=21805, value=10, excepted='Revert')
 
         # run a revert tx with too little gas
         self.log.info('Run a revert tx with too little gas')
         txid = self.nodes[0].sendtocontract(contract_address, "00", 10, 21803, 0.000001)['txid']
-        self.nodes[0].generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.nodes[0], 1, dummy_address)
         self.assert_revert_state(self.nodes[0], gas=21803, gas_price=0.000001, gas_used=21803, value=10, excepted='OutOfGas')
 
         # run a revert tx with too little gas
         self.log.info('Run a revert tx with too little gas')
         txid = self.nodes[0].sendtocontract(contract_address, "00", 10, 21804, 0.000001)['txid']
-        self.nodes[0].generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.nodes[0], 1, dummy_address)
         self.assert_revert_state(self.nodes[0], gas=21804, gas_price=0.000001, gas_used=21804, value=10, excepted='OutOfGas')
 
         # run a revert tx with just enough gas
         self.log.info('Run a revert tx with just enough gas')
         txid = self.nodes[0].sendtocontract(contract_address, "00", 10, 21805, 0.000001)['txid']
-        self.nodes[0].generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.nodes[0], 1, dummy_address)
         self.assert_revert_state(self.nodes[0], gas=21805, gas_price=0.000001, gas_used=21805, value=10, excepted='Revert')
 
         # run a revert tx with 1 gas more than required
         self.log.info('Run a revert tx with 1 gas more than required')
         txid = self.nodes[0].sendtocontract(contract_address, "00", 10, 21806, 0.000001)['txid']
-        self.nodes[0].generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.nodes[0], 1, dummy_address)
         self.assert_revert_state(self.nodes[0], gas=21806, gas_price=0.000001, gas_used=21805, value=10, excepted='Revert')
         
 
 if __name__ == '__main__':
-    RunebaseEVMRevertTest().main()
+    RunebaseEVMRevertTest(__file__).main()

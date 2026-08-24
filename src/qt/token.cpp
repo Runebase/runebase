@@ -170,9 +170,11 @@ bool Token::execEvents(const int64_t &fromBlock, const int64_t &toBlock, const i
                 tokenEvent.receiver = topicsList[2].toString().toStdString().substr(24);
                 Token::ToRunebaseAddress(tokenEvent.receiver, tokenEvent.receiver);
             }
-            tokenEvent.blockHash = uint256S(variantMap.value("blockHash").toString().toStdString());
+            std::string blockHashHex = variantMap.value("blockHash").toString().toStdString();
+            tokenEvent.blockHash = uint256::FromHex(blockHashHex).value_or(uint256::ZERO);
             tokenEvent.blockNumber = variantMap.value("blockNumber").toLongLong();
-            tokenEvent.transactionHash = uint256S(variantMap.value("transactionHash").toString().toStdString());
+            std::string transactionHashHex = variantMap.value("transactionHash").toString().toStdString();
+            tokenEvent.transactionHash = uint256::FromHex(transactionHashHex).value_or(uint256::ZERO);
 
             // Parse data
             std::string data = variantLog.value("data").toString().toStdString();

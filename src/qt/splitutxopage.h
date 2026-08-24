@@ -44,6 +44,9 @@ private Q_SLOTS:
     void on_cancelButtonClicked();
 
 private:
+    void setDefaultMaxOutputsValue();
+
+private:
     Ui::SplitUTXOPage *ui;
     WalletModel* m_model;
     ExecRPCCommand *m_execRPCCommand;

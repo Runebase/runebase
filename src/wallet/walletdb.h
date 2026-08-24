@@ -189,6 +189,11 @@ public:
     }
 };
 
+struct DbTxnListener
+{
+    std::function<void()> on_commit, on_abort;
+};
+
 /** Access to the wallet database.
  * Opens the database and provides read and write access to it. Each read and write is its own transaction.
  * Multiple operation transactions can be started using TxnBegin() and committed using TxnCommit()
@@ -259,6 +264,7 @@ public:
     bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata &keyMeta);
     bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, const CKeyMetadata &keyMeta);
     bool WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey);
+    bool EraseMasterKey(unsigned int id);
 
     bool WriteCScript(const uint160& hash, const CScript& redeemScript);
 
@@ -267,6 +273,9 @@ public:
 
     bool WriteBestBlock(const CBlockLocator& locator);
     bool ReadBestBlock(CBlockLocator& locator);
+
+    // Returns true if wallet stores encryption keys
+    bool IsEncrypted();
 
     bool WriteOrderPosNext(int64_t nOrderPosNext);
 
@@ -315,9 +324,18 @@ public:
     bool TxnCommit();
     //! Abort current transaction
     bool TxnAbort();
+    bool HasActiveTxn() { return m_batch->HasActiveTxn(); }
+
+    //! Registers db txn callback functions
+    void RegisterTxnListener(const DbTxnListener& l);
+
 private:
     std::unique_ptr<DatabaseBatch> m_batch;
     WalletDatabase& m_database;
+
+    // External functions listening to the current db txn outcome.
+    // Listeners are cleared at the end of the transaction.
+    std::vector<DbTxnListener> m_txn_listeners;
 };
 
 /**

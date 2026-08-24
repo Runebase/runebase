@@ -50,5 +50,6 @@ std::string dev::eth::genesisInfoRunebase(Network _n, EVMConsensus _consensus)
     ReplaceInt(_consensus.nLondonHeight,      "LONDON_STARTING_BLOCK", _genesisInfo);
     ReplaceInt(_consensus.nShanghaiHeight,    "SHANGHAI_STARTING_BLOCK", _genesisInfo);
     ReplaceInt(_consensus.nCancunHeight,      "CANCUN_STARTING_BLOCK", _genesisInfo);
+    ReplaceInt(_consensus.nPectraHeight,      "PECTRA_STARTING_BLOCK", _genesisInfo);
     return _genesisInfo;
 }

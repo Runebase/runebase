@@ -32,7 +32,7 @@ class RunebaseNoExecCallDisabledTest(BitcoinTestFramework):
 
     def run_test(self):
         self.node = self.nodes[0]
-        self.node.generate(10 + COINBASE_MATURITY)
+        self.generate(self.node, 10 + COINBASE_MATURITY)
         """
         pragma solidity ^0.4.12;
         contract Test {
@@ -41,9 +41,9 @@ class RunebaseNoExecCallDisabledTest(BitcoinTestFramework):
         """
         bytecode = "60606040523415600e57600080fd5b5b603580601c6000396000f30060606040525b5b5b0000a165627a7a723058208938cb174ee70dbb41b522af1feac2c7e0e252b7bc9ecb92c8d87a50c445a26c0029"
         contract_address = self.node.createcontract(bytecode)['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
         self.node.sendtocontract(contract_address, "00", 1)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         tx = CTransaction()
         tx.vin = [make_vin(self.node, int(COIN+1000000))]
 
@@ -75,4 +75,4 @@ class RunebaseNoExecCallDisabledTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    RunebaseNoExecCallDisabledTest().main()
+    RunebaseNoExecCallDisabledTest(__file__).main()

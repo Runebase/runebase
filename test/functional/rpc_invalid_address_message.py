@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2022 The Bitcoin Core developers
+# Copyright (c) 2020-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test error messages for 'getaddressinfo' and 'validateaddress' RPC commands."""
@@ -15,6 +15,7 @@ from test_framework.util import (
 import test_framework.segwit_addr
 
 BECH32_VALID = convert_btc_bech32_address_to_runebase('bcrt1qtmp74ayg7p24uslctssvjm06q5phz4yrxucgnv')
+BECH32_VALID_UNKNOWN_WITNESS = convert_btc_bech32_address_to_runebase('bcrt1p424qxxyd0r')
 BECH32_VALID_CAPITALS = convert_btc_bech32_address_to_runebase('BCRT1QPLMTZKC2XHARPPZDLNPAQL78RSHJ68U33RAH7R')
 BECH32_VALID_MULTISIG = convert_btc_bech32_address_to_runebase('bcrt1qdg3myrgvzw7ml9q0ejxhlkyxm7vl9r56yzkfgvzclrf4hkpx9yfqhpsuks')
 
@@ -84,6 +85,7 @@ class InvalidAddressErrorMessageTest(BitcoinTestFramework):
 
         # Valid Bech32
         self.check_valid(BECH32_VALID)
+        self.check_valid(BECH32_VALID_UNKNOWN_WITNESS)
         self.check_valid(BECH32_VALID_CAPITALS)
         self.check_valid(BECH32_VALID_MULTISIG)
 
@@ -113,6 +115,7 @@ class InvalidAddressErrorMessageTest(BitcoinTestFramework):
         assert_raises_rpc_error(-5, "Invalid or unsupported Segwit (Bech32) or Base58 encoding.", node.getaddressinfo, BECH32_INVALID_PREFIX)
         assert_raises_rpc_error(-5, "Invalid or unsupported Base58-encoded address.", node.getaddressinfo, BASE58_INVALID_PREFIX)
         assert_raises_rpc_error(-5, "Invalid or unsupported Segwit (Bech32) or Base58 encoding.", node.getaddressinfo, INVALID_ADDRESS)
+        assert "isscript" not in node.getaddressinfo(BECH32_VALID_UNKNOWN_WITNESS)
 
     def run_test(self):
         self.test_validateaddress()
@@ -123,4 +126,4 @@ class InvalidAddressErrorMessageTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    InvalidAddressErrorMessageTest().main()
+    InvalidAddressErrorMessageTest(__file__).main()

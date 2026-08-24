@@ -147,7 +147,7 @@ void SendToContract::setModel(WalletModel *_model)
 
     if (bCreateUnsigned) {
         ui->pushButtonSendToContract->setText(tr("Cr&eate Unsigned"));
-        ui->pushButtonSendToContract->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+        ui->pushButtonSendToContract->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
     }
 }
 
@@ -246,7 +246,7 @@ void SendToContract::on_sendToContractClicked()
         if (bCreateUnsigned) {
             questionString.append(tr("Do you want to draft this transaction?"));
             questionString.append("<br /><span style='font-size:10pt;'>");
-            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
             questionString.append("</span>");
             questionString.append(tr("<br /><br />Send to the contract:<br />"));
         } else {

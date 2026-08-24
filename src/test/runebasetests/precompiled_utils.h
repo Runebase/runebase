@@ -33,7 +33,7 @@ public:
      * @brief performTests Perform tests for the precompiled contract
      * @param jsondata List of tests to perform
      */
-    void performTests(const std::string& jsondata)
+    void performTests(const std::string_view& jsondata)
     {
         // Read tests
         UniValue json_tests = read_json(jsondata);
@@ -83,7 +83,7 @@ private:
         BOOST_CHECK_MESSAGE(res.second == expected, strprintf("Output not correct for precompiled contract %s in test %s", callName, testName));
     }
 
-    UniValue read_json(const std::string& jsondata)
+    UniValue read_json(const std::string_view& jsondata)
     {
         UniValue v;
 

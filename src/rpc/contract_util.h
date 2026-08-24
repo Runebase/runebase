@@ -20,7 +20,7 @@ void transactionReceiptInfoToJSON(const TransactionReceiptInfo& resExec, UniValu
 
 size_t parseUInt(const UniValue& val, size_t defaultVal);
 
-int parseBlockHeight(const UniValue& val, int defaultVal);
+int parseBlockHeight(const UniValue& val, int defaultVal, int numBlocks);
 
 void parseParam(const UniValue& val, std::set<dev::h160> &h160s);
 

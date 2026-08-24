@@ -22,7 +22,7 @@ class RunebaseSpendOpCallTest(BitcoinTestFramework):
         self.skip_if_no_wallet()
 
     def run_test(self):
-        self.nodes[0].generate(10+COINBASE_MATURITY)
+        self.generate(self.nodes[0], 10+COINBASE_MATURITY)
 
         # Create a new contract that can receive funds
         """
@@ -34,11 +34,11 @@ class RunebaseSpendOpCallTest(BitcoinTestFramework):
         """
         contract_bytecode = "60606040523415600e57600080fd5b5b603580601c6000396000f30060606040525b5b5b0000a165627a7a723058202a205a0473a338a161903e98bd0920e9c01b9ab0a8f94f8f19028c49733fb60d0029"
         first_contract_address = self.nodes[0].createcontract(contract_bytecode)['address']
-        self.nodes[0].generate(1)
+        self.generate(self.nodes[0], 1)
 
         # Send 100000 runebase to the contract
         self.nodes[0].sendtocontract(first_contract_address, "00", 100000)['txid']
-        blockhash = self.nodes[0].generate(1)[0]
+        blockhash = self.generate(self.nodes[0], 1)[0]
         prev_block = self.nodes[0].getblock(blockhash)
 
         # Extract the transaction which will be the prevout to spend the contract's funds later on
@@ -61,4 +61,4 @@ class RunebaseSpendOpCallTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].getblockcount(), block_count)
 
 if __name__ == '__main__':
-    RunebaseSpendOpCallTest().main()
+    RunebaseSpendOpCallTest(__file__).main()

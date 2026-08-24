@@ -8,21 +8,25 @@
 #include <kernel/mempool_options.h>
 
 #include <common/args.h>
+#include <common/messages.h>
 #include <consensus/amount.h>
 #include <kernel/chainparams.h>
 #include <logging.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
 #include <tinyformat.h>
-#include <util/error.h>
 #include <util/moneystr.h>
 #include <util/translation.h>
 
 #include <chrono>
 #include <memory>
 
+using common::AmountErrMsg;
 using kernel::MemPoolLimits;
 using kernel::MemPoolOptions;
+
+//! Maximum mempool size on 32-bit systems.
+static constexpr int MAX_32BIT_MEMPOOL_MB{500};
 
 namespace {
 void ApplyArgsManOptions(const ArgsManager& argsman, MemPoolLimits& mempool_limits)
@@ -41,7 +45,13 @@ util::Result<void> ApplyArgsManOptions(const ArgsManager& argsman, const CChainP
 {
     mempool_opts.check_ratio = argsman.GetIntArg("-checkmempool", mempool_opts.check_ratio);
 
-    if (auto mb = argsman.GetIntArg("-maxmempool")) mempool_opts.max_size_bytes = *mb * 1'000'000;
+    if (auto mb = argsman.GetIntArg("-maxmempool")) {
+        constexpr bool is_32bit{sizeof(void*) == 4};
+        if (is_32bit && *mb > MAX_32BIT_MEMPOOL_MB) {
+            return util::Error{Untranslated(strprintf("-maxmempool is set to %i but can't be over %i MB on 32-bit systems", *mb, MAX_32BIT_MEMPOOL_MB))};
+        }
+        mempool_opts.max_size_bytes = *mb * 1'000'000;
+    }
 
     if (auto hours = argsman.GetIntArg("-mempoolexpiry")) mempool_opts.expiry = std::chrono::hours{*hours};
 
@@ -88,10 +98,8 @@ util::Result<void> ApplyArgsManOptions(const ArgsManager& argsman, const CChainP
 
     mempool_opts.require_standard = !argsman.GetBoolArg("-acceptnonstdtxn", DEFAULT_ACCEPT_NON_STD_TXN);
     if (!chainparams.IsTestChain() && !mempool_opts.require_standard) {
-        return util::Error{strprintf(Untranslated("acceptnonstdtxn is not currently supported for %s chain"), chainparams.GetChainTypeString())};
+        return util::Error{Untranslated(strprintf("acceptnonstdtxn is not currently supported for %s chain", chainparams.GetChainTypeString()))};
     }
-
-    mempool_opts.full_rbf = argsman.GetBoolArg("-mempoolfullrbf", mempool_opts.full_rbf);
 
     mempool_opts.persist_v1_dat = argsman.GetBoolArg("-persistmempoolv1", mempool_opts.persist_v1_dat);
 

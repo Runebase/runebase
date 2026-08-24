@@ -65,7 +65,7 @@ class UTXOSetHashTest(BitcoinTestFramework):
 
         finalized = muhash.digest()
         node_muhash = node.gettxoutsetinfo("muhash")['muhash']
-        
+
         assert_equal(finalized[::-1].hex(), node_muhash)
 
         self.log.info("Test deterministic UTXO set hash results")
@@ -77,4 +77,4 @@ class UTXOSetHashTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    UTXOSetHashTest().main()
+    UTXOSetHashTest(__file__).main()

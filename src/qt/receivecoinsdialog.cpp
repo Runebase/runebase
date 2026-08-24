@@ -55,6 +55,7 @@ ReceiveCoinsDialog::ReceiveCoinsDialog(const PlatformStyle *_platformStyle, QWid
     tableView->setAlternatingRowColors(true);
     tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     tableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
+
 }
 
 void ReceiveCoinsDialog::setModel(WalletModel *_model)

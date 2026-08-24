@@ -21,14 +21,14 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
-        self.extra_args = [['-logevents', '-minmempoolgaslimit=21000', '-constantinopleheight=%d' % (204 + COINBASE_MATURITY), '-muirglacierheight=100000', '-londonheight=100000', '-shanghaiheight=100000', '-cancunheight=100000']]
+        self.extra_args = [['-logevents', '-minmempoolgaslimit=21000', '-constantinopleheight=%d' % (204 + COINBASE_MATURITY), '-muirglacierheight=100000', '-londonheight=100000', '-shanghaiheight=100000', '-cancunheight=100000', '-pectraheight=100000']]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
     def reset(self):
         self.node.sendtocontract(self.contract_address, 'd826f88f')
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
     def get_value_at_index(self, i):
         info = self.node.callcontract(self.contract_address, "a05d8c0b" + hex(i)[2:].zfill(64))
@@ -115,8 +115,8 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         dummy_address = hex_hash_to_p2pkh("12"*20)
 
         self.node = self.nodes[0]
-        self.node.generatetoaddress(200, self.node.getnewaddress())
-        self.node.generatetoaddress(COINBASE_MATURITY, dummy_address)
+        self.generatetoaddress(self.node, 200, self.node.getnewaddress())
+        self.generatetoaddress(self.node, COINBASE_MATURITY, dummy_address)
 
         """
         pragma solidity ^0.5.10;
@@ -233,30 +233,30 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
 
         bytecode = "608060405234801561001057600080fd5b506108ff806100206000396000f3fe6080604052600436106101085760003560e01c806385b3382811610095578063d402b4ea11610064578063d402b4ea14610307578063d826f88f1461031e578063da2bf6f914610335578063f820fa6e1461034c578063fac9ecf11461036357610108565b806385b33828146102735780638896fb041461028a578063a05d8c0b146102a1578063b0b05a5a146102f057610108565b806341a0e892116100dc57806341a0e89214610200578063571ffff11461021757806362d910841461022e5780637c1c850f146102455780637cf0b3cd1461025c57610108565b80623494411461010d5780630311f972146101c857806314a91a95146101df578063372c0357146101f6575b600080fd5b6101c66004803603602081101561012357600080fd5b810190808035906020019064010000000081111561014057600080fd5b82018360208201111561015257600080fd5b8035906020019184600183028401116401000000008311171561017457600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f82011690508083019250505050505050919291929050505061037a565b005b3480156101d457600080fd5b506101dd6103ef565b005b3480156101eb57600080fd5b506101f46103f6565b005b6101fe610424565b005b34801561020c57600080fd5b50610215610426565b005b34801561022357600080fd5b5061022c6104a0565b005b34801561023a57600080fd5b506102436104d8565b005b34801561025157600080fd5b5061025a61054c565b005b34801561026857600080fd5b5061027161057e565b005b34801561027f57600080fd5b506102886105b1565b005b34801561029657600080fd5b5061029f61066d565b005b3480156102ad57600080fd5b506102da600480360360208110156102c457600080fd5b81019080803590602001909291905050506106b7565b6040518082815260200191505060405180910390f35b3480156102fc57600080fd5b506103056106d7565b005b34801561031357600080fd5b5061031c610730565b005b34801561032a57600080fd5b5061033361074d565b005b34801561034157600080fd5b5061034a61075c565b005b34801561035857600080fd5b506103616107f7565b005b34801561036f57600080fd5b50610378610810565b005b600081805190602001207bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19169050600060405182815260008060048330620186a05a03fa9150506000819080600181540180825580915050906001820390600052602060002001600090919290919091505550505050565b6002600055565b7f902ab12fc657922f9e7e1085a23c967a546ad6f8a771c0b5c7db57f7aac0076e60405160405180910390a1565b565b7f32000000000000000000000000000000000000000000000000000000000000007f310000000000000000000000000000000000000000000000000000000000000060405180807f3000000000000000000000000000000000000000000000000000000000000000815250600101905060405180910390a2565b60405180807f3000000000000000000000000000000000000000000000000000000000000000815250600101905060405180910390a0565b600060405180807f70617961626c655f63616c6c2829000000000000000000000000000000000000815250600e01905060405180910390207bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19169050604051818152600080600483600130620186a05a03f1505050565b606060405180604001604052806002815260200160008152509050606081905060008151602083016064f09050505050565b60606040518060400160405280600281526020016000815250905060008082519050600081602085016000f59150505050565b7f34000000000000000000000000000000000000000000000000000000000000007f33000000000000000000000000000000000000000000000000000000000000007f32000000000000000000000000000000000000000000000000000000000000007f310000000000000000000000000000000000000000000000000000000000000060405180807f3000000000000000000000000000000000000000000000000000000000000000815250600101905060405180910390a4565b3373ffffffffffffffffffffffffffffffffffffffff166108fc60019081150290604051600060405180830381858888f193505050501580156106b4573d6000803e3d6000fd5b50565b60008082815481106106c557fe5b90600052602060002001549050919050565b7f310000000000000000000000000000000000000000000000000000000000000060405180807f3000000000000000000000000000000000000000000000000000000000000000815250600101905060405180910390a1565b60008090505b600a81101561074a57806001019050610736565b50565b60008061075a9190610884565b565b7f33000000000000000000000000000000000000000000000000000000000000007f32000000000000000000000000000000000000000000000000000000000000007f310000000000000000000000000000000000000000000000000000000000000060405180807f3000000000000000000000000000000000000000000000000000000000000000815250600101905060405180910390a3565b3373ffffffffffffffffffffffffffffffffffffffff16ff5b600060405180807f70617961626c655f63616c6c2829000000000000000000000000000000000000815250600e01905060405180910390207bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19169050604051818152600080600483600030620186a05a03f2505050565b50805460008255906000526020600020908101906108a291906108a5565b50565b6108c791905b808211156108c35760008160009055506001016108ab565b5090565b9056fea265627a7a72305820b81a82cf6ff756317c40a1d2fbbe83691f4a624cb87770795678a41ae6ce38f564736f6c634300050a0032"
         self.contract_address = self.node.createcontract(bytecode)['address']
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         assert_equal(self.node.listcontracts()[self.contract_address], 0)
 
         # Run a normal valid staticcall tx
         # will cause a throw since staticcall is undefined before qip7/constantinople
         abi = self.generate_staticcall_abi("normal_fun()")
         self.node.sendtocontract(self.contract_address, abi, 10, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         # check refund
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=1000000, value=10,
                                  excepted='BadInstruction')
 
-        self.node.generatetoaddress(10, dummy_address)
+        self.generatetoaddress(self.node, 10, dummy_address)
 
         # Run a normal valid staticcall tx with low gas
         self.node.sendtocontract(self.contract_address, abi, 10, 64835, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=64835, gas_price=0.000001, gas_used=64835, value=10,
                                  excepted='OutOfGas')
         assert_equal(self.get_value_at_index(0), "")
 
         # Run a normal valid staticcall tx
         self.node.sendtocontract(self.contract_address, abi, 10, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=64836, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 63 + "1")
@@ -266,7 +266,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("create_fun()")
         self.node.sendtocontract(self.contract_address, abi, 10, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -276,7 +276,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("create2_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -286,7 +286,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("log0_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -296,7 +296,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("log1_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -306,7 +306,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("log2_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -316,7 +316,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("log3_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -326,7 +326,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("log4_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -336,7 +336,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("sstore_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -346,7 +346,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("selfdestruct_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -357,7 +357,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("call_value_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -367,7 +367,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("callcode_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=65577, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 63 + "1")
@@ -377,7 +377,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("event_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -387,7 +387,7 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
         self.reset()
         abi = self.generate_staticcall_abi("transfer_fun()")
         self.node.sendtocontract(self.contract_address, abi, 1, 1000000, 0.000001)
-        self.node.generatetoaddress(1, dummy_address)
+        self.generatetoaddress(self.node, 1, dummy_address)
         self.assert_state(self.node, gas=1000000, gas_price=0.000001, gas_used=926056, value=0,
                                  excepted='None')
         assert_equal(self.get_value_at_index(0), "0" * 64)
@@ -395,4 +395,4 @@ class RunebaseEVMStaticCallTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    RunebaseEVMStaticCallTest().main()
+    RunebaseEVMStaticCallTest(__file__).main()

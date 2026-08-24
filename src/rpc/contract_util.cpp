@@ -29,6 +29,19 @@ UniValue transactionReceiptToJSON(const RunebaseTransactionReceipt& txRec)
     result.pushKV("utxoRoot", txRec.utxoRoot().hex());
     result.pushKV("gasUsed", CAmount(txRec.cumulativeGasUsed()));
     result.pushKV("bloom", txRec.bloom().hex());
+    UniValue createdContracts(UniValue::VARR);
+    for (const auto& item : txRec.createdContracts()) {
+        UniValue contractItem(UniValue::VOBJ);
+        contractItem.pushKV("address", item.first.hex());
+        contractItem.pushKV("code", HexStr(item.second));
+        createdContracts.push_back(contractItem);
+    }
+    result.pushKV("createdContracts", createdContracts);
+    UniValue destructedContracts(UniValue::VARR);
+    for (const dev::Address& contract : txRec.destructedContracts()) {
+        destructedContracts.push_back(contract.hex());
+    }
+    result.pushKV("destructedContracts", destructedContracts);
     UniValue logEntries(UniValue::VARR);
     dev::eth::LogEntries logs = txRec.log();
     for(dev::eth::LogEntry log : logs){
@@ -50,22 +63,12 @@ UniValue CallToContract(const UniValue& params, ChainstateManager &chainman)
 {
     LOCK(cs_main);
 
+    CChain& active_chain = chainman.ActiveChain();
     std::string strAddr = params[0].get_str();
     std::string data = params[1].get_str();
 
     if(data.size() % 2 != 0 || !CheckHex(data))
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid data (data not hex)");
-
-    dev::Address addrAccount;
-    if(strAddr.size() > 0)
-    {
-        if(strAddr.size() != 40 || !CheckHex(strAddr))
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect address");
-
-        addrAccount = dev::Address(strAddr);
-        if(!globalState->addressInUse(addrAccount))
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not exist");
-    }
 
     dev::Address senderAddress;
     if(!params[2].isNull()){
@@ -90,8 +93,33 @@ UniValue CallToContract(const UniValue& params, ChainstateManager &chainman)
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
     }
 
+    TemporaryState ts(globalState);
+    int blockNum;
+    if (params.size() >= 6) {
+        if (params[5].isNum()) {
+            blockNum = params[5].getInt<int>();
+            if ((blockNum < 0 && blockNum != -1) || blockNum > active_chain.Height())
+                throw JSONRPCError(RPC_INVALID_PARAMS, "Incorrect block number");
+            if (blockNum != -1) {
+                ts.SetRoot(uintToh256(active_chain[blockNum]->hashStateRoot), uintToh256(active_chain[blockNum]->hashUTXORoot));
+            }
+        } else {
+            throw JSONRPCError(RPC_INVALID_PARAMS, "Incorrect block number");
+        }
+    } else {
+        blockNum = active_chain.Height();
+    }
 
-    std::vector<ResultExecute> execResults = CallContract(addrAccount, ParseHex(data), chainman.ActiveChainstate(), senderAddress, gasLimit, nAmount);
+    dev::Address addrAccount;
+    if (strAddr.size() > 0) {
+        if (strAddr.size() != 40 || !CheckHex(strAddr))
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect address");
+        addrAccount = dev::Address(strAddr);
+        if (!globalState->addressInUse(addrAccount))
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not exist");
+    }
+
+    std::vector<ResultExecute> execResults = CallContract(addrAccount, ParseHex(data), chainman.ActiveChainstate(), blockNum, senderAddress, gasLimit, nAmount);
 
     if(fRecordLogOpcodes){
         writeVMlog(execResults, chainman.ActiveChain());
@@ -123,6 +151,19 @@ void assignJSON(UniValue& entry, const TransactionReceiptInfo& resExec) {
     entry.pushKV("bloom", resExec.bloom.hex());
     entry.pushKV("stateRoot", resExec.stateRoot.hex());
     entry.pushKV("utxoRoot", resExec.utxoRoot.hex());
+    UniValue createdContracts(UniValue::VARR);
+    for (const auto& item : resExec.createdContracts) {
+        UniValue contractItem(UniValue::VOBJ);
+        contractItem.pushKV("address", item.first.hex());
+        contractItem.pushKV("code", HexStr(item.second));
+        createdContracts.push_back(contractItem);
+    }
+    entry.pushKV("createdContracts", createdContracts);
+    UniValue destructedContracts(UniValue::VARR);
+    for (const dev::Address& contract : resExec.destructedContracts) {
+        destructedContracts.push_back(contract.hex());
+    }
+    entry.pushKV("destructedContracts", destructedContracts);
 }
 
 void assignJSON(UniValue& logEntry, const dev::eth::LogEntry& log,
@@ -165,12 +206,12 @@ size_t parseUInt(const UniValue& val, size_t defaultVal) {
     }
 }
 
-int parseBlockHeight(const UniValue& val) {
+int parseBlockHeight(const UniValue& val, int numBlocks) {
     if (val.isStr()) {
         auto blockKey = val.get_str();
 
         if (blockKey == "latest") {
-            return latestblock.height;
+            return numBlocks;
         } else {
             throw JSONRPCError(RPC_INVALID_PARAMS, "invalid block number");
         }
@@ -180,7 +221,7 @@ int parseBlockHeight(const UniValue& val) {
         int blockHeight = val.getInt<int>();
 
         if (blockHeight < 0) {
-            return latestblock.height;
+            return numBlocks;
         }
 
         return blockHeight;
@@ -189,11 +230,11 @@ int parseBlockHeight(const UniValue& val) {
     throw JSONRPCError(RPC_INVALID_PARAMS, "invalid block number");
 }
 
-int parseBlockHeight(const UniValue& val, int defaultVal) {
+int parseBlockHeight(const UniValue& val, int defaultVal, int numBlocks) {
     if (val.isNull()) {
         return defaultVal;
     } else {
-        return parseBlockHeight(val);
+        return parseBlockHeight(val, numBlocks);
     }
 }
 
@@ -275,12 +316,13 @@ public:
     size_t fromBlock;
     size_t toBlock;
     size_t minconf;
+    int numBlocks;
 
     std::set<dev::h160> addresses;
     std::vector<boost::optional<dev::h256>> topics;
 
-    SearchLogsParams(const UniValue& params) {
-        std::unique_lock<std::mutex> lock(cs_blockchange);
+    SearchLogsParams(const UniValue& params, int height) {
+        numBlocks = height;
 
         setFromBlock(params[0]);
         setToBlock(params[1]);
@@ -294,17 +336,17 @@ public:
 private:
     void setFromBlock(const UniValue& val) {
         if (!val.isNull()) {
-            fromBlock = parseBlockHeight(val);
+            fromBlock = parseBlockHeight(val, numBlocks);
         } else {
-            fromBlock = latestblock.height;
+            fromBlock = numBlocks;
         }
     }
 
     void setToBlock(const UniValue& val) {
         if (!val.isNull()) {
-            toBlock = parseBlockHeight(val);
+            toBlock = parseBlockHeight(val, numBlocks);
         } else {
-            toBlock = latestblock.height;
+            toBlock = numBlocks;
         }
     }
 
@@ -319,7 +361,7 @@ UniValue SearchLogs(const UniValue& _params, ChainstateManager &chainman)
 
     LOCK(cs_main);
 
-    SearchLogsParams params(_params);
+    SearchLogsParams params(_params, chainman.ActiveChain().Height());
 
     std::vector<std::vector<uint256>> hashesToBlock;
 
@@ -505,9 +547,9 @@ bool CallToken::execEvents(const int64_t &fromBlock, const int64_t &toBlock, con
                 tokenEvent.receiver = topicsList[2].get_str().substr(24);
                 ToRunebaseAddress(tokenEvent.receiver, tokenEvent.receiver);
             }
-            tokenEvent.blockHash = uint256S(eventMap["blockHash"].get_str());
+            tokenEvent.blockHash = uint256::FromHex(eventMap["blockHash"].get_str()).value_or(uint256::ZERO);
             tokenEvent.blockNumber = eventMap["blockNumber"].getInt<int64_t>();
-            tokenEvent.transactionHash = uint256S(eventMap["transactionHash"].get_str());
+            tokenEvent.transactionHash = uint256::FromHex(eventMap["transactionHash"].get_str()).value_or(uint256::ZERO);
 
             // Parse data
             std::string data = eventLog["data"].get_str();

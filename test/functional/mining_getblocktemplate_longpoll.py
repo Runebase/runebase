@@ -29,7 +29,7 @@ class GetBlockTemplateLPTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.supports_cli = False
-        self.requires_wallet = True 
+        self.requires_wallet = True
 
     def run_test(self):
         self.log.info("Warning: this test will take about 70 seconds in the best case. Be patient.")
@@ -74,4 +74,4 @@ class GetBlockTemplateLPTest(BitcoinTestFramework):
         assert not thr.is_alive()
 
 if __name__ == '__main__':
-    GetBlockTemplateLPTest().main()
+    GetBlockTemplateLPTest(__file__).main()

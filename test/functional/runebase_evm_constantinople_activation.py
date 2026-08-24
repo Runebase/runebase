@@ -20,7 +20,7 @@ class RunebaseEVMConstantinopleActivationTest(BitcoinTestFramework):
         self.skip_if_no_wallet()
 
     def run_test(self):
-        self.nodes[0].generate(COINBASE_MATURITY+50)
+        self.generate(self.nodes[0], COINBASE_MATURITY+50)
         self.node = self.nodes[0]
 
         """
@@ -38,7 +38,7 @@ class RunebaseEVMConstantinopleActivationTest(BitcoinTestFramework):
         bytecode = "6080604052348015600f57600080fd5b5060006002801b90505060358060266000396000f3fe6080604052600080fdfea165627a7a7230582050b41bb4079fe4c4ec2ab007d83304ad1680585dd519d188151a4ff4af2f4ded0029"
         for i in range(5):
             self.node.createcontract(bytecode)['address']
-            self.node.generate(1)
+            self.generate(self.node, 1)
 
 if __name__ == '__main__':
-    RunebaseEVMConstantinopleActivationTest().main()
+    RunebaseEVMConstantinopleActivationTest(__file__).main()

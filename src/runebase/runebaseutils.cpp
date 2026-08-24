@@ -3,6 +3,7 @@
 #include <pubkey.h>
 #include <util/convert.h>
 #include <chainparams.h>
+#include <chain.h>
 
 using namespace dev;
 
@@ -73,4 +74,91 @@ int runebaseutils::eth_getChainId(int blockHeight)
     }
 
     return blockHeight < shanghaiHeight ? idCache.beforeShanghaiChainId : idCache.afterShanghaiChainId;
+}
+
+dev::Address runebaseutils::eth_getHistoryStorageAddress()
+{
+
+    const CChainParams& chainparams = Params();
+    dev::Address addr = uintToh160(chainparams.GetConsensus().historyStorageAddress);
+    return addr;
+}
+
+runebaseutils::HistoricalHashes &runebaseutils::HistoricalHashes::instance()
+{
+    // Get instance
+    static runebaseutils::HistoricalHashes _instance;
+    return _instance;
+}
+
+void runebaseutils::HistoricalHashes::set(CBlockIndex *tip)
+{
+    if (m_tip != tip)
+    {
+        clear();
+    }
+    m_tip = tip;
+}
+
+bool runebaseutils::HistoricalHashes::get(const dev::u256 &blockHeight, dev::h256 &hash)
+{
+    // Check the tip
+    if (!m_tip)
+        return false;
+    if (blockHeight > (dev::h256) m_tip->nHeight)
+        return false;
+
+    // Update the list of hashes
+    update();
+
+    // Get the hash from the list
+    int height = (int) blockHeight;
+    if (m_hashes.contains(height)) {
+        hash = m_hashes[height];
+        return true;
+    }
+
+    return false;
+}
+
+runebaseutils::HistoricalHashes::HistoricalHashes()
+{
+    clear();
+}
+
+void runebaseutils::HistoricalHashes::clear() {
+    m_hashes.clear();
+}
+
+void runebaseutils::HistoricalHashes::update()
+{
+    // Check if update is needed
+    if (needUpdate()) {
+        clear();
+
+        // Get Pectra fork height
+        const CChainParams& params = Params();
+        int pectraHeight = params.GetConsensus().nPectraHeight;
+
+        // Add the last 8191 hashes, or until Pectra fork is reached, or not enough blocks
+        const CBlockIndex *tip = m_tip;
+        for(int i = 0; i < m_historyWindow; i++){
+            if(!tip)
+                break;
+            if(tip->nHeight < pectraHeight)
+                break;
+            m_hashes[tip->nHeight] = uintToh256(*tip->phashBlock);
+            tip = tip->pprev;
+        }
+    }
+}
+
+bool runebaseutils::HistoricalHashes::needUpdate()
+{
+    // Update if the tip hash is changed
+    bool ret = true;
+    if (m_tip && m_hashes.contains(m_tip->nHeight) && uintToh256(*m_tip->phashBlock) == m_hashes[m_tip->nHeight]) {
+        ret = false;
+    }
+    return ret;
 }

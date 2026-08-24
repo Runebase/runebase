@@ -65,7 +65,6 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const interface
         }
     }
 
-
     if(nNet < 0 && wtx.has_create_or_call && (fAllFromMe || !any_from_me)) {
         TransactionRecord sub(hash, nTime);
         sub.idx = 0;

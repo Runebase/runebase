@@ -48,7 +48,7 @@ class RunebaseSignRawSenderTest(BitcoinTestFramework):
         tx = res['hex']
         self.nodes[1].sendrawtransaction(tx)
         self.sync_all()
-        self.nodes[0].generate(1)
+        self.generate(self.nodes[0], 1)
         self.sync_all()
 
         # Create a contract with a sender address that we CANT sign with and one that we CAN sign
@@ -75,7 +75,7 @@ class RunebaseSignRawSenderTest(BitcoinTestFramework):
         self.nodes[1].sendrawtransaction(tx)
         self.sync_all()
         contract_addresses = set(self.nodes[0].listcontracts().keys())
-        self.nodes[0].generate(1)
+        self.generate(self.nodes[0], 1)
         self.sync_all()
 
         # Now send some runebase to both addresses (one contract will increase its balance and the other one will throw),
@@ -94,7 +94,7 @@ class RunebaseSignRawSenderTest(BitcoinTestFramework):
         tx = res['hex']
         self.nodes[1].sendrawtransaction(tx, 0)
         self.sync_all()
-        block_hash = self.nodes[0].generate(1)[0]
+        block_hash = self.generate(self.nodes[0], 1)[0]
         self.sync_all()
         payable_contract_addresses = [x[0] for x in self.nodes[0].listcontracts().items() if x[1] == 1]
         assert_equal(len(payable_contract_addresses), 1)
@@ -119,4 +119,4 @@ class RunebaseSignRawSenderTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].listcontracts()[payable_contract_address], 1)
 
 if __name__ == '__main__':
-    RunebaseSignRawSenderTest().main()
+    RunebaseSignRawSenderTest(__file__).main()

@@ -46,7 +46,7 @@ class CoinbaseCategoryTest(BitcoinTestFramework):
         self.assert_category("immature", address, txid, 0)
 
         # Mine another 99 blocks on top
-        self.nodes[0].generate(COINBASE_MATURITY-1)
+        self.generate(self.nodes[0], COINBASE_MATURITY-1)
         # Coinbase transaction is still immature after 100 confirmations
         self.assert_category("immature", address, txid, COINBASE_MATURITY-1)
 
@@ -61,4 +61,4 @@ class CoinbaseCategoryTest(BitcoinTestFramework):
         self.assert_category("orphan", address, txid, COINBASE_MATURITY)
 
 if __name__ == '__main__':
-    CoinbaseCategoryTest().main()
+    CoinbaseCategoryTest(__file__).main()

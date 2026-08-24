@@ -125,7 +125,7 @@ class RunebaseDGPBlockSizeSyncTest(BitcoinTestFramework):
 
         # Set ourself up as admin
         self.BLOCK_SIZE_DGP.send_set_initial_admin(admin_address)
-        self.node.generate(1)
+        self.node.generate(1, called_by_framework=True)
 
         possible_block_sizes = [1000000, 2000000] if ENABLE_REDUCED_BLOCK_TIME else [1000000, 2000000, 4000000, 8000000]
         ascending_block_sizes = sorted(possible_block_sizes)
@@ -133,7 +133,7 @@ class RunebaseDGPBlockSizeSyncTest(BitcoinTestFramework):
         for max_block_size in possible_block_sizes:
             self.create_proposal_contract(max_block_size)
             self.BLOCK_SIZE_DGP.send_add_address_proposal(self.proposal_address, 2, admin_address)
-            self.node.generate(2) # We need to generate 2 blocks now for it to activate
+            self.node.generate(2, called_by_framework=True) # We need to generate 2 blocks now for it to activate
             self.sync_blocks(self.nodes[0:2])
             self.assert_block_limits(max_block_size, ascending_block_sizes)
 
@@ -145,4 +145,4 @@ class RunebaseDGPBlockSizeSyncTest(BitcoinTestFramework):
         self.sync_all()
 
 if __name__ == '__main__':
-    RunebaseDGPBlockSizeSyncTest().main()
+    RunebaseDGPBlockSizeSyncTest(__file__).main()

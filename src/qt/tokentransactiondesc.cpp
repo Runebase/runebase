@@ -6,7 +6,6 @@
 #include <uint256.h>
 #include <validation.h>
 #include <wallet/wallet.h>
-#include <timedata.h>
 #include <interfaces/wallet.h>
 #include <consensus/params.h>
 #include <qt/guiconstants.h>

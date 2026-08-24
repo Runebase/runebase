@@ -37,11 +37,11 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
         # We also mature three coinbases for the node that will orphan node#0s blocks
         # We contiously sync the blocks between the disconnected nodes, using getblock and submitblock.
         staking_nodes_prevouts = []
-        self.nodes[1].generate(3)
+        self.nodes[1].generate(3, called_by_framework=True)
         self.sync_disconnected_nodes(self.nodes[1], self.nodes[0])
-        last_block_hashes = self.nodes[0].generatetoaddress(20, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        last_block_hashes = self.nodes[0].generatetoaddress(20, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq", called_by_framework=True)
         self.sync_disconnected_nodes(self.nodes[0], self.nodes[1])
-        self.nodes[1].generate(COINBASE_MATURITY)
+        self.nodes[1].generate(COINBASE_MATURITY, called_by_framework=True)
         self.sync_disconnected_nodes(self.nodes[1], self.nodes[0])
 
         # Spend the only available staking tx for node#0, give the staker some time to start before sending the tx that spends the only available staking tx
@@ -100,4 +100,4 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
         assert_equal(int(self.nodes[0].getbalance()*COIN), int((19*(INITIAL_BLOCK_REWARD-0.01)+INITIAL_BLOCK_REWARD)*COIN))
         assert_equal(self.nodes[0].getbestblockhash(), self.nodes[1].getbestblockhash())
 if __name__ == '__main__':
-    RunebasePOSConflictingStakingMempoolTxTest().main()
+    RunebasePOSConflictingStakingMempoolTxTest(__file__).main()

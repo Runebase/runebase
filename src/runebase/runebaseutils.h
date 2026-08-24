@@ -3,7 +3,10 @@
 
 #include <libdevcore/Common.h>
 #include <libdevcore/FixedHash.h>
+#include <libdevcore/Address.h>
 #include <util/chaintype.h>
+
+class CBlockIndex;
 
 /**
  * runebaseutils Provides utility functions to EVM for functionalities that already exist in runebase
@@ -21,9 +24,9 @@ bool btc_ecrecover(dev::h256 const& hash, dev::u256 const& v, dev::h256 const& r
  */
 enum ChainIdType
 {
-    MAIN = 531800, // 0x81D58
-    TESTNET = 531801, // 0x81D59
-    REGTEST = 531802, // 0x81D5A
+    MAIN = 81,
+    TESTNET = 8889,
+    REGTEST = 8890,
 };
 
 /**
@@ -41,6 +44,67 @@ int eth_getChainId(int blockHeight, int shanghaiHeight, const ChainType& chain);
  * @return chain id
  */
 int eth_getChainId(int blockHeight);
+
+/**
+ * @brief eth_getHistoryStorageAddress Get eth history storage address
+ * @return Return history storage address
+ */
+dev::Address eth_getHistoryStorageAddress();
+
+/**
+ * @brief The HistoricalHashes class Store the historical hashes
+ */
+class HistoricalHashes
+{
+public:
+    /**
+     * @brief instance Get instance from the historical hashages storage
+     * @return Instance of the storage
+     */
+    static HistoricalHashes& instance();
+
+    /**
+     * @brief set Set the most recent block index
+     * @param tip Block index for the tip
+     */
+    void set(CBlockIndex* tip);
+
+    /**
+     * @brief get Get the block hash from the history window
+     * @param blockHeight Input block height
+     * @param hash Output hash
+     * @return true if found the hash, false if not found
+     */
+    bool get(const dev::u256& blockHeight, dev::h256& hash);
+
+private:
+    // Private constructor, copy constructor and operator equal for singleton
+    HistoricalHashes();
+    HistoricalHashes(const HistoricalHashes&) = delete;
+    HistoricalHashes& operator=(const HistoricalHashes&) = delete;
+
+private:
+    /**
+     * @brief clear Clear the hashes
+     */
+    void clear();
+
+    /**
+     * @brief update Update the hashes from the tip
+     */
+    void update();
+
+    /**
+     * @brief needUpdate Check if update is needed
+     * @return true if needed, otherwise false
+     */
+    bool needUpdate();
+
+private:
+    const static int m_historyWindow = 8191;
+    std::map<int, dev::h256> m_hashes;
+    CBlockIndex* m_tip = 0;
+};
 
 }
 

@@ -41,6 +41,8 @@ else:
 
 MAX_LOCATOR_SZ = 101
 MAX_BLOCK_WEIGHT = 2000000
+DEFAULT_BLOCK_RESERVED_WEIGHT = 8000
+MINIMUM_BLOCK_RESERVED_WEIGHT = 2000
 MAX_BLOOM_FILTER_SIZE = 36000
 MAX_BLOOM_HASH_FUNCS = 50
 
@@ -54,6 +56,7 @@ MAX_PROTOCOL_MESSAGE_LENGTH = 8000000  # Maximum length of incoming protocol mes
 MAX_HEADERS_RESULTS = 2000  # Number of headers sent in one getheaders result
 MAX_INV_SIZE = 50000  # Maximum number of entries in an 'inv' protocol message
 
+NODE_NONE = 0
 NODE_NETWORK = (1 << 0)
 NODE_BLOOM = (1 << 2)
 NODE_WITNESS = (1 << 3)
@@ -334,7 +337,7 @@ class CAddress:
         elif self.net == self.NET_CJDNS:
             self.ip = socket.inet_ntop(socket.AF_INET6, addr_bytes)
         else:
-            raise Exception(f"Address type not supported")
+            raise Exception("Address type not supported")
 
         self.port = int.from_bytes(f.read(2), "big")
 
@@ -361,7 +364,7 @@ class CAddress:
         elif self.net == self.NET_CJDNS:
             r += socket.inet_pton(socket.AF_INET6, self.ip)
         else:
-            raise Exception(f"Address type not supported")
+            raise Exception("Address type not supported")
         r += self.port.to_bytes(2, "big")
         return r
 
@@ -567,12 +570,12 @@ class CTxWitness:
 
 
 class CTransaction:
-    __slots__ = ("hash", "nLockTime", "nVersion", "sha256", "vin", "vout",
+    __slots__ = ("hash", "nLockTime", "version", "sha256", "vin", "vout",
                  "wit")
 
     def __init__(self, tx=None):
         if tx is None:
-            self.nVersion = 2
+            self.version = 2
             self.vin = []
             self.vout = []
             self.wit = CTxWitness()
@@ -580,7 +583,7 @@ class CTransaction:
             self.sha256 = None
             self.hash = None
         else:
-            self.nVersion = tx.nVersion
+            self.version = tx.version
             self.vin = copy.deepcopy(tx.vin)
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
@@ -589,7 +592,7 @@ class CTransaction:
             self.wit = copy.deepcopy(tx.wit)
 
     def deserialize(self, f):
-        self.nVersion = int.from_bytes(f.read(4), "little", signed=True)
+        self.version = int.from_bytes(f.read(4), "little")
         self.vin = deser_vector(f, CTxIn)
         flags = 0
         if len(self.vin) == 0:
@@ -612,7 +615,7 @@ class CTransaction:
 
     def serialize_without_witness(self):
         r = b""
-        r += self.nVersion.to_bytes(4, "little", signed=True)
+        r += self.version.to_bytes(4, "little")
         r += ser_vector(self.vin)
         r += ser_vector(self.vout)
         r += self.nLockTime.to_bytes(4, "little")
@@ -624,7 +627,7 @@ class CTransaction:
         if not self.wit.is_null():
             flags |= 1
         r = b""
-        r += self.nVersion.to_bytes(4, "little", signed=True)
+        r += self.version.to_bytes(4, "little")
         if flags:
             dummy = []
             r += ser_vector(dummy)
@@ -684,8 +687,8 @@ class CTransaction:
         return math.ceil(self.get_weight() / WITNESS_SCALE_FACTOR)
 
     def __repr__(self):
-        return "CTransaction(nVersion=%i vin=%s vout=%s wit=%s nLockTime=%i)" \
-            % (self.nVersion, repr(self.vin), repr(self.vout), repr(self.wit), self.nLockTime)
+        return "CTransaction(version=%i vin=%s vout=%s wit=%s nLockTime=%i)" \
+            % (self.version, repr(self.vin), repr(self.vout), repr(self.wit), self.nLockTime)
 
 
 class CBlockHeader(object):
@@ -1362,8 +1365,11 @@ class msg_tx:
     __slots__ = ("tx",)
     msgtype = b"tx"
 
-    def __init__(self, tx=CTransaction()):
-        self.tx = tx
+    def __init__(self, tx=None):
+        if tx is None:
+            self.tx = CTransaction()
+        else:
+            self.tx = tx
 
     def deserialize(self, f):
         self.tx.deserialize(f)
@@ -1421,7 +1427,7 @@ class msg_block:
 # for cases where a user needs tighter control over what is sent over the wire
 # note that the user must supply the name of the msgtype, and the data
 class msg_generic:
-    __slots__ = ("data")
+    __slots__ = ("msgtype", "data")
 
     def __init__(self, msgtype, data=None):
         self.msgtype = msgtype

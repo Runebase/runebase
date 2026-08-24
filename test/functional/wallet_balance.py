@@ -4,7 +4,6 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the wallet balance RPC methods."""
 from decimal import Decimal
-import struct
 
 from test_framework.address import ADDRESS_BCRT1_UNSPENDABLE as ADDRESS_WATCHONLY
 from test_framework.blocktools import COINBASE_MATURITY
@@ -55,6 +54,8 @@ class WalletTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 3
         self.setup_clean_chain = True
+        # whitelist peers to speed up tx relay / mempool sync
+        self.noban_tx_relay = True
         self.extra_args = [
             # Limit mempool descendants as a hack to have wallet txs rejected from the mempool.
             # Set walletrejectlongchains=0 so the wallet still creates the transactions.
@@ -62,9 +63,6 @@ class WalletTest(BitcoinTestFramework):
             ['-headerspamfilter=0'],
             ['-headerspamfilter=0']
         ]
-        # whitelist peers to speed up tx relay / mempool sync
-        for args in self.extra_args:
-            args.append("-whitelist=noban@127.0.0.1")
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -82,14 +80,14 @@ class WalletTest(BitcoinTestFramework):
             assert 'watchonly' not in self.nodes[1].getbalances()
 
         self.log.info("Mining blocks ...")
-        blockhash = self.nodes[2].generate(1)[0]
+        blockhash = self.generate(self.nodes[2], 1)[0]
         self.nodes[0].submitblock(self.nodes[2].getblock(blockhash, False))
         self.nodes[1].submitblock(self.nodes[2].getblock(blockhash, False))
         self.sync_blocks()
         generatesynchronized(self.nodes[2], COINBASE_MATURITY, self.nodes[2].getnewaddress(), self.nodes)
         self.sync_blocks()
         self.nodes[2].sendmany("", {self.nodes[0].getnewaddress(): 50, self.nodes[1].getnewaddress(): 50})
-        self.nodes[2].generatetoaddress(1, self.nodes[2].getnewaddress())
+        self.generatetoaddress(self.nodes[2], 1, self.nodes[2].getnewaddress())
         self.sync_all()
 
         # Verify listunspent returns immature coinbase if 'include_immature_coinbase' is set
@@ -281,8 +279,8 @@ class WalletTest(BitcoinTestFramework):
         tx_orig = self.nodes[0].gettransaction(txid)['hex']
         # Increase fee by 1 coin
         tx_replace = tx_orig.replace(
-            struct.pack("<q", 99 * 10**8).hex(),
-            struct.pack("<q", 98 * 10**8).hex(),
+            (99 * 10**8).to_bytes(8, "little", signed=True).hex(),
+            (98 * 10**8).to_bytes(8, "little", signed=True).hex(),
         )
         tx_replace = self.nodes[0].signrawtransactionwithwallet(tx_replace)['hex']
         # Total balance is given by the sum of outputs of the tx
@@ -360,4 +358,4 @@ class WalletTest(BitcoinTestFramework):
         assert_equal(tx_info['lastprocessedblock']['hash'], prev_hash)
 
 if __name__ == '__main__':
-    WalletTest().main()
+    WalletTest(__file__).main()

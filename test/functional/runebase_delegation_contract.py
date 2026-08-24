@@ -46,7 +46,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
     def remove_delegation(self):
         abi = "3d666e8b"
         txid = self.delegator.sendtocontract(DELEGATION_CONTRACT_ADDRESS, abi, 0, 200000, 0.00000040, self.delegator_address)['txid']
-        self.delegator.generate(1)
+        self.delegator.generate(1, called_by_framework=True)
         receipt = self.delegator.gettransactionreceipt(txid)[0]
 
     def stake_one_block(self, node, t, timeout=600):
@@ -70,7 +70,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         for fee in range(0, 101, 20): # inc by 5 to lower the execution time
             # send the evm tx that delegates the address to the staker address
             delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-            self.delegator.generatetoaddress(1, self.delegator_address)
+            self.generatetoaddress(self.delegator, 1, self.delegator_address)
             t = self.staker.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
             self.sync_all()
             t += 0x10
@@ -100,7 +100,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         pod = create_POD(self.delegator, self.delegator_address, self.staker_address)
         fee = 50
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
         self.sync_all()
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
         t += 0x10
@@ -143,7 +143,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
 
 
         # generate one more block and submit the duplicate
-        self.staker.generatetoaddress(1, self.staker_address)
+        self.generatetoaddress(self.staker, 1, self.staker_address)
         t += 0x10
         dupe_prevout_block = create_delegated_pos_block(self.staker, self.staker_eckey, staker_prevout_for_nas, self.delegator_address_hex, pod, fee, dupe_delegator_prevouts, nFees=0, nTime=t, use_pos_reward=use_pos_reward)
         while dupe_prevout_block == None:
@@ -161,7 +161,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         pod = create_POD(self.delegator, self.delegator_address, self.staker_address)
         fee = 51
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
         self.sync_all()
         t = self.delegator.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
 
@@ -192,7 +192,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         pod = create_POD(self.delegator, self.delegator_address, self.staker_address)
         fee = 52
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
         self.sync_all()
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
         t += 0x10
@@ -237,7 +237,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         pod = create_POD(self.delegator, self.delegator_address, self.staker_address)
         fee = 53
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
         self.sync_all()
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
         t += 0x10
@@ -266,7 +266,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         pod = create_POD(self.delegator, self.delegator_address, self.staker_address)
         fee = 54
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
         self.sync_all()
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
         t += 0x20
@@ -294,11 +294,11 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         pod = create_POD(self.delegator, self.delegator_address, self.staker_address)
         fee = 55
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
 
         # remove the delegation
         self.remove_delegation()
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
 
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
         t += 0x10
@@ -453,7 +453,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         pod = create_POD(self.delegator, self.delegator_address, self.staker_address)
         fee = 58
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
         self.sync_all()
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & (0xffffffff - TIMESTAMP_MASK)
         t += TIMESTAMP_MASK+1
@@ -474,10 +474,10 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         assert_equal(self.nodes[4].getpeerinfo(), [])
 
         self.remove_delegation()
-        self.staker.generatetoaddress(2, self.staker_address)
+        self.staker.generatetoaddress(2, self.staker_address, called_by_framework=True)
 
         self.nodes[4].submitblock(bytes_to_hex_str(block.serialize()), None)
-        self.nodes[4].generatetoaddress(4, self.staker_address)
+        self.nodes[4].generatetoaddress(4, self.staker_address, called_by_framework=True)
         time.sleep(2)
 
         for i in range(len(self.nodes)):
@@ -489,7 +489,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
             if node_send.getrawmempool():
                 for node_receive in self.nodes:
                     node_receive.sendrawtransaction(node_send.getrawtransaction(node_send.getrawmempool()[0], False))
-        self.staker.generatetoaddress(1, self.staker_address)
+        self.generatetoaddress(self.staker, 1, self.staker_address)
         self.used_delegator_prevouts.append(block.prevoutStake)
 
 
@@ -499,7 +499,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & (0xffffffff - TIMESTAMP_MASK)
         t += TIMESTAMP_MASK+1
         for n in self.nodes: n.setmocktime(t)
-        self.delegator.generatetoaddress(1, self.delegator_address)
+        self.generatetoaddress(self.delegator, 1, self.delegator_address)
 
         self.restart_node(4, ['-offlinestakingheight=' + str(OFFLINE_STAKING_ACTIVATION_HEIGHT), '-londonheight=100000'])
         t = self.staker.getblock(self.staker.getbestblockhash())['time'] & 0xfffffff0
@@ -512,7 +512,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         delegate_to_staker(self.delegator, self.delegator_address, self.staker_address, fee, pod)
 
         # Make a longer chain
-        best_block_hash = self.nodes[4].generatetoaddress(10, self.staker_address)[-1]
+        best_block_hash = self.nodes[4].generatetoaddress(10, self.staker_address, called_by_framework=True)[-1]
 
         # and reconnect
         for i in range(len(self.nodes)):
@@ -533,7 +533,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         block = create_delegated_pos_block(self.staker, self.staker_eckey, staker_prevout_for_nas, self.delegator_address_hex, pod, fee, delegator_prevouts, nFees=0, nTime=t, use_pos_reward=use_pos_reward)
         for n in self.nodes:
             assert_equal(n.submitblock(bytes_to_hex_str(block.serialize())), 'bad-delegate-output')
-        self.staker.generatetoaddress(1, self.staker_address)
+        self.generatetoaddress(self.staker, 1, self.staker_address)
 
 
     def run_test(self):
@@ -556,7 +556,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         self.wallet_backup_path = self.staker.datadir_path / "regtest" / "backup_wallets"
         shutil.copytree(self.wallet_clean_path, self.wallet_backup_path)
 
-        self.staker.generatetoaddress(1, self.staker_address)
+        self.generatetoaddress(self.staker, 1, self.staker_address)
         self.sync_all()
         generatesynchronized(self.delegator, COINBASE_MATURITY+100, self.delegator_address, self.nodes)
         self.sync_all()
@@ -624,4 +624,4 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         self.sync_all()
 
 if __name__ == '__main__':
-    RunebaseSimpleDelegationContractTest().main()
+    RunebaseSimpleDelegationContractTest(__file__).main()

@@ -9,7 +9,7 @@
 
 #include <QAbstractTableModel>
 #include <QStringList>
-#include <QColor> 
+#include <QColor>
 
 #include <memory>
 

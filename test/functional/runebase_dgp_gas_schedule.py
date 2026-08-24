@@ -92,10 +92,10 @@ class RunebaseDGPGasSchedule(BitcoinTestFramework):
 
         # Set ourself up as admin
         self.BLOCK_SIZE_DGP.send_set_initial_admin(admin_address)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         self.create_proposal_contract()
         self.BLOCK_SIZE_DGP.send_add_address_proposal(self.proposal_address, 2, admin_address)
-        self.node.generate(2) # We need to generate 2 blocks now for it to activate
+        self.generate(self.node, 2) # We need to generate 2 blocks now for it to activate
 
         for i in range(1, self.node.getblockcount()+1):
             block_raw = self.node.getblock(self.node.getblockhash(i), False)
@@ -115,9 +115,9 @@ class RunebaseDGPGasSchedule(BitcoinTestFramework):
 
         for node, opt in zip(self.nodes, ['dgpevm', 'dgpstorage']):
             contract_address = node.createcontract(bytecode, 1000000)['address']
-            node.generate(1)
+            self.generate(node, 1)
             print('dgp worked with ', opt, contract_address in node.listcontracts())
             self.sync_all()
 
 if __name__ == '__main__':
-    RunebaseDGPGasSchedule().main()
+    RunebaseDGPGasSchedule(__file__).main()

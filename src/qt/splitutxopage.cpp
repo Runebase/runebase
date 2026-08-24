@@ -69,7 +69,7 @@ SplitUTXOPage::SplitUTXOPage(QWidget *parent, Mode mode) :
     ui->lineEditMaxValue->setValue(DEFAULT_STAKING_MIN_UTXO_VALUE * 2);
     ui->spinBoxMaxOutputs->setMinimum(1);
     ui->spinBoxMaxOutputs->setMaximum(10000);
-    ui->spinBoxMaxOutputs->setValue(100);
+    setDefaultMaxOutputsValue();
 
     ui->splitCoinsButton->setEnabled(false);
 
@@ -115,13 +115,10 @@ void SplitUTXOPage::setModel(WalletModel *_model)
 
     if (bCreateUnsigned) {
         ui->splitCoinsButton->setText(tr("Cr&eate Unsigned"));
-        ui->splitCoinsButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+        ui->splitCoinsButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
     }
 
-    if(m_model && m_model->wallet().privateKeysDisabled())
-    {
-        ui->spinBoxMaxOutputs->setValue(20);
-    }
+    setDefaultMaxOutputsValue();
 }
 
 void SplitUTXOPage::setAddress(const QString &address)
@@ -176,7 +173,7 @@ void SplitUTXOPage::clearAll()
     }
     ui->lineEditMinValue->setValue(DEFAULT_STAKING_MIN_UTXO_VALUE);
     ui->lineEditMaxValue->setValue(DEFAULT_STAKING_MIN_UTXO_VALUE * 2);
-    ui->spinBoxMaxOutputs->setValue(100);
+    setDefaultMaxOutputsValue();
 }
 
 void SplitUTXOPage::accept()
@@ -229,7 +226,7 @@ void SplitUTXOPage::on_splitCoinsClicked()
         if (bCreateUnsigned) {
             questionString.append(tr("Do you want to draft this create contract transaction?"));
             questionString.append("<br /><span style='font-size:10pt;'>");
-            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
             questionString.append("</span>");
             questionString.append(tr("<br/><br/>Split coins for address:<br/>"));
         } else {
@@ -315,4 +312,10 @@ void SplitUTXOPage::on_updateSplitCoinsButton()
     }
 
     ui->splitCoinsButton->setEnabled(enabled);
+}
+
+void SplitUTXOPage::setDefaultMaxOutputsValue()
+{
+    uint8_t numOutputs = m_model && m_model->wallet().privateKeysDisabled() ? 20 : 100;
+    ui->spinBoxMaxOutputs->setValue(numOutputs);
 }

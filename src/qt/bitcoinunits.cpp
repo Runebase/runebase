@@ -83,11 +83,11 @@ int BitcoinUnits::decimals(Unit unit)
     assert(false);
 }
 
-int256_t BitcoinUnits::tokenFactor(int decimalUnits)
+dev::s256 BitcoinUnits::tokenFactor(int decimalUnits)
 {
     if(decimalUnits == 0)
         return 0;
-    int256_t factor = 1;
+    dev::s256 factor = 1;
     for(int i = 0; i < decimalUnits; i++){
         factor *= 10;
     }
@@ -182,7 +182,7 @@ bool BitcoinUnits::parse(Unit unit, const QString& value, CAmount* val_out)
     {
         return false; // More than one dot
     }
-    QString whole = parts[0];
+    const QString& whole = parts[0];
     QString decimals;
 
     if(parts.size() > 1)
@@ -208,7 +208,7 @@ bool BitcoinUnits::parse(Unit unit, const QString& value, CAmount* val_out)
     return ok;
 }
 
-bool BitcoinUnits::parseToken(int decimal_units, const QString &value, int256_t *val_out)
+bool BitcoinUnits::parseToken(int decimal_units, const QString &value, dev::s256 *val_out)
 {
     if(value.isEmpty())
         return false; // Refuse to parse empty string
@@ -245,10 +245,10 @@ bool BitcoinUnits::parseToken(int decimal_units, const QString &value, int256_t 
         return false; // Longer numbers will exceed 256 bits
     }
 
-    int256_t retvalue;
+    dev::s256 retvalue;
     try
     {
-        retvalue = int256_t(str.toStdString());
+        retvalue = dev::s256(str.toStdString());
         ok = true;
     }
     catch(...)
@@ -263,15 +263,15 @@ bool BitcoinUnits::parseToken(int decimal_units, const QString &value, int256_t 
     return ok;
 }
 
-QString BitcoinUnits::formatToken(int decimal_units, const int256_t& nIn, bool fPlus, SeparatorStyle separators)
+QString BitcoinUnits::formatToken(int decimal_units, const dev::s256& nIn, bool fPlus, SeparatorStyle separators)
 {
-    int256_t n = nIn;
-    int256_t n_abs = (n > 0 ? n : -n);
-    int256_t quotient;
-    int256_t remainder;
+    dev::s256 n = nIn;
+    dev::s256 n_abs = (n > 0 ? n : -n);
+    dev::s256 quotient;
+    dev::s256 remainder;
     QString quotient_str;
     QString remainder_str;
-    int256_t coin = tokenFactor(decimal_units);
+    dev::s256 coin = tokenFactor(decimal_units);
     if(coin != 0)
     {
         quotient = n_abs / coin;
@@ -303,7 +303,7 @@ QString BitcoinUnits::formatToken(int decimal_units, const int256_t& nIn, bool f
     return quotient_str;
 }
 
-QString BitcoinUnits::formatTokenWithUnit(const QString unit, int decimals, const int256_t &amount, bool plussign, BitcoinUnits::SeparatorStyle separators)
+QString BitcoinUnits::formatTokenWithUnit(const QString unit, int decimals, const dev::s256 &amount, bool plussign, BitcoinUnits::SeparatorStyle separators)
 {
     return formatToken(decimals, amount, plussign, separators) + " " + unit;
 }

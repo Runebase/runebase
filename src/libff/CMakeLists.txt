@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.16)
 
-project (libff)
+# Version is added to fix warning
+project (libff VERSION 0.0.0)
 
 # Default to RelWithDebInfo configuration if no configuration is explicitly specified.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)

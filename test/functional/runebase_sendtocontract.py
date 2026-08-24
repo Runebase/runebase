@@ -48,7 +48,7 @@ class SendToContractTest(BitcoinTestFramework):
         """
         contract_data = self.node.createcontract("6060604052341561000c57fe5b5b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505b5b6102218061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806313af40351461005c5780632bcf51b41461008a5780635e01eb5a14610094578063893d20e8146100e6575bfe5b610088600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610138565b005b61009261017d565b005b341561009c57fe5b6100a46101c1565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34156100ee57fe5b6100f66101ca565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b80600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505b50565b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505b565b60003390505b90565b6000600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1690505b905600a165627a7a72305820791895230daae0ed58cc374ad5b639044408f1942d7b85689a616caee50dc42e0029", 1000000)
         self.contract_address = contract_data['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
 
     # Verifies that the contract storage and abi work correctly
@@ -58,7 +58,7 @@ class SendToContractTest(BitcoinTestFramework):
         assert('txid' in ret)
         assert('sender' in ret)
         assert('hash160' in ret)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         
         ret = self.node.getaccountinfo(self.contract_address)
         assert_equal(ret['address'], self.contract_address)
@@ -74,7 +74,7 @@ class SendToContractTest(BitcoinTestFramework):
         assert('txid' in ret)
         assert('sender' in ret)
         assert('hash160' in ret)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         
         ret = self.node.getaccountinfo(self.contract_address)
         #print(ret)
@@ -87,14 +87,14 @@ class SendToContractTest(BitcoinTestFramework):
     def sendtocontract_specify_sender_test(self):
         self.node.importprivkey("cQWxca9y9XBf4c6ohTwRQ9Kf4GZyRybhGBfzaFgkvRpw8HjbRC58")
         self.node.sendtoaddress("qabmqZk3re5b9UpUcznxDkCnCsnKdmPktT", 0.1)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         # call setSenderAsOwner with 100 runebase
         ret = self.node.sendtocontract(self.contract_address, "2bcf51b4", 100, 1000000, RUNEBASE_MIN_GAS_PRICE_STR, "qabmqZk3re5b9UpUcznxDkCnCsnKdmPktT")
         assert('txid' in ret)
         assert('sender' in ret)
         assert('hash160' in ret)
         time.sleep(0.1)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         ret = self.node.getaccountinfo(self.contract_address)
         assert(ret['address'] == self.contract_address)
         assert(ret['balance'] == 20000000000)
@@ -105,7 +105,7 @@ class SendToContractTest(BitcoinTestFramework):
 
     def sendtocontract_no_broadcast(self):
         self.node.sendtoaddress("qabmqZk3re5b9UpUcznxDkCnCsnKdmPktT", 0.1)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         # call setSenderAsOwner with 100 runebase
         ret = self.node.sendtocontract(self.contract_address, "2bcf51b4", 100, 1000000, RUNEBASE_MIN_GAS_PRICE_STR, "qabmqZk3re5b9UpUcznxDkCnCsnKdmPktT", False)
         assert('raw transaction' in ret)
@@ -118,7 +118,7 @@ class SendToContractTest(BitcoinTestFramework):
         assert(False)
 
     def run_test(self):
-        self.nodes[0].generate(100+COINBASE_MATURITY)
+        self.generate(self.nodes[0], 100+COINBASE_MATURITY)
         self.node = self.nodes[0]
         self.setup_contract()
         self.sendtocontract_verify_storage_test()
@@ -127,4 +127,4 @@ class SendToContractTest(BitcoinTestFramework):
         self.sendtocontract_no_broadcast()
 
 if __name__ == '__main__':
-    SendToContractTest().main()
+    SendToContractTest(__file__).main()

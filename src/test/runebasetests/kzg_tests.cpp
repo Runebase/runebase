@@ -6,7 +6,7 @@
 #include <intx/intx.hpp>
 #include <validation.h>
 #include <chainparams.h>
-#include <runebasetests/precompiled_utils.h>
+#include <test/runebasetests/precompiled_utils.h>
 #include <test/runebasetests/data/point_evaluation.json.h>
 
 #include <span>

@@ -32,7 +32,7 @@ class ImportPrunedFundsTest(BitcoinTestFramework):
 
     def run_test(self):
         self.log.info("Mining blocks...")
-        self.nodes[0].generate(COINBASE_MATURITY + 1)
+        self.generate(self.nodes[0], COINBASE_MATURITY + 1)
 
         # address
         address1 = self.nodes[0].getnewaddress()
@@ -143,4 +143,4 @@ class ImportPrunedFundsTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    ImportPrunedFundsTest().main()
+    ImportPrunedFundsTest(__file__).main()

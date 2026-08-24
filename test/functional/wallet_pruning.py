@@ -63,7 +63,6 @@ class WalletPruningTest(BitcoinTestFramework):
             
             if i%100 == 0:
                 self.sync_all()
-            
         self.sync_all()
 
     def test_wallet_import_pruned(self, wallet_name):
@@ -159,4 +158,4 @@ class WalletPruningTest(BitcoinTestFramework):
         self.test_wallet_import_pruned_with_missing_blocks(wallet_birthheight_1)
 
 if __name__ == '__main__':
-    WalletPruningTest().main()
+    WalletPruningTest(__file__).main()

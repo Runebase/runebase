@@ -67,7 +67,6 @@ private:
 private Q_SLOTS:
     void LimitTransactionRows();
     void updateDisplayUnit();
-
     void updateAlerts(const QString &warnings);
     void updateWatchOnlyLabels(bool showWatchOnly);
     void setMonospacedFont(const QFont&);
@@ -78,4 +77,3 @@ private Q_SLOTS:
 };
 
 #endif // BITCOIN_QT_OVERVIEWPAGE_H
-

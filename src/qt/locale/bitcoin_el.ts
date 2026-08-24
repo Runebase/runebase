@@ -2,6 +2,10 @@
 <context>
     <name>AddressBookPage</name>
     <message>
+        <source>Create a new address</source>
+        <translation type="unfinished">Δημιουργία νέας διεύθυνσης </translation>
+    </message>
+    <message>
         <source>&amp;New</source>
         <translation type="unfinished">&amp;Νέo</translation>
     </message>
@@ -86,6 +90,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">Σφάλμα κατά την προσπάθεια αποθήκευσης της λίστας διευθύνσεων στο %1. Παρακαλώ δοκιμάστε ξανά.</translation>
     </message>
     <message>
+        <source>Receiving addresses - %1</source>
+        <translation type="unfinished">Διευθύνσεις λήψης - %1</translation>
+    </message>
+    <message>
         <source>Exporting Failed</source>
         <translation type="unfinished">Αποτυχία εξαγωγής</translation>
     </message>
@@ -166,6 +174,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Enter the old passphrase and new passphrase for the wallet.</source>
         <translation type="unfinished">Εισαγάγετε τον παλιό και νέο κωδικό πρόσβασης σας για το πορτοφόλι.</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation type="unfinished">Συνεχίστε</translation>
     </message>
     <message>
         <source>Remember that encrypting your wallet cannot fully protect your runebases from being stolen by malware infecting your computer.</source>
@@ -283,6 +295,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">άγνωστο</translation>
     </message>
     <message>
+        <source>Default system font "%1"</source>
+        <translation type="unfinished">Προεπιλεγμένη γραμματοσειρά συστήματος "%1"</translation>
+    </message>
+    <message>
         <source>Amount</source>
         <translation type="unfinished">Ποσό</translation>
     </message>
@@ -389,7 +405,11 @@ Signing is only possible with addresses of the type 'legacy'.</source>
             <numerusform>%n έτη</numerusform>
         </translation>
     </message>
-    </context>
+    <message>
+        <source>default wallet</source>
+        <translation type="unfinished">Προεπιλεγμένο πορτοφόλι</translation>
+    </message>
+</context>
 <context>
     <name>BitcoinGUI</name>
     <message>
@@ -467,7 +487,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>Change the passphrase used for wallet encryption</source>
-        <translation type="unfinished">Αλλαγή της φράσης πρόσβασης για την κρυπτογράφηση του πορτοφολιού</translation>
+        <translation type="unfinished">Αλλαγή του κωδικού κρυπτογράφησης του πορτοφολιού</translation>
     </message>
     <message>
         <source>&amp;Send</source>
@@ -684,11 +704,11 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     </message>
     <message>
         <source>Migrate Wallet</source>
-        <translation type="unfinished">Μεταφορά Πορτοφολιού</translation>
+        <translation type="unfinished">Μετεγκατάσταση Πορτοφολιού</translation>
     </message>
     <message>
         <source>Migrate a wallet</source>
-        <translation type="unfinished">Μεταφορά ενός πορτοφολιού</translation>
+        <translation type="unfinished">Μετεγκατάσταση ενός πορτοφολιού</translation>
     </message>
     <message>
         <source>Show the %1 help message to get a list with possible Runebase command-line options</source>
@@ -701,10 +721,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Mask the values in the Overview tab</source>
         <translation type="unfinished">Απόκρυψη τιμών στην καρτέλα Επισκόπησης</translation>
-    </message>
-    <message>
-        <source>default wallet</source>
-        <translation type="unfinished">Προεπιλεγμένο πορτοφόλι</translation>
     </message>
     <message>
         <source>No wallets available</source>
@@ -758,8 +774,8 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <source>%n active connection(s) to Runebase network.</source>
         <extracomment>A substring of the tooltip.</extracomment>
         <translation type="unfinished">
-            <numerusform>1%n  ενεργές συνδέσεις στο δίκτυο Runebase.</numerusform>
-            <numerusform>%n ενεργές συνδέσεις στο δίκτυο Runebase.</numerusform>
+            <numerusform>%n active connection(s) to Runebase network.</numerusform>
+            <numerusform>%n active connection(s) to Runebase network.</numerusform>
         </translation>
     </message>
     <message>
@@ -1111,10 +1127,6 @@ The migration process will create a backup of the wallet before migrating. This 
     <message>
         <source>Open wallet warning</source>
         <translation type="unfinished">Προειδοποίηση ανοίγματος πορτοφολιού</translation>
-    </message>
-    <message>
-        <source>default wallet</source>
-        <translation type="unfinished">Προεπιλεγμένο πορτοφόλι</translation>
     </message>
     <message>
         <source>Open Wallet</source>
@@ -1600,11 +1612,6 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished">Η επαναφορά αυτής της ρύθμισης απαιτεί εκ νέου λήψη ολόκληρου του μπλοκ αλυσίδας.</translation>
     </message>
     <message>
-        <source>Maximum database cache size. A larger cache can contribute to faster sync, after which the benefit is less pronounced for most use cases. Lowering the cache size will reduce memory usage. Unused mempool memory is shared for this cache.</source>
-        <extracomment>Tooltip text for Options window setting that sets the size of the database cache. Explains the corresponding effects of increasing/decreasing this value.</extracomment>
-        <translation type="unfinished">Μέγιστο μέγεθος βάσης δεδομένων προσωρινής μνήμης. Μια μεγαλύτερη προσωρινή μνήμη μπορεί να συμβάλει στον ταχύτερο συγχρονισμό, μετά τον οποίο το όφελος είναι λιγότερο έντονο για τις περισσότερες περιπτώσεις χρήσης. Η μείωση του μεγέθους της προσωρινής μνήμης θα μειώσει τη χρήση της μνήμης. Η αχρησιμοποίητη μνήμη mempool είναι κοινόχρηστη για αυτήν την προσωρινή μνήμη.</translation>
-    </message>
-    <message>
         <source>MiB</source>
         <translation type="unfinished">MebiBytes</translation>
     </message>
@@ -1674,22 +1681,6 @@ The migration process will create a backup of the wallet before migrating. This 
     <message>
         <source>&amp;External signer script path</source>
         <translation type="unfinished">&amp;Διαδρομή σεναρίου εξωτερικού υπογράφοντος</translation>
-    </message>
-    <message>
-        <source>Automatically open the Runebase client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation type="unfinished">Αυτόματο άνοιγμα των θυρών Runebase στον δρομολογητή. Λειτουργεί μόνο αν ο δρομολογητής σας υποστηρίζει τη λειτουργία UPnP.</translation>
-    </message>
-    <message>
-        <source>Map port using &amp;UPnP</source>
-        <translation type="unfinished">Απόδοση θυρών με χρήση &amp;UPnP</translation>
-    </message>
-    <message>
-        <source>Automatically open the Runebase client port on the router. This only works when your router supports NAT-PMP and it is enabled. The external port could be random.</source>
-        <translation type="unfinished">Ανοίξτε αυτόματα τη πόρτα του Runebase client στο router. Αυτό λειτουργεί μόνο όταν το router σας υποστηρίζει NAT-PMP και είναι ενεργοποιημένο. Η εξωτερική πόρτα μπορεί να είναι τυχαία.</translation>
-    </message>
-    <message>
-        <source>Map port using NA&amp;T-PMP</source>
-        <translation type="unfinished">Δρομολόγηση θύρας με χρήση NA&amp;T-PMP</translation>
     </message>
     <message>
         <source>Accept connections from outside.</source>
@@ -2315,10 +2306,6 @@ If you are receiving this error you should request the merchant provide a BIP21 
         <translation type="unfinished">Μεταφορά</translation>
     </message>
     <message>
-        <source>The BIP324 session ID string in hex, if any.</source>
-        <translation type="unfinished">Η συμβολοσειρά αναγνωριστικού περιόδου σύνδεσης BIP324 σε δεκαεξαδική μορφή, εάν υπάρχει.</translation>
-    </message>
-    <message>
         <source>Session ID</source>
         <translation type="unfinished">Αναγνωριστικό περιόδου σύνδεσης</translation>
     </message>
@@ -2415,6 +2402,10 @@ If you are receiving this error you should request the merchant provide a BIP21 
     <message>
         <source>Permissions</source>
         <translation type="unfinished">Αδειες</translation>
+    </message>
+    <message>
+        <source>The direction and type of peer connection: %1</source>
+        <translation type="unfinished">Η κατεύθυνση και ο τύπος της ομότιμης σύνδεσης: %1</translation>
     </message>
     <message>
         <source>Direction/Type</source>
@@ -2564,7 +2555,7 @@ If you are receiving this error you should request the merchant provide a BIP21 
     </message>
     <message>
         <source>we selected the peer for high bandwidth relay</source>
-        <translation type="unfinished">επιλέξαμε τον ομότιμο για αναμετάδοση υψηλού εύρους ζώνης</translation>
+        <translation type="unfinished">επιλέξαμε τον ομότιμο για υψηλού εύρους ζώνης αναμετάδοση</translation>
     </message>
     <message>
         <source>the peer selected us for high bandwidth relay</source>
@@ -2607,6 +2598,10 @@ If you are receiving this error you should request the merchant provide a BIP21 
     <message>
         <source>Network activity disabled</source>
         <translation type="unfinished">Η δραστηριότητα δικτύου είναι απενεργοποιημένη</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation type="unfinished">Κανένα</translation>
     </message>
     <message>
         <source>Executing command without any wallet</source>
@@ -2780,7 +2775,7 @@ For more information on using this console, type %6.
     </message>
     <message>
         <source>Generates an address compatible with older wallets.</source>
-        <translation type="unfinished">Παράγει μια διεύθυνση συμβατή με παλαιότερα πορτοφόλια.</translation>
+        <translation type="unfinished">Δημιουργεί μια διεύθυνση συμβατή με παλαιότερα πορτοφόλια.</translation>
     </message>
     <message>
         <source>Generates a native segwit address (BIP-173). Some old wallets don't support it.</source>
@@ -3079,6 +3074,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of "100 satos
         <translation type="unfinished">Δη&amp;μιουργία Ανυπόγραφου</translation>
     </message>
     <message>
+        <source>Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
+        <translation type="unfinished">Δημιουργεί μια συναλλαγή Runebase με μερική υπογραφή (PSBT) για χρήση με π.χ. ένα πορτοφόλι%1 εκτός σύνδεσης ή ένα πορτοφόλι υλικού συμβατό με το PSBT.</translation>
+    </message>
+    <message>
         <source>%1 to '%2'</source>
         <translation type="unfinished">%1 προς το '%2'</translation>
     </message>
@@ -3216,8 +3215,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of "100 satos
     <message numerus="yes">
         <source>Estimated to begin confirmation within %n block(s).</source>
         <translation type="unfinished">
-            <numerusform>Estimated to begin confirmation within %n block(s).</numerusform>
-            <numerusform>Estimated to begin confirmation within %n block(s).</numerusform>
+            <numerusform>Αναμένεται η έναρξη επιβεβαίωσης εντός %n μπλοκ.</numerusform>
+            <numerusform>Αναμένεται η έναρξη επιβεβαίωσης εντός %n μπλοκ.</numerusform>
         </translation>
     </message>
     <message>
@@ -3280,6 +3279,10 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of "100 satos
         <translation type="unfinished">Το τέλος θα αφαιρεθεί από το ποσό που αποστέλλεται. Ο παραλήπτης θα λάβει λιγότερα runebases από ό,τι εισάγετε στο πεδίο ποσό. Εάν επιλεγούν πολλοί παραλήπτες, το έξοδο διαιρείται εξίσου.</translation>
     </message>
     <message>
+        <source>S&amp;ubtract fee from amount</source>
+        <translation type="unfinished">Α&amp;φερέστε το τέλος από το ποσό</translation>
+    </message>
+    <message>
         <source>Use available balance</source>
         <translation type="unfinished">Χρησιμοποιήστε το διαθέσιμο υπόλοιπο</translation>
     </message>
@@ -3316,10 +3319,6 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of "100 satos
     <message>
         <source>&amp;Sign Message</source>
         <translation type="unfinished">&amp;Υπογραφή Μηνύματος</translation>
-    </message>
-    <message>
-        <source>You can sign messages/agreements with your addresses to prove you can receive runebases sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation type="unfinished">Μπορείτε να υπογράψετε μηνύματα/συμφωνίες με τις διευθύνσεις σας για να αποδείξετε ότι μπορείτε να λάβετε τα runebases που τους αποστέλλονται. Προσέξτε να μην υπογράψετε τίποτα ασαφές ή τυχαίο, καθώς οι επιθέσεις ηλεκτρονικού "ψαρέματος" ενδέχεται να σας εξαπατήσουν να υπογράψετε την ταυτότητά σας σε αυτούς. Υπογράψτε μόνο πλήρως λεπτομερείς δηλώσεις που συμφωνείτε.</translation>
     </message>
     <message>
         <source>The Runebase address to sign the message with</source>
@@ -3404,10 +3403,6 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of "100 satos
     <message>
         <source>Please check the address and try again.</source>
         <translation type="unfinished">Ελέγξτε τη διεύθυνση και δοκιμάστε ξανά.</translation>
-    </message>
-    <message>
-        <source>The entered address does not refer to a key.</source>
-        <translation type="unfinished">Η καταχωρημένη διεύθυνση δεν αναφέρεται σε ένα κλειδί.</translation>
     </message>
     <message>
         <source>Wallet unlock was cancelled.</source>
@@ -3971,10 +3966,6 @@ Go to File &gt; Open Wallet to load a wallet.
         <source>Can't display address</source>
         <translation type="unfinished">Αδυναμία προβολής διεύθυνσης</translation>
     </message>
-    <message>
-        <source>default wallet</source>
-        <translation type="unfinished">Προεπιλεγμένο πορτοφόλι</translation>
-    </message>
 </context>
 <context>
     <name>WalletView</name>
@@ -4031,10 +4022,6 @@ Go to File &gt; Open Wallet to load a wallet.
         <translation type="unfinished">Αδύνατη η υποβάθμιση του πορτοφολιού από την έκδοση %i στην έκδοση %i. Η έκδοση του πορτοφολιού δεν έχει αλλάξει.</translation>
     </message>
     <message>
-        <source>Cannot obtain a lock on data directory %s. %s is probably already running.</source>
-        <translation type="unfinished">Δεν είναι δυνατή η εφαρμογή κλειδώματος στον κατάλογο δεδομένων %s. Το %s μάλλον εκτελείται ήδη.</translation>
-    </message>
-    <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
         <translation type="unfinished">Διανέμεται υπό την άδεια χρήσης του λογισμικού MIT, δείτε το συνοδευτικό αρχείο %s ή %s</translation>
     </message>
@@ -4061,10 +4048,6 @@ Go to File &gt; Open Wallet to load a wallet.
     <message>
         <source>No wallet file format provided. To use createfromdump, -format=&lt;format&gt; must be provided.</source>
         <translation type="unfinished">Δεν δόθηκε φορμά αρχείου πορτοφολιού. Για τη χρήση του createfromdump, πρέπει να δοθεί -format=&lt;format&gt;.</translation>
-    </message>
-    <message>
-        <source>Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly.</source>
-        <translation type="unfinished">Ελέγξτε ότι η ημερομηνία και η ώρα του υπολογιστή σας είναι σωστές! Αν το ρολόι σας είναι λάθος, το %s δεν θα λειτουργήσει σωστά.</translation>
     </message>
     <message>
         <source>Please contribute if you find %s useful. Visit %s for further information about the software.</source>
@@ -4103,6 +4086,10 @@ Go to File &gt; Open Wallet to load a wallet.
         <translation type="unfinished">Αυτό είναι το τέλος συναλλαγής που μπορείτε να πληρώσετε όταν δεν υπάρχουν εκτιμήσεις τελών.</translation>
     </message>
     <message>
+        <source>Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.</source>
+        <translation type="unfinished">Το συνολικό μήκος της συμβολοσειράς έκδοσης δικτύου (%i) υπερβαίνει το μέγιστο μήκος (%i). Μειώστε τον αριθμό ή το μέγεθος των προϊόντων.</translation>
+    </message>
+    <message>
         <source>Unable to replay blocks. You will need to rebuild the database using -reindex-chainstate.</source>
         <translation type="unfinished">Δεν είναι δυνατή η επανάληψη των μπλοκ. Θα χρειαστεί να ξαναφτιάξετε τη βάση δεδομένων χρησιμοποιώντας το -reindex-chainstate.</translation>
     </message>
@@ -4119,20 +4106,16 @@ Go to File &gt; Open Wallet to load a wallet.
         <translation type="unfinished">Πρέπει να ξαναφτιάξετε τη βάση δεδομένων χρησιμοποιώντας το -reindex για να επιστρέψετε στη λειτουργία χωρίς εκτύπωση. Αυτό θα ξαναφορτώσει ολόκληρο το blockchain</translation>
     </message>
     <message>
+        <source>%s is set very high!</source>
+        <translation type="unfinished">%s είναι πολύ υψηλή!</translation>
+    </message>
+    <message>
         <source>-maxmempool must be at least %d MB</source>
         <translation type="unfinished">-maxmempool πρέπει να είναι τουλάχιστον %d MB</translation>
     </message>
     <message>
-        <source>A fatal internal error occurred, see debug.log for details</source>
-        <translation type="unfinished">Προέκυψε ένα κρίσιμο εσωτερικό σφάλμα. Ανατρέξτε στο debug.log για λεπτομέρειες</translation>
-    </message>
-    <message>
         <source>Cannot resolve -%s address: '%s'</source>
         <translation type="unfinished">Δεν είναι δυνατή η επίλυση -%s διεύθυνση: '%s'</translation>
-    </message>
-    <message>
-        <source>Cannot write to data directory '%s'; check permissions.</source>
-        <translation type="unfinished">Αδύνατη η εγγραφή στον κατάλογο δεδομένων '%s'. Ελέγξτε τα δικαιώματα.</translation>
     </message>
     <message>
         <source>%s is set very high! Fees this large could be paid on a single transaction.</source>
@@ -4169,10 +4152,6 @@ Go to File &gt; Open Wallet to load a wallet.
     <message>
         <source>Disk space is too low!</source>
         <translation type="unfinished">Αποθηκευτικός χώρος πολύ μικρός!</translation>
-    </message>
-    <message>
-        <source>Do you want to rebuild the block database now?</source>
-        <translation type="unfinished">Θέλετε να δημιουργηθεί τώρα η βάση δεδομένων των μπλοκ;</translation>
     </message>
     <message>
         <source>Done loading</source>
@@ -4291,6 +4270,10 @@ Go to File &gt; Open Wallet to load a wallet.
         <translation type="unfinished">Μη έγκυρη άδεια P2P: '%s'</translation>
     </message>
     <message>
+        <source>Invalid amount for -%s=&lt;amount&gt;: '%s'</source>
+        <translation type="unfinished">Μη έγκυρο ποσό για -%s=&lt;amount&gt;: '%s'</translation>
+    </message>
+    <message>
         <source>Invalid netmask specified in -whitelist: '%s'</source>
         <translation type="unfinished">Μη έγκυρη μάσκα δικτύου που καθορίζεται στο -whitelist: '%s'</translation>
     </message>
@@ -4317,10 +4300,6 @@ Go to File &gt; Open Wallet to load a wallet.
     <message>
         <source>No addresses available</source>
         <translation type="unfinished">Καμμία διαθέσιμη διεύθυνση</translation>
-    </message>
-    <message>
-        <source>Not enough file descriptors available.</source>
-        <translation type="unfinished">Δεν υπάρχουν αρκετοί περιγραφείς αρχείων διαθέσιμοι.</translation>
     </message>
     <message>
         <source>Prune cannot be configured with a negative value.</source>
@@ -4465,6 +4444,10 @@ Go to File &gt; Open Wallet to load a wallet.
     <message>
         <source>Unknown address type '%s'</source>
         <translation type="unfinished">Άγνωστος τύπος διεύθυνσης '%s'</translation>
+    </message>
+    <message>
+        <source>Unknown change type '%s'</source>
+        <translation type="unfinished"> Άγνωστος τύπος αλλαγής '%s'</translation>
     </message>
     <message>
         <source>Unknown network specified in -onlynet: '%s'</source>

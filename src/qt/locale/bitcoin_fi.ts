@@ -2,8 +2,8 @@
 <context>
     <name>AddressBookPage</name>
     <message>
-        <source>Create a new address</source>
-        <translation type="unfinished">Luo uusi osoite</translation>
+        <source>Right-click to edit address or label</source>
+        <translation type="unfinished">Valitse hiiren kakkospainikkeella muokataksesi osoitetta tai nimikettä</translation>
     </message>
     <message>
         <source>&amp;New</source>
@@ -52,10 +52,6 @@
     <message>
         <source>C&amp;hoose</source>
         <translation type="unfinished">V&amp;alitse</translation>
-    </message>
-    <message>
-        <source>These are your Runebase addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation type="unfinished">Nämä ovat Runebase-osoitteesi maksujen lähettämistä varten. Tarkista aina määrä ja vastaanotto-osoite ennen kolikoiden lähettämistä.</translation>
     </message>
     <message>
         <source>These are your Runebase addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.
@@ -178,6 +174,14 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
     <message>
         <source>Enter the old passphrase and new passphrase for the wallet.</source>
         <translation type="unfinished">Syötä vanha ja uusi salasanalause lompakolle.</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation type="unfinished">Jatka</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished">Takaisin</translation>
     </message>
     <message>
         <source>Remember that encrypting your wallet cannot fully protect your runebases from being stolen by malware infecting your computer.</source>
@@ -417,7 +421,11 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
             <numerusform>%n vuotta</numerusform>
         </translation>
     </message>
-    </context>
+    <message>
+        <source>default wallet</source>
+        <translation type="unfinished">oletuslompakko</translation>
+    </message>
+</context>
 <context>
     <name>BitcoinGUI</name>
     <message>
@@ -729,10 +737,6 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
     <message>
         <source>Mask the values in the Overview tab</source>
         <translation type="unfinished">Naamioi arvot Yhteenveto-välilehdessä</translation>
-    </message>
-    <message>
-        <source>default wallet</source>
-        <translation type="unfinished">oletuslompakko</translation>
     </message>
     <message>
         <source>No wallets available</source>
@@ -1094,6 +1098,18 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
         <translation type="unfinished">Oletko varma, että haluat siirtää lompakon &lt;i&gt;%1&lt;/i&gt;?</translation>
     </message>
     <message>
+        <source>Migrating the wallet will convert this wallet to one or more descriptor wallets. A new wallet backup will need to be made.
+If this wallet contains any watchonly scripts, a new wallet will be created which contains those watchonly scripts.
+If this wallet contains any solvable but not watched scripts, a different and new wallet will be created which contains those scripts.
+
+The migration process will create a backup of the wallet before migrating. This backup file will be named &lt;wallet name&gt;-&lt;timestamp&gt;.legacy.bak and can be found in the directory for this wallet. In the event of an incorrect migration, the backup can be restored with the "Restore Wallet" functionality.</source>
+        <translation type="unfinished">Lompakon siirtäminen muuntaa tämän lompakon yhdeksi tai useammaksi kuvailluksi lompakoksi. Uusi lompakon varmuuskopio on tehtävä.
+Jos tämä lompakko sisältää vain katseltavia skriptejä, luodaan uusi lompakko, joka sisältää nämä katseltavat skriptit.
+Jos tämä lompakko sisältää ratkaistavia mutta ei katsottuja skriptejä, luodaan eri ja uusi lompakko, joka sisältää nämä skriptit.
+
+Siirtoprosessi luo varmuuskopion lompakosta ennen siirtoa. Tämä varmuuskopiotiedosto nimetään &lt;wallet name&gt;-&lt;timestamp&gt;.legacy.bak ja se löytyy tämän lompakon hakemistosta. Virheellisen siirron sattuessa varmuuskopio voidaan palauttaa "Palauta lompakko" -toiminnolla.</translation>
+    </message>
+    <message>
         <source>Migrate Wallet</source>
         <translation type="unfinished">Siirrä lompakko</translation>
     </message>
@@ -1104,6 +1120,14 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
     <message>
         <source>The wallet '%1' was migrated successfully.</source>
         <translation type="unfinished">Lompakko '%1' siirrettiin onnistuneesti.</translation>
+    </message>
+    <message>
+        <source>Watchonly scripts have been migrated to a new wallet named '%1'.</source>
+        <translation type="unfinished">Pelkästään katseltavissa olevat skriptit on siirretty uuteen lompakkoon nimeltä '%1'.</translation>
+    </message>
+    <message>
+        <source>Solvable but not watched scripts have been migrated to a new wallet named '%1'.</source>
+        <translation type="unfinished">Ratkaistavat mutta ei katsotut skriptit on siirretty uuteen lompakkoon nimeltä '%1'.</translation>
     </message>
     <message>
         <source>Migration failed</source>
@@ -1123,10 +1147,6 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
     <message>
         <source>Open wallet warning</source>
         <translation type="unfinished">Avoimen lompakon varoitus</translation>
-    </message>
-    <message>
-        <source>default wallet</source>
-        <translation type="unfinished">oletuslompakko</translation>
     </message>
     <message>
         <source>Open Wallet</source>
@@ -1522,7 +1542,7 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
     </message>
     <message>
         <source>Unknown. Pre-syncing Headers (%1, %2%)…</source>
-        <translation type="unfinished">Tuntematon. Esi synkronointi otsikot (%1, %2%)...</translation>
+        <translation type="unfinished">Tuntematon. Esi-synkronointi otsikot (%1, %2%)...</translation>
     </message>
 </context>
 <context>
@@ -1624,11 +1644,6 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
         <translation type="unfinished">Tämän asetuksen muuttaminen vaatii koko lohkoketjun uudelleenlataamista.</translation>
     </message>
     <message>
-        <source>Maximum database cache size. A larger cache can contribute to faster sync, after which the benefit is less pronounced for most use cases. Lowering the cache size will reduce memory usage. Unused mempool memory is shared for this cache.</source>
-        <extracomment>Tooltip text for Options window setting that sets the size of the database cache. Explains the corresponding effects of increasing/decreasing this value.</extracomment>
-        <translation type="unfinished">Tietokannan välimuistin enimmäiskoko. Suurempi välimuisti voi nopeuttaa synkronointia, mutta sen jälkeen hyöty ei ole enää niin merkittävä useimmissa käyttötapauksissa. Välimuistin koon pienentäminen vähentää muistin käyttöä. Käyttämätön mempool-muisti jaetaan tätä välimuistia varten.</translation>
-    </message>
-    <message>
         <source>Set the number of script verification threads. Negative values correspond to the number of cores you want to leave free to the system.</source>
         <extracomment>Tooltip text for Options window setting that sets the number of script verification threads. Explains that negative values mean to leave these many cores free to the system.</extracomment>
         <translation type="unfinished">Aseta komentosarjan vahvistusketjujen määrä. Negatiiviset arvot vastaavat niiden ytimien määrää, jotka haluat jättää järjestelmälle vapaiksi.</translation>
@@ -1694,22 +1709,6 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
     <message>
         <source>&amp;External signer script path</source>
         <translation type="unfinished">&amp;Ulkoisen allekirjoittajan komentosarjapolku</translation>
-    </message>
-    <message>
-        <source>Automatically open the Runebase client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation type="unfinished">Avaa Runebase-asiakasohjelman portti reitittimellä automaattisesti. Tämä toimii vain, jos reitittimesi tukee UPnP:tä ja se on käytössä.</translation>
-    </message>
-    <message>
-        <source>Map port using &amp;UPnP</source>
-        <translation type="unfinished">Portin uudelleenohjaus &amp;UPnP:llä</translation>
-    </message>
-    <message>
-        <source>Automatically open the Runebase client port on the router. This only works when your router supports NAT-PMP and it is enabled. The external port could be random.</source>
-        <translation type="unfinished">Avaa reitittimen Runebase client-portti automaattisesti. Tämä toimii vain, jos reitittimesi tukee NAT-PMP:tä ja se on käytössä. Ulkoinen portti voi olla satunnainen.</translation>
-    </message>
-    <message>
-        <source>Map port using NA&amp;T-PMP</source>
-        <translation type="unfinished">Kartoita portti käyttämällä NA&amp;T-PMP:tä</translation>
     </message>
     <message>
         <source>Accept connections from outside.</source>
@@ -1829,6 +1828,11 @@ Allekirjoitus on mahdollista vain 'legacy'-tyyppisillä osoitteilla.</translatio
         <source>Client restart required to activate changes.</source>
         <extracomment>Text explaining that the settings changed will not come into effect until the client is restarted.</extracomment>
         <translation type="unfinished">Ohjelman uudelleenkäynnistys aktivoi muutokset.</translation>
+    </message>
+    <message>
+        <source>Current settings will be backed up at "%1".</source>
+        <extracomment>Text explaining to the user that the client's current settings will be backed up at a specific location. %1 is a stand-in argument for the backup location's path.</extracomment>
+        <translation type="unfinished">Nykyiset asetukset varmuuskopioidaan klo"%1"</translation>
     </message>
     <message>
         <source>Client will be shut down. Do you want to proceed?</source>
@@ -2269,6 +2273,14 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <translation type="unfinished">Yhteyksien lukumäärä</translation>
     </message>
     <message>
+        <source>Local Addresses</source>
+        <translation type="unfinished">Paikalliset osoitteet</translation>
+    </message>
+    <message>
+        <source>Network addresses that your Runebase node is currently using to communicate with other nodes.</source>
+        <translation type="unfinished">Verkko-osoitteet, joita Runebase-solmusi käyttää tällä hetkellä kommunikoidakseen muiden solmujen kanssa.</translation>
+    </message>
+    <message>
         <source>Block chain</source>
         <translation type="unfinished">Lohkoketju</translation>
     </message>
@@ -2317,16 +2329,16 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <translation type="unfinished">Valitse vertainen eriteltyjä tietoja varten.</translation>
     </message>
     <message>
+        <source>Hide Peers Detail</source>
+        <translation type="unfinished">Piilota vertaisten yksityiskohdat</translation>
+    </message>
+    <message>
         <source>The transport layer version: %1</source>
         <translation type="unfinished">Kuljetuskerroksen versio: %1</translation>
     </message>
     <message>
         <source>Transport</source>
         <translation type="unfinished">Kuljetus</translation>
-    </message>
-    <message>
-        <source>The BIP324 session ID string in hex, if any.</source>
-        <translation type="unfinished">BIP324-istunnon tunnusmerkkijono heksadesimaalimuodossa, jos sellainen on.</translation>
     </message>
     <message>
         <source>Session ID</source>
@@ -2433,6 +2445,10 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
     <message>
         <source>Direction/Type</source>
         <translation type="unfinished">Suunta/Tyyppi</translation>
+    </message>
+    <message>
+        <source>The BIP324 session ID string in hex.</source>
+        <translation type="unfinished">BIP324-istunnon ID-merkkijono heksana.</translation>
     </message>
     <message>
         <source>The network protocol this peer is connected through: IPv4, IPv6, Onion, I2P, or CJDNS.</source>
@@ -2548,6 +2564,11 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <translation type="unfinished">Outbound Feeler: lyhytaikainen, osoitteiden testaamiseen</translation>
     </message>
     <message>
+        <source>Outbound Address Fetch: short-lived, for soliciting addresses</source>
+        <extracomment>Explanatory text for a short-lived outbound peer connection that is used to request addresses from a peer.</extracomment>
+        <translation type="unfinished">Lähtevän osoitteen haku: lyhytkestoinen, osoitteiden pyytämiseen</translation>
+    </message>
+    <message>
         <source>detecting: peer could be v1 or v2</source>
         <extracomment>Explanatory text for "detecting" transport type.</extracomment>
         <translation type="unfinished">havaitseminen: vertaiskumppani voi olla v1 tai v2</translation>
@@ -2618,12 +2639,32 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <translation type="unfinished">Verkkoliikenne pysäytetty</translation>
     </message>
     <message>
+        <source>None</source>
+        <translation type="unfinished">Ei yhtään</translation>
+    </message>
+    <message>
         <source>Executing command without any wallet</source>
         <translation type="unfinished">Suoritetaan komento ilman lomakkoa</translation>
     </message>
     <message>
         <source>Executing command using "%1" wallet</source>
         <translation type="unfinished">Suoritetaan komento käyttäen lompakkoa "%1"</translation>
+    </message>
+    <message>
+        <source>Welcome to the %1 RPC console.
+Use up and down arrows to navigate history, and %2 to clear screen.
+Use %3 and %4 to increase or decrease the font size.
+Type %5 for an overview of available commands.
+For more information on using this console, type %6.
+
+%7WARNING: Scammers have been active, telling users to type commands here, stealing their wallet contents. Do not use this console without fully understanding the ramifications of a command.%8</source>
+        <extracomment>RPC console welcome message. Placeholders %7 and %8 are style tags for the warning content, and they are not space separated from the rest of the text intentionally.</extracomment>
+        <translation type="unfinished">Tervetuloa %1 RPC-konsoliin.
+Käytä ylä- ja alanuolinäppäintä historiassa navigoimiseen ja näppäintä %2 näytön tyhjentämiseen.
+Käytä näppäimiä %3 ja %4 fonttikoon suurentamiseen ja pienentämiseen.
+Näet yleiskuvan käytettävistä komennoista kirjoittamalla %5.
+Lisätietoja konsolin käytöstä saat kirjoittamalla %6.
+%7VAROITUS: Huijarit ovat aktiivisesti yrittäneet varastaa käyttäjien lompakoiden sisältöä pyytämällä heitä kirjoittamaan komentoja tänne. Älä käytä tätä konsolia, jos et täysin ymmärrän komennon seurauksia.%8</translation>
     </message>
     <message>
         <source>Executing…</source>
@@ -2768,6 +2809,15 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
     <message>
         <source>Generates an address compatible with older wallets.</source>
         <translation type="unfinished">Luo osoitteen, joka on yhteensopiva vanhempien lompakoiden kanssa.</translation>
+    </message>
+    <message>
+        <source>Generates a native segwit address (BIP-173). Some old wallets don't support it.</source>
+        <translation type="unfinished"> 
+Luo natiivin segwit-osoitteen (BIP-173). Jotkin vanhat lompakot eivät tue sitä.</translation>
+    </message>
+    <message>
+        <source>Bech32m (BIP-350) is an upgrade to Bech32, wallet support is still limited.</source>
+        <translation type="unfinished">Bech32m (BIP-350) on päivitys Bech32, mutta lompakkojen tuki on edelleen rajallinen.</translation>
     </message>
     <message>
         <source>Could not unlock wallet.</source>
@@ -2967,12 +3017,25 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <translation type="unfinished"> Piilota siirtomaksuasetukset</translation>
     </message>
     <message>
+        <source>Specify a custom fee per kB (1,000 bytes) of the transaction's virtual size.
+
+Note:  Since the fee is calculated on a per-byte basis, a fee rate of "100 satoshis per kvB" for a transaction size of 500 virtual bytes (half of 1 kvB) would ultimately yield a fee of only 50 satoshis.</source>
+        <translation type="unfinished">Määritä mukautettu maksu per kB (1 000 tavua) tapahtuman virtuaalikoosta.
+
+Huom: Koska maksu lasketaan per tavu, "100 satoshin per kB" maksunopeus 500 virtuaalitavun (puolet 1 kB
+) tapahtumakoolle johtaisi lopulta vain 50 satoshin maksuun.</translation>
+    </message>
+    <message>
         <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for runebase transactions than the network can process.</source>
         <translation type="unfinished">Mikäli lohkoissa ei ole tilaa kaikille siirtotapahtumille, voi louhijat sekä välittävät solmut pakottaa vähimmäispalkkion. Tämän vähimmäispalkkion maksaminen on täysin OK, mutta huomaa, että se saattaa johtaa siihen, ettei siirto vahvistu koskaan, jos runebase-siirtoja on enemmän kuin mitä verkko pystyy käsittelemään.</translation>
     </message>
     <message>
         <source>A too low fee might result in a never confirming transaction (read the tooltip)</source>
         <translation type="unfinished">Liian alhainen maksu saattaa johtaa siirtoon, joka ei koskaan vahvistu (lue työkaluohje)</translation>
+    </message>
+    <message>
+        <source>(Smart fee not initialized yet. This usually takes a few blocks…)</source>
+        <translation type="unfinished">(Älykäs maksu ei ole vielä alustettu. Tämä vie yleensä muutaman lohkon...)</translation>
     </message>
     <message>
         <source>Confirmation time target:</source>
@@ -3115,6 +3178,11 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <translation type="unfinished">Haluatko luoda tämän siirtotapahtuman?</translation>
     </message>
     <message>
+        <source>Please, review your transaction. You can create and send this transaction or create a Partially Signed Runebase Transaction (PSBT), which you can save or copy and then sign with, e.g., an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
+        <extracomment>Text to inform a user attempting to create a transaction of their current options. At this stage, a user can send their transaction or create a PSBT. This string is displayed when both private keys and PSBT controls are enabled.</extracomment>
+        <translation type="unfinished">Ole hyvä ja tarkista tapahtumasi. Voit luoda ja lähettää tämän tapahtuman tai luoda osittain allekirjoitetun Runebase-tapahtuman (PSBT), jonka voit tallentaa tai kopioida ja allekirjoittaa esimerkiksi offline-ympäristössä%1lompakkoosi tai PSBT-yhteensopivalla laitteistolompakolla.</translation>
+    </message>
+    <message>
         <source>Please, review your transaction.</source>
         <extracomment>Text to prompt a user to review the details of the transaction they are attempting to send.</extracomment>
         <translation type="unfinished">Tarkistathan siirtosi.</translation>
@@ -3136,6 +3204,10 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <comment>PSBT copied</comment>
         <extracomment>Caption of "PSBT has been copied" messagebox</extracomment>
         <translation type="unfinished">Allekirjoittamaton Siirto</translation>
+    </message>
+    <message>
+        <source>The PSBT has been copied to the clipboard. You can also save it.</source>
+        <translation type="unfinished">PSBT on kopioitu leikepöydälle. Voit myös tallentaa sen.</translation>
     </message>
     <message>
         <source>PSBT saved to disk</source>
@@ -3286,8 +3358,8 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
         <translation type="unfinished">&amp;Allekirjoita viesti</translation>
     </message>
     <message>
-        <source>You can sign messages/agreements with your addresses to prove you can receive runebases sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation type="unfinished">Voit allekirjoittaa viestit / sopimukset omalla osoitteellasi todistaaksesi että voit vastaanottaa siihen lähetetyt runebaseit. Varo allekirjoittamasta mitään epämääräistä, sillä phishing-hyökkääjät voivat huijata sinua luovuttamaan henkilöllisyytesi allekirjoituksella. Allekirjoita ainoastaan täysin yksityiskohtainen selvitys siitä, mihin olet sitoutumassa.</translation>
+        <source>You can sign messages/agreements with your legacy (P2PKH) addresses to prove you can receive runebases sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
+        <translation type="unfinished">Voit allekirjoittaa viestejä/sopimuksia vanhojen (P2PKH) osoitteidesi kanssa todistaaksesi, että voit vastaanottaa niihin lähetettyjä runebaseeja. Varo allekirjoittamasta mitään epämääräistä tai satunnaista, sillä phishing-hyökkäykset voivat yrittää huijata sinua allekirjoittamaan henkilöllisyytesi heille. Allekirjoita vain täysin yksityiskohtaiset lausunnot, joihin suostut.</translation>
     </message>
     <message>
         <source>The Runebase address to sign the message with</source>
@@ -3372,10 +3444,6 @@ Jos saat tämän virheen, pyydä kauppiasta antamaan BIP21-yhteensopiva URI.</tr
     <message>
         <source>Please check the address and try again.</source>
         <translation type="unfinished">Tarkista osoite ja yritä uudelleen.</translation>
-    </message>
-    <message>
-        <source>The entered address does not refer to a key.</source>
-        <translation type="unfinished">Syötetty osoite ei viittaa tunnettuun avaimeen.</translation>
     </message>
     <message>
         <source>Wallet unlock was cancelled.</source>
@@ -3931,6 +3999,11 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
         <translation type="unfinished">Uusi palkkio:</translation>
     </message>
     <message>
+        <source>Warning: This may pay the additional fee by reducing change outputs or adding inputs, when necessary. It may add a new change output if one does not already exist. These changes may potentially leak privacy.</source>
+        <translation type="unfinished"> 
+Varoitus: Tämä voi maksaa ylimääräisen maksun vähentämällä vaihtotuloja tai lisäämällä tuloja tarvittaessa. Se voi lisätä uuden vaihtotulojen, jos sellaista ei jo ole. Nämä muutokset voivat mahdollisesti vuotaa yksityisyyttä.</translation>
+    </message>
+    <message>
         <source>Confirm fee bump</source>
         <translation type="unfinished">Vahvista palkkion korotus</translation>
     </message>
@@ -3943,9 +4016,8 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
         <translation type="unfinished">PSBT kopioitu</translation>
     </message>
     <message>
-        <source>Copied to clipboard</source>
-        <comment>Fee-bump PSBT saved</comment>
-        <translation type="unfinished">Kopioi leikepöydälle</translation>
+        <source>Fee-bump PSBT copied to clipboard</source>
+        <translation type="unfinished">Siirtokulujen nosto PSBT kopioitu leikepöydälle</translation>
     </message>
     <message>
         <source>Can't sign transaction.</source>
@@ -3956,12 +4028,12 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
         <translation type="unfinished">Siirtoa ei voitu tehdä</translation>
     </message>
     <message>
-        <source>Can't display address</source>
-        <translation type="unfinished">Osoitetta ei voida näyttää</translation>
+        <source>Signer error</source>
+        <translation type="unfinished">Signaalivirhe</translation>
     </message>
     <message>
-        <source>default wallet</source>
-        <translation type="unfinished">oletuslompakko</translation>
+        <source>Can't display address</source>
+        <translation type="unfinished">Osoitetta ei voida näyttää</translation>
     </message>
 </context>
 <context>
@@ -4015,12 +4087,17 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
         <translation type="unfinished">%s on vioittunut. Yritä käyttää lompakkotyökalua runebase-wallet pelastaaksesi sen tai palauttaa varmuuskopio.</translation>
     </message>
     <message>
-        <source>Cannot downgrade wallet from version %i to version %i. Wallet version unchanged.</source>
-        <translation type="unfinished">Ei voida alentaa lompakon versiota versiosta %i versioon %i. Lompakon versio pysyy ennallaan.</translation>
+        <source>%s failed to validate the -assumeutxo snapshot state. This indicates a hardware problem, or a bug in the software, or a bad software modification that allowed an invalid snapshot to be loaded. As a result of this, the node will shut down and stop using any state that was built on the snapshot, resetting the chain height from %d to %d. On the next restart, the node will resume syncing from %d without using any snapshot data. Please report this incident to %s, including how you obtained the snapshot. The invalid snapshot chainstate will be left on disk in case it is helpful in diagnosing the issue that caused this error.</source>
+        <translation type="unfinished">%s virheellinen -assumeutxo-snapshot-tila. Tämä viittaa laitteistoon liittyvään ongelmaan, ohjelmistovirheeseen tai huonoon ohjelmistomuutokseen, joka on sallinut virheellisen snapshotin lataamisen. Tämän seurauksena solmu sulkeutuu ja lopettaa kaiken sen tilan käytön, joka perustui snapshottiin, ja nollaa lohkokorkeuden%darvoon%d. Seuraavassa uudelleenkäynnistyksessä solmu jatkaa synkronointia kohdasta%d  
+ilman, että käytetään mitään snapshot-tietoja. Ilmoita tästä tapauksesta osoitteeseen%s, mukaan lukien se, miten sait snapshotin. Virheellinen snapshot-tilatiedosto jätetään levylle, jos se on hyödyllinen ongelman diagnosoinnissa, joka aiheutti tämän virheen.</translation>
     </message>
     <message>
-        <source>Cannot obtain a lock on data directory %s. %s is probably already running.</source>
-        <translation type="unfinished">Ei voida lukita data-hakemistoa %s. %s on luultavasti jo käynnissä.</translation>
+        <source>%s request to listen on port %u. This port is considered "bad" and thus it is unlikely that any peer will connect to it. See doc/p2p-bad-ports.md for details and a full list.</source>
+        <translation type="unfinished">%s pyyntö kuunnella porttia %u. Tätä porttia pidetään ”huonona”, joten on epätodennäköistä, että mikään vertaisohjelma muodostaa siihen yhteyden. Katso lisätietoja ja täydellinen luettelo doc/p2p-bad-ports.md-tiedostosta.</translation>
+    </message>
+    <message>
+        <source>Cannot downgrade wallet from version %i to version %i. Wallet version unchanged.</source>
+        <translation type="unfinished">Ei voida alentaa lompakon versiota versiosta %i versioon %i. Lompakon versio pysyy ennallaan.</translation>
     </message>
     <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
@@ -4033,10 +4110,6 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
     <message>
         <source>More than one onion bind address is provided. Using %s for the automatically created Tor onion service.</source>
         <translation type="unfinished">Useampi onion bind -osoite on tarjottu. Automaattisesti luotua Torin onion-palvelua varten käytetään %s.</translation>
-    </message>
-    <message>
-        <source>Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly.</source>
-        <translation type="unfinished">Tarkistathan että tietokoneesi päivämäärä ja kellonaika ovat oikeassa! Jos kellosi on väärässä, %s ei toimi oikein.</translation>
     </message>
     <message>
         <source>Please contribute if you find %s useful. Visit %s for further information about the software.</source>
@@ -4111,20 +4184,12 @@ Siirry osioon Tiedosto &gt; Avaa lompakko ladataksesi lompakon.
         <translation type="unfinished">-maxmempool on oltava vähintään %d MB</translation>
     </message>
     <message>
-        <source>A fatal internal error occurred, see debug.log for details</source>
-        <translation type="unfinished">Kriittinen sisäinen virhe kohdattiin, katso debug.log lisätietoja varten</translation>
-    </message>
-    <message>
         <source>Cannot resolve -%s address: '%s'</source>
         <translation type="unfinished">-%s -osoitteen '%s' selvittäminen epäonnistui</translation>
     </message>
     <message>
         <source>Cannot set -peerblockfilters without -blockfilterindex.</source>
         <translation type="unfinished">-peerblockfiltersiä ei voida asettaa ilman -blockfilterindexiä.</translation>
-    </message>
-    <message>
-        <source>Cannot write to data directory '%s'; check permissions.</source>
-        <translation type="unfinished">Hakemistoon '%s' ei voida kirjoittaa. Tarkista käyttöoikeudet.</translation>
     </message>
     <message>
         <source>
@@ -4165,10 +4230,6 @@ Ei voinut palauttaa lompakon varmuuskopiota..</translation>
     <message>
         <source>Disk space is too low!</source>
         <translation type="unfinished">Liian vähän levytilaa!</translation>
-    </message>
-    <message>
-        <source>Do you want to rebuild the block database now?</source>
-        <translation type="unfinished">Haluatko uudelleenrakentaa lohkotietokannan nyt?</translation>
     </message>
     <message>
         <source>Done loading</source>
@@ -4265,10 +4326,6 @@ Ei voinut palauttaa lompakon varmuuskopiota..</translation>
     <message>
         <source>Error: Unable to write record to new wallet</source>
         <translation type="unfinished">Virhe: Tiedon kirjoittaminen lompakkoon epäonnistui</translation>
-    </message>
-    <message>
-        <source>Error: address book copy failed for wallet %s</source>
-        <translation type="unfinished">Virhe: osoitekirjan kopiointi epäonnistui lompakolle %s</translation>
     </message>
     <message>
         <source>Failed to listen on any port. Use -listen=0 if you want this.</source>
@@ -4389,10 +4446,6 @@ Ei voinut palauttaa lompakon varmuuskopiota..</translation>
     <message>
         <source>No addresses available</source>
         <translation type="unfinished">Osoitteita ei ole saatavilla</translation>
-    </message>
-    <message>
-        <source>Not enough file descriptors available.</source>
-        <translation type="unfinished">Ei tarpeeksi tiedostomerkintöjä vapaana.</translation>
     </message>
     <message>
         <source>Not found pre-selected input %s</source>
@@ -4529,10 +4582,6 @@ Ei voinut palauttaa lompakon varmuuskopiota..</translation>
     <message>
         <source>Transaction too large</source>
         <translation type="unfinished">Siirtosumma liian iso</translation>
-    </message>
-    <message>
-        <source>Unable to allocate memory for -maxsigcachesize: '%s' MiB</source>
-        <translation type="unfinished">Ei voida varata muistia kohteelle %sMiB</translation>
     </message>
     <message>
         <source>Unable to bind to %s on this computer (bind returned error %s)</source>

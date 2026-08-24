@@ -42,14 +42,14 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
         #mocktime = 1490247077
         #node.setmocktime(mocktime)
 
-        node.generate(10)
+        self.generate(node, 10)
         self.block_time = int(time.time())+20
         for i in range(COINBASE_MATURITY):
             self.tip = create_block(int(node.getbestblockhash(), 16), create_coinbase(node.getblockcount()+1), self.block_time+i)
             self.tip.solve()
             self.sync_all_blocks([self.tip])
 
-        #node.generate(COINBASE_MATURITY+50)
+        #self.generate(node, COINBASE_MATURITY+50)
         mocktime = COINBASE_MATURITY+50
         spendable_addresses = []
         # store some addresses to use later
@@ -96,7 +96,7 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
             }
         """
         contract_address = node.createcontract("60606040523415600b57fe5b5b60398060196000396000f30060606040525b600b5b5b565b0000a165627a7a72305820693c4900c412f72a51f8c01a36d38d9038d822d953faf5a5b28e40ec6e1a25020029")['address']
-        node.generate(1)
+        self.generate(node, 1)
 
         realHashUTXORoot = int(node.getblock(node.getbestblockhash())['hashUTXORoot'], 16)
         realHashStateRoot = int(node.getblock(node.getbestblockhash())['hashStateRoot'], 16)
@@ -178,4 +178,4 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
             self.reconnect_p2p()
 
 if __name__ == '__main__':
-    RunebaseBlockHeaderTest().main()
+    RunebaseBlockHeaderTest(__file__).main()

@@ -11,8 +11,7 @@
 #include <QDataStream>
 #include <QString>
 
-#include <boost/multiprecision/cpp_int.hpp>
-using namespace boost::multiprecision;
+#include <libdevcore/Common.h>
 
 // U+2009 THIN SPACE = UTF-8 E2 80 89
 #define REAL_THIN_SP_CP 0x2009
@@ -72,7 +71,7 @@ public:
     //! Number of Satoshis (1e-8) per unit
     static qint64 factor(Unit unit);
     //! Token factor from decimals
-    static int256_t tokenFactor(int unit);
+    static dev::s256 tokenFactor(int unit);
     //! Number of decimals left
     static int decimals(Unit unit);
     //! Format as string
@@ -90,11 +89,11 @@ public:
     //! Gets title for amount column including current display unit if optionsModel reference available */
     static QString getAmountColumnTitle(Unit unit);
     //! Parse string to token amount
-    static bool parseToken(int decimal_units, const QString &value, int256_t *val_out);
+    static bool parseToken(int decimal_units, const QString &value, dev::s256 *val_out);
     //! Format token as string
-    static QString formatToken(int decimal_units, const int256_t& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD); //! Format token as string
+    static QString formatToken(int decimal_units, const dev::s256& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD); //! Format token as string
     //! Format token as string (with unit)
-    static QString formatTokenWithUnit(const QString unit, int decimals, const int256_t& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD);
+    static QString formatTokenWithUnit(const QString unit, int decimals, const dev::s256& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD);
     //! Format integer number as string (with and without separator)
     static QString formatInt(const int64_t& number, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD);
     ///@}

@@ -3,8 +3,7 @@
 
 #include <QWidget>
 
-#include <boost/multiprecision/cpp_int.hpp>
-using namespace boost::multiprecision;
+#include <libdevcore/Common.h>
 
 class TokenAmountSpinBox;
 
@@ -14,15 +13,15 @@ class TokenAmountField : public QWidget
 {
     Q_OBJECT
 
-    Q_PROPERTY(int256_t value READ value WRITE setValue NOTIFY valueChanged USER true)
+    Q_PROPERTY(dev::s256 value READ value WRITE setValue NOTIFY valueChanged USER true)
 
 public:
     explicit TokenAmountField(QWidget *parent = 0);
-    int256_t value(bool *value=0) const;
-    void setValue(const int256_t& value);
+    dev::s256 value(bool *value=0) const;
+    void setValue(const dev::s256& value);
 
     /** Set single step **/
-    void setSingleStep(const int256_t& step);
+    void setSingleStep(const dev::s256& step);
 
     /** Make read-only **/
     void setReadOnly(bool fReadOnly);
@@ -38,10 +37,10 @@ public:
     /** Enable/Disable. */
     void setEnabled(bool fEnabled);
 
-    int256_t minimum() const;
-    void setMinimum(const int256_t& min);
+    dev::s256 minimum() const;
+    void setMinimum(const dev::s256& min);
 
-    void setTotalSupply(const int256_t &value);
+    void setTotalSupply(const dev::s256 &value);
     void setDecimalUnits(int value);
 
     QString text() const;

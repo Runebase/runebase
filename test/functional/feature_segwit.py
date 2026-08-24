@@ -211,7 +211,7 @@ class SegWitTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance(), balance_presetup - 60 * INITIAL_BLOCK_REWARD + 20 * (INITIAL_BLOCK_REWARD - Decimal("0.001")) + (0 if ENABLE_REDUCED_BLOCK_TIME else INITIAL_BLOCK_REWARD))
         assert_equal(self.nodes[1].getbalance(), 20 * (INITIAL_BLOCK_REWARD - Decimal("0.001")))
         assert_equal(self.nodes[2].getbalance(), 20 * (INITIAL_BLOCK_REWARD - Decimal("0.001")))
-        self.nodes[0].generate(32 if ENABLE_REDUCED_BLOCK_TIME else 260)  # block 423
+        self.generate(self.nodes[0], 32 if ENABLE_REDUCED_BLOCK_TIME else 260)  # block 423
 
         self.log.info("Verify unsigned p2sh witness txs without a redeem script are invalid")
         self.fail_accept(self.nodes[2], "mandatory-script-verify-flag-failed (Operation not valid with the current stack size)", p2sh_ids[NODE_2][P2WPKH][1], sign=False)
@@ -682,4 +682,4 @@ class SegWitTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    SegWitTest().main()
+    SegWitTest(__file__).main()

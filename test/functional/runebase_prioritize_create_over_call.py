@@ -30,13 +30,13 @@ class RunebasePrioritizeCreateOverCallTest(BitcoinTestFramework):
     def run_test(self):
         self.node = self.nodes[0]
         creator_address = self.node.getnewaddress()
-        self.node.generate(1)
+        self.generate(self.node, 1)
         sender_address = self.node.getnewaddress()
-        self.node.generate(1)
-        self.node.generate(COINBASE_MATURITY)
+        self.generate(self.node, 1)
+        self.generate(self.node, COINBASE_MATURITY)
         self.node.sendtoaddress(creator_address, 100)
         self.node.sendtoaddress(sender_address, 101)
-        fork_block_hash = self.node.generate(1)[0]
+        fork_block_hash = self.generate(self.node, 1)[0]
         fork_tip = self.node.getblock(fork_block_hash)
 
         """
@@ -48,10 +48,10 @@ class RunebasePrioritizeCreateOverCallTest(BitcoinTestFramework):
         """
         bytecode = "6080604052348015600f57600080fd5b50603280601d6000396000f3fe608060405200fea165627a7a72305820c90cd8221110d815df9b74f6910f10c84b24658eb89ef1413dab6a845b3e3c2a0029"
         self.contract_address = self.node.createcontract(bytecode, 1000000, 0.0000004, creator_address)['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
         # We set a higher fee for the call tx so that if it and the create tx is evaluated it will have a higher fee.
         self.node.sendtocontract(self.contract_address, "00", 1, 1000000, 0.000001, sender_address)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         assert_equal(self.node.listcontracts()[self.contract_address], 1)
 
         # Create a longer fork that will cause a reorg
@@ -65,9 +65,9 @@ class RunebasePrioritizeCreateOverCallTest(BitcoinTestFramework):
         # The contract should not exist in the fork's state
         assert(self.contract_address not in self.node.listcontracts())
         # remine the create and call txs
-        self.node.generate(1)[0]
+        self.generate(self.node, 1)[0]
         # Make sure that the create tx is executed first
         assert_equal(self.node.listcontracts()[self.contract_address], 1)
 
 if __name__ == '__main__':
-    RunebasePrioritizeCreateOverCallTest().main()
+    RunebasePrioritizeCreateOverCallTest(__file__).main()

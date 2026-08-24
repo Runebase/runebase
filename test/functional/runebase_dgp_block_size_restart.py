@@ -84,7 +84,7 @@ class RunebaseDGPActivation(BitcoinTestFramework):
 
     def run_test(self):
         self.node = self.nodes[0]
-        self.node.generate(1000 + COINBASE_MATURITY)
+        self.generate(self.node, 1000 + COINBASE_MATURITY)
         self.BLOCK_SIZE_DGP = DGPState(self.node, "0000000000000000000000000000000000000081")
         
         # Start off by setting ourself as admin
@@ -92,13 +92,13 @@ class RunebaseDGPActivation(BitcoinTestFramework):
 
         # Set ourself up as admin
         self.BLOCK_SIZE_DGP.send_set_initial_admin(admin_address)
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
         # Activate a proposal for 8MB blocks
         max_block_size = 8000000
         self.create_proposal_contract(max_block_size)
         self.BLOCK_SIZE_DGP.send_add_address_proposal(self.proposal_address, 2, admin_address)
-        self.node.generate(2)
+        self.generate(self.node, 2)
 
         # Submit a block close to 8MB and make sure that it was accepted
         block = self.create_block_of_approx_max_size(max_block_size)
@@ -110,7 +110,7 @@ class RunebaseDGPActivation(BitcoinTestFramework):
         max_block_size = 1000000
         self.create_proposal_contract(max_block_size)
         self.BLOCK_SIZE_DGP.send_add_address_proposal(self.proposal_address, 2, admin_address)
-        self.node.generate(2)
+        self.generate(self.node, 2)
 
 
         # We now have had the following chain of events:
@@ -126,4 +126,4 @@ class RunebaseDGPActivation(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    RunebaseDGPActivation().main()
+    RunebaseDGPActivation(__file__).main()

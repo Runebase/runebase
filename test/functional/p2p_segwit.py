@@ -5,8 +5,6 @@
 """Test segwit transactions and blocks on P2P network."""
 from decimal import Decimal
 import random
-import struct
-import time
 
 from test_framework.blocktools import (
     WITNESS_COMMITMENT_HEADER,
@@ -84,8 +82,9 @@ from test_framework.script_util import (
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
-    softfork_active,
     assert_raises_rpc_error,
+    ensure_for,
+    softfork_active,
     bytes_to_hex_str,
     hex_str_to_bytes,
 )
@@ -206,37 +205,40 @@ class TestP2PConn(P2PInterface):
             else:
                 self.wait_for_getdata([tx.sha256])
         else:
-            time.sleep(5)
-            assert not self.last_message.get("getdata")
+            ensure_for(duration=5, f=lambda: not self.last_message.get("getdata"))
 
     def announce_block_and_wait_for_getdata(self, block, use_header, timeout=60):
         with p2p_lock:
             self.last_message.pop("getdata", None)
-            self.last_message.pop("getheaders", None)
         msg = msg_headers()
         msg.headers = [CBlockHeader(block)]
         if use_header:
             self.send_message(msg)
         else:
             self.send_message(msg_inv(inv=[CInv(MSG_BLOCK, block.sha256)]))
-            self.wait_for_getheaders()
+            self.wait_for_getheaders(block_hash=block.hashPrevBlock, timeout=timeout)
             self.send_message(msg)
-        self.wait_for_getdata([block.sha256])
+        self.wait_for_getdata([block.sha256], timeout=timeout)
 
     def request_block(self, blockhash, inv_type, timeout=60):
         with p2p_lock:
             self.last_message.pop("block", None)
         self.send_message(msg_getdata(inv=[CInv(inv_type, blockhash)]))
-        self.wait_for_block(blockhash, timeout)
+        self.wait_for_block(blockhash, timeout=timeout)
         return self.last_message["block"].block
 
 class SegWitTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
+        # whitelist peers to speed up tx relay / mempool sync
+        self.noban_tx_relay = True
         # This test tests SegWit both pre and post-activation, so use the normal BIP9 activation.
         self.extra_args = [
-            ["-acceptnonstdtxn=1", f"-testactivationheight=segwit@{SEGWIT_HEIGHT}", "-whitelist=noban@127.0.0.1", "-par=1"],
+            # -par=1 should not affect validation outcome or logging/reported failures. It is kept
+            # here to exercise the code path still (as it is distinct for multithread script
+            # validation).
+            ["-acceptnonstdtxn=1", f"-testactivationheight=segwit@{SEGWIT_HEIGHT}", "-par=1"],
             ["-acceptnonstdtxn=0", f"-testactivationheight=segwit@{SEGWIT_HEIGHT}"],
         ]
         self.supports_cli = False
@@ -531,10 +533,6 @@ class SegWitTest(BitcoinTestFramework):
             # When the block is serialized without witness, validation fails because the transaction is
             # invalid (transactions are always validated with SCRIPT_VERIFY_WITNESS so a segwit v0 transaction
             # without a witness is invalid).
-            # Note: The reject reason for this failure could be
-            # 'block-validation-failed' (if script check threads > 1) or
-            # 'mandatory-script-verify-flag-failed (Witness program was passed an
-            # empty witness)' (otherwise).
             test_witness_block(self.nodes[0], self.test_node, block, accepted=False, with_witness=False,
                                reason='mandatory-script-verify-flag-failed (Witness program was passed an empty witness)')
 
@@ -1044,7 +1042,7 @@ class SegWitTest(BitcoinTestFramework):
         tx2.vout.append(CTxOut(tx.vout[0].nValue, CScript([OP_TRUE])))
         tx2.wit.vtxinwit.extend([CTxInWitness(), CTxInWitness()])
         tx2.wit.vtxinwit[0].scriptWitness.stack = [CScript([CScriptNum(1)]), CScript([CScriptNum(1)]), witness_script]
-        tx2.wit.vtxinwit[1].scriptWitness.stack = [CScript([OP_TRUE])]
+        tx2.wit.vtxinwit[1].scriptWitness.stack = []
 
         block = self.build_next_block()
         self.update_witness_block_with_transactions(block, [tx2])
@@ -1081,7 +1079,7 @@ class SegWitTest(BitcoinTestFramework):
 
     @subtest
     def test_max_witness_push_length(self):
-        """Test that witness stack can only allow up to 520 byte pushes."""
+        """Test that witness stack can only allow up to MAX_SCRIPT_ELEMENT_SIZE byte pushes."""
 
         MAX_SCRIPT_ELEMENT_SIZE = 128000
 
@@ -1195,16 +1193,16 @@ class SegWitTest(BitcoinTestFramework):
                 if not self.wit.is_null():
                     flags |= 1
                 r = b""
-                r += struct.pack("<i", self.nVersion)
+                r += self.version.to_bytes(4, "little")
                 if flags:
                     dummy = []
                     r += ser_vector(dummy)
-                    r += struct.pack("<B", flags)
+                    r += flags.to_bytes(1, "little")
                 r += ser_vector(self.vin)
                 r += ser_vector(self.vout)
                 if flags & 1:
                     r += self.wit.serialize()
-                r += struct.pack("<I", self.nLockTime)
+                r += self.nLockTime.to_bytes(4, "little")
                 return r
 
         tx2 = BrokenCTransaction()
@@ -2006,11 +2004,11 @@ class SegWitTest(BitcoinTestFramework):
         def serialize_with_bogus_witness(tx):
             flags = 3
             r = b""
-            r += struct.pack("<i", tx.nVersion)
+            r += tx.version.to_bytes(4, "little")
             if flags:
                 dummy = []
                 r += ser_vector(dummy)
-                r += struct.pack("<B", flags)
+                r += flags.to_bytes(1, "little")
             r += ser_vector(tx.vin)
             r += ser_vector(tx.vout)
             if flags & 1:
@@ -2020,14 +2018,14 @@ class SegWitTest(BitcoinTestFramework):
                     for _ in range(len(tx.wit.vtxinwit), len(tx.vin)):
                         tx.wit.vtxinwit.append(CTxInWitness())
                 r += tx.wit.serialize()
-            r += struct.pack("<I", tx.nLockTime)
+            r += tx.nLockTime.to_bytes(4, "little")
             return r
 
         class msg_bogus_tx(msg_tx):
             def serialize(self):
                 return serialize_with_bogus_witness(self.tx)
 
-        self.wallet.generate(2100)
+        self.generate(self.wallet, 2100)
         tx = self.wallet.create_self_transfer()['tx']
         assert_raises_rpc_error(-22, "TX decode failed", self.nodes[0].decoderawtransaction, hexstring=serialize_with_bogus_witness(tx).hex(), iswitness=True)
         with self.nodes[0].assert_debug_log(['Unknown transaction optional data']):
@@ -2085,8 +2083,11 @@ class SegWitTest(BitcoinTestFramework):
             self.wtx_node.last_message.pop("getdata", None)
         test_transaction_acceptance(self.nodes[0], self.wtx_node, tx2, with_witness=True, accepted=False)
 
+        # Disconnect tx_node to avoid the possibility of it being selected for orphan resolution.
+        self.tx_node.peer_disconnect()
+
         # Expect a request for parent (tx) by txid despite use of WTX peer
-        self.wtx_node.wait_for_getdata([tx.sha256], 60)
+        self.wtx_node.wait_for_getdata([tx.sha256], timeout=60)
         with p2p_lock:
             lgd = self.wtx_node.lastgetdata[:]
         assert_equal(lgd, [CInv(MSG_WITNESS_TX, tx.sha256)])
@@ -2099,4 +2100,4 @@ class SegWitTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    SegWitTest().main()
+    SegWitTest(__file__).main()

@@ -45,10 +45,14 @@ class RawTransactionsTest(BitcoinTestFramework):
 
     def set_test_params(self):
         self.num_nodes = 4
+        self.extra_args = [[
+            "-deprecatedrpc=settxfee",
+            "-minrelaytxfee=0.00001000",
+        ] for i in range(self.num_nodes)]
         self.setup_clean_chain = True
-        # This test isn't testing tx relay. Set whitelist on the peers for
-        # instant tx relay.
-        self.extra_args = [["-addresstype=bech32", '-whitelist=noban@127.0.0.1']] * self.num_nodes
+        # whitelist peers to speed up tx relay / mempool sync
+        self.noban_tx_relay = True
+        self.extra_args = [["-addresstype=bech32"]] * self.num_nodes
         self.rpc_timeout = 90  # to prevent timeouts in `test_transaction_too_large`
 
     def skip_test_if_missing_module(self):
@@ -112,12 +116,13 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         self.generate(self.nodes[2], 1)
         self.sync_all()
-        self.nodes[0].generate(COINBASE_MATURITY+121)
+        self.generate(self.nodes[0], COINBASE_MATURITY+121)
         self.sync_all()
 
         self.test_add_inputs_default_value()
         self.test_preset_inputs_selection()
         self.test_weight_calculation()
+        self.test_weight_limits()
         self.test_change_position()
         self.test_simple()
         self.test_simple_two_coins()
@@ -1062,8 +1067,8 @@ class RawTransactionsTest(BitcoinTestFramework):
         assert_raises_rpc_error(-4, "Not solvable pre-selected input COutPoint(%s, %s)" % (ext_utxo["txid"][0:10], ext_utxo["vout"]), wallet.fundrawtransaction, raw_tx)
 
         # Error conditions
-        assert_raises_rpc_error(-5, "'not a pubkey' is not hex", wallet.fundrawtransaction, raw_tx, solving_data={"pubkeys":["not a pubkey"]})
-        assert_raises_rpc_error(-5, "'01234567890a0b0c0d0e0f' is not a valid public key", wallet.fundrawtransaction, raw_tx, solving_data={"pubkeys":["01234567890a0b0c0d0e0f"]})
+        assert_raises_rpc_error(-5, 'Pubkey "not a pubkey" must be a hex string', wallet.fundrawtransaction, raw_tx, solving_data={"pubkeys":["not a pubkey"]})
+        assert_raises_rpc_error(-5, 'Pubkey "01234567890a0b0c0d0e0f" must have a length of either 33 or 65 bytes', wallet.fundrawtransaction, raw_tx, solving_data={"pubkeys":["01234567890a0b0c0d0e0f"]})
         assert_raises_rpc_error(-5, "'not a script' is not hex", wallet.fundrawtransaction, raw_tx, solving_data={"scripts":["not a script"]})
         assert_raises_rpc_error(-8, "Unable to parse descriptor 'not a descriptor'", wallet.fundrawtransaction, raw_tx, solving_data={"descriptors":["not a descriptor"]})
         assert_raises_rpc_error(-8, "Invalid parameter, missing vout key", wallet.fundrawtransaction, raw_tx, input_weights=[{"txid": ext_utxo["txid"]}])
@@ -1320,6 +1325,94 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         self.nodes[2].unloadwallet("test_weight_calculation")
 
+    def test_weight_limits(self):
+        self.log.info("Test weight limits")
+
+        self.nodes[2].createwallet("test_weight_limits")
+        wallet = self.nodes[2].get_wallet_rpc("test_weight_limits")
+
+        # Create many UTXOs to test weight limits
+        num_txs = 50
+        outputs_per_tx = 400
+        
+        for tx_num in range(num_txs):
+            outputs = [{wallet.getnewaddress(address_type="legacy"): 1} for _ in range(outputs_per_tx)]
+            self.nodes[0].send(outputs=outputs, change_position=0)
+            if tx_num % 5 == 0:
+                self.generate(self.nodes[0], 1)
+        
+        self.generate(self.nodes[0], 1)
+        
+        utxos = wallet.listunspent()
+        
+        # Measure actual weight per input
+        test_inputs = utxos[:10]
+        test_tx = wallet.createrawtransaction(
+            [{"txid": inp["txid"], "vout": inp["vout"]} for inp in test_inputs],
+            [{wallet.getnewaddress(): 5}]
+        )
+        test_weight = wallet.decoderawtransaction(test_tx)['weight']
+        
+        base_tx = wallet.createrawtransaction([], [{wallet.getnewaddress(): 5}])
+        base_weight = wallet.decoderawtransaction(base_tx)['weight']
+        
+        actual_weight_per_input = (test_weight - base_weight) // len(test_inputs)
+        
+        # Calculate inputs needed to exceed the limit
+        max_weight = 2000000  # MAX_STANDARD_TX_WEIGHT
+        inputs_needed_to_exceed = (max_weight - base_weight) // actual_weight_per_input + 100
+        
+        # For input_weights parameter, must use at least 165 WU per input
+        min_weight_per_input = 165
+        max_inputs_allowed = (max_weight - base_weight) // min_weight_per_input
+
+        # 1) Test with preset inputs using input_weights (exceeds limit)
+        inputs_to_use = min(max_inputs_allowed + 100, len(utxos))
+        input_weights = [{"txid": utxo["txid"], "vout": utxo["vout"], "weight": min_weight_per_input} 
+                         for utxo in utxos[:inputs_to_use]]
+        
+        assert_raises_rpc_error(-4, "Transaction too large", 
+                                wallet.fundrawtransaction, hexstring=base_tx, input_weights=input_weights)
+
+        # 2) Test with wallet's automatic coin selection
+        rawtx_large = wallet.createrawtransaction([], [{wallet.getnewaddress(): len(utxos) * 0.5}])
+        
+        assert_raises_rpc_error(-4, "The inputs size exceeds the maximum weight. Please try sending a smaller amount or manually consolidating your wallet's UTXOs",
+                                wallet.fundrawtransaction, hexstring=rawtx_large)
+
+        # 3) Test with pre-selected inputs and wallet filling the rest
+        inputs = input_weights[:max_inputs_allowed//2]
+        
+        assert_raises_rpc_error(-4, "The inputs size exceeds the maximum weight. Please try sending a smaller amount or manually consolidating your wallet's UTXOs",
+                                wallet.fundrawtransaction, hexstring=rawtx_large, input_weights=inputs)
+
+        # 4) Create and test an actual oversized transaction
+        inputs_for_tx = utxos[:inputs_needed_to_exceed]
+        total_input_value = sum(inp["amount"] for inp in inputs_for_tx)
+        output_value = total_input_value * Decimal('0.9')
+        
+        rawtx_with_inputs = wallet.createrawtransaction(
+            [{"txid": inp["txid"], "vout": inp["vout"]} for inp in inputs_for_tx],
+            [{wallet.getnewaddress(): output_value}]
+        )
+        
+        actual_weight = wallet.decoderawtransaction(rawtx_with_inputs)['weight']
+        assert_greater_than(actual_weight, max_weight)
+        
+        # Verify it gets rejected when broadcast
+        try:
+            signed_tx = wallet.signrawtransactionwithwallet(rawtx_with_inputs)
+            self.nodes[0].sendrawtransaction(signed_tx['hex'])
+            assert False, "Transaction should have been rejected for exceeding weight limit"
+        except Exception as e:
+            error_msg = str(e.error['message']).lower()
+            assert ("tx-size" in error_msg or 
+                    "transaction too large" in error_msg or 
+                    "bad-txns-oversize" in error_msg or
+                    "oversize" in error_msg)
+
+        self.nodes[2].unloadwallet("test_weight_limits")
+
     def test_include_unsafe(self):
         self.log.info("Test fundrawtxn with unsafe inputs")
 
@@ -1498,4 +1591,4 @@ class RawTransactionsTest(BitcoinTestFramework):
         wallet.unloadwallet()
 
 if __name__ == '__main__':
-    RawTransactionsTest().main()
+    RawTransactionsTest(__file__).main()

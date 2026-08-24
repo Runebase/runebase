@@ -2,9 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
+#include <bitcoin-build-config.h> // IWYU pragma: keep
 
 #include <interfaces/node.h>
 #include <qt/createwalletdialog.h>
@@ -53,7 +51,6 @@ CreateWalletDialog::CreateWalletDialog(QWidget* parent) :
         ui->hardware_wallet_checkbox->blockSignals(true);
         if (checked) ui->hardware_wallet_checkbox->setChecked(false);
         ui->hardware_wallet_checkbox->blockSignals(false);
-
         ui->encrypt_wallet_checkbox->setEnabled(!checked);
         ui->blank_wallet_checkbox->setEnabled(!checked);
         ui->disable_privkeys_checkbox->setEnabled(!checked);
@@ -98,6 +95,7 @@ CreateWalletDialog::CreateWalletDialog(QWidget* parent) :
         ui->external_signer_checkbox->setEnabled(false);
         ui->external_signer_checkbox->setChecked(false);
 #endif
+
     connect(ui->hardware_wallet_checkbox, &QCheckBox::toggled, [this](bool checked) {
 #ifdef ENABLE_EXTERNAL_SIGNER
         ui->external_signer_checkbox->blockSignals(true);

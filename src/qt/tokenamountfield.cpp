@@ -43,7 +43,7 @@ public:
     void fixup(QString &input) const override
     {
         bool valid = false;
-        int256_t val = parse(input, &valid);
+        dev::s256 val = parse(input, &valid);
         val = getMax(val, minAmount);
         if(valid)
         {
@@ -52,14 +52,14 @@ public:
         }
     }
 
-    int256_t value(bool *valid_out=0) const
+    dev::s256 value(bool *valid_out=0) const
     {
         return parse(text(), valid_out);
     }
 
-    void setValue(const int256_t& value)
+    void setValue(const dev::s256& value)
     {
-        int256_t val = getMax(value, minAmount);
+        dev::s256 val = getMax(value, minAmount);
         lineEdit()->setText(BitcoinUnits::formatToken(decimalUnits, val, false, BitcoinUnits::SeparatorStyle::ALWAYS));
         Q_EMIT valueChanged();
     }
@@ -67,24 +67,24 @@ public:
     void stepBy(int steps) override
     {
         bool valid = false;
-        int256_t val = value(&valid);
+        dev::s256 val = value(&valid);
         val = val + steps * singleStep;
         val = getMin(getMax(val, minAmount), totalSupply);
         setValue(val);
     }
 
-    int256_t minimum() const
+    dev::s256 minimum() const
     {
         return minAmount;
     }
 
-    void setMinimum(const int256_t& min)
+    void setMinimum(const dev::s256& min)
     {
         minAmount = min;
         Q_EMIT valueChanged();
     }
 
-    void setTotalSupply(const int256_t &value)
+    void setTotalSupply(const dev::s256 &value)
     {
         totalSupply = value;
     }
@@ -97,18 +97,18 @@ public:
 
 private:
     int decimalUnits; // Token decimal units
-    int256_t totalSupply; // Token total supply
-    int256_t singleStep;
-    int256_t minAmount;
+    dev::s256 totalSupply; // Token total supply
+    dev::s256 singleStep;
+    dev::s256 minAmount;
 
     /**
      * Parse a string into a number of base monetary units and
      * return validity.
      * @note Must return 0 if !valid.
      */
-    int256_t parse(const QString &text, bool *valid_out=0) const
+    dev::s256 parse(const QString &text, bool *valid_out=0) const
     {
-        int256_t val = 0;
+        dev::s256 val = 0;
         bool valid = BitcoinUnits::parseToken(decimalUnits, text, &val);
         if(valid)
         {
@@ -122,7 +122,7 @@ private:
 
     void setSingleStep()
     {
-        int256_t step = 1;
+        dev::s256 step = 1;
         for(int i = 1; i < decimalUnits; i++)
         {
             step *= 10;
@@ -130,11 +130,11 @@ private:
         singleStep = step;
     }
 
-    int256_t getMax(int256_t a, int256_t b) const{
+    dev::s256 getMax(dev::s256 a, dev::s256 b) const{
         return a > b ? a : b;
     }
 
-    int256_t getMin(int256_t a, int256_t b) const{
+    dev::s256 getMin(dev::s256 a, dev::s256 b) const{
         return a > b ? b : a;
     }
 
@@ -163,7 +163,7 @@ protected:
 
         StepEnabled rv = QAbstractSpinBox::StepNone;
         bool valid = false;
-        int256_t val = value(&valid);
+        dev::s256 val = value(&valid);
         if(valid)
         {
             if(val > minAmount)
@@ -233,12 +233,12 @@ bool TokenAmountField::eventFilter(QObject *object, QEvent *event)
     return QWidget::eventFilter(object, event);
 }
 
-int256_t TokenAmountField::value(bool *valid_out) const
+dev::s256 TokenAmountField::value(bool *valid_out) const
 {
     return amount->value(valid_out);
 }
 
-void TokenAmountField::setValue(const int256_t& value)
+void TokenAmountField::setValue(const dev::s256& value)
 {
     amount->setValue(value);
 }
@@ -248,17 +248,17 @@ void TokenAmountField::setReadOnly(bool fReadOnly)
     amount->setReadOnly(fReadOnly);
 }
 
-int256_t TokenAmountField::minimum() const
+dev::s256 TokenAmountField::minimum() const
 {
     return amount->minimum();
 }
 
-void TokenAmountField::setMinimum(const int256_t& min)
+void TokenAmountField::setMinimum(const dev::s256& min)
 {
     amount->setMinimum(min);
 }
 
-void TokenAmountField::setTotalSupply(const int256_t &value)
+void TokenAmountField::setTotalSupply(const dev::s256 &value)
 {
     amount->setTotalSupply(value);
 }

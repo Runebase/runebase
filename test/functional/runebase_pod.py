@@ -36,7 +36,7 @@ class RunebasePODTest(BitcoinTestFramework):
         staker_key = wif_to_ECKey(self.staker.dumpprivkey(staker_address))
 
         block_count_staker = 100
-        self.staker.generatetoaddress(block_count_staker, staker_address)
+        self.generatetoaddress(self.staker, block_count_staker, staker_address)
         self.sync_all()
         generatesynchronized(self.delegator, COINBASE_MATURITY + 100, delegator_address, self.nodes)
         self.sync_all()
@@ -46,7 +46,7 @@ class RunebasePODTest(BitcoinTestFramework):
         fee = 20
 
         delegate_to_staker(self.delegator, delegator_address, staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, delegator_address)
+        self.generatetoaddress(self.delegator, 1, delegator_address)
         self.sync_all()
 
         # delegation not available for now
@@ -106,4 +106,4 @@ class RunebasePODTest(BitcoinTestFramework):
         assert_equal(self.staker.getbestblockhash(), block.hash)
 
 if __name__ == '__main__':
-    RunebasePODTest().main()
+    RunebasePODTest(__file__).main()

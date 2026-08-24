@@ -34,6 +34,7 @@ $(package)_config_opts+=no-weak-ssl-ciphers
 $(package)_config_opts+=no-whirlpool
 $(package)_config_opts+=no-zlib
 $(package)_config_opts+=no-zlib-dynamic
+$(package)_config_opts+=no-sock
 $(package)_config_opts+=-pipe -O2 $($(package)_cppflags)
 $(package)_config_opts_linux=-fPIC -Wa,--noexecstack
 $(package)_config_opts_x86_64_linux=linux-x86_64
@@ -55,7 +56,7 @@ endef
 
 define $(package)_preprocess_cmds
   sed -i.old "s/built on: \$date/built on: date not available/g" util/mkbuildinf.pl && \
-  sed -i.old "s|\"engines\", \"apps\", \"test\"|\"engines\"|" Configure
+  sed -i.old "s|\"engines\", \"apps\", \"test\", \"util\", \"tools\", \"fuzz\"|\"engines\", \"util\", \"tools\"|" Configure
 endef
 
 define $(package)_config_cmds

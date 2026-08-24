@@ -24,7 +24,7 @@ class QFrame;
 class QLineEdit;
 class QMenu;
 class QModelIndex;
-class QSpacerItem; 
+class QSpacerItem;
 class QTableView;
 QT_END_NAMESPACE
 

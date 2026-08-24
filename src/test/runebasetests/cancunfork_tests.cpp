@@ -1,5 +1,5 @@
 #include <boost/test/unit_test.hpp>
-#include <runebasetests/test_utils.h>
+#include <test/runebasetests/test_utils.h>
 #include <runebase/runebaseutils.h>
 #include <chainparams.h>
 

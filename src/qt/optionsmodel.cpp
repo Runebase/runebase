@@ -2,9 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
+#include <bitcoin-build-config.h> // IWYU pragma: keep
 
 #include <qt/optionsmodel.h>
 
@@ -17,15 +15,17 @@
 #include <mapport.h>
 #include <net.h>
 #include <netbase.h>
+#include <node/caches.h>
 #include <node/chainstatemanager_args.h>
-#include <txdb.h> // for -dbcache defaults
 #include <util/string.h>
 #include <validation.h>    // For DEFAULT_SCRIPTCHECK_THREADS
 #include <wallet/wallet.h> // For DEFAULT_SPEND_ZEROCONF_CHANGE
 
+
 #ifdef ENABLE_WALLET
 #include <wallet/walletdb.h>
 #endif
+
 #include <QDebug>
 #include <QLatin1Char>
 #include <QSettings>
@@ -47,7 +47,6 @@ static const char* SettingName(OptionsModel::OptionID option)
     case OptionsModel::ThreadsScriptVerif: return "par";
     case OptionsModel::SpendZeroConfChange: return "spendzeroconfchange";
     case OptionsModel::ExternalSignerPath: return "signer";
-    case OptionsModel::MapPortUPnP: return "upnp";
     case OptionsModel::MapPortNatpmp: return "natpmp";
     case OptionsModel::Listen: return "listen";
     case OptionsModel::Server: return "server";
@@ -60,6 +59,7 @@ static const char* SettingName(OptionsModel::OptionID option)
     case OptionsModel::ProxyPortTor: return "onion";
     case OptionsModel::ProxyUseTor: return "onion";
     case OptionsModel::Language: return "lang";
+
     case OptionsModel::HWIToolPath: return "hwitoolpath";
     case OptionsModel::StakeLedgerId: return "stakerledgerid";
     case OptionsModel::SignPSBTWithHWITool: return "signpsbtwithhwitool";
@@ -67,6 +67,7 @@ static const char* SettingName(OptionsModel::OptionID option)
     case OptionsModel::ReserveBalance: return "reservebalance";
     case OptionsModel::LogEvents: return "logevents";
     case OptionsModel::SuperStaking: return "superstaking";
+
     default: throw std::logic_error(strprintf("GUI option %i has no corresponding node setting.", option));
     }
 }
@@ -228,7 +229,7 @@ bool OptionsModel::Init(bilingual_str& error)
 
     // These are shared with the core or have a command-line parameter
     // and we want command-line parameters to overwrite the GUI settings.
-    for (OptionID option : {DatabaseCache, ThreadsScriptVerif, SpendZeroConfChange, ExternalSignerPath, MapPortUPnP,
+    for (OptionID option : {DatabaseCache, ThreadsScriptVerif, SpendZeroConfChange, ExternalSignerPath,
                             MapPortNatpmp, Listen, Server, Prune, ProxyUse, ProxyUseTor, Language,
                             HWIToolPath, StakeLedgerId, SignPSBTWithHWITool, UseChangeAddress, ReserveBalance,
                             LogEvents, SuperStaking}) {
@@ -253,18 +254,22 @@ bool OptionsModel::Init(bilingual_str& error)
 
     // Wallet
 #ifdef ENABLE_WALLET
+
     if (!settings.contains("bZeroBalanceAddressToken"))
         settings.setValue("bZeroBalanceAddressToken", wallet::DEFAULT_ZERO_BALANCE_ADDRESS_TOKEN);
     bZeroBalanceAddressToken = settings.value("bZeroBalanceAddressToken").toBool();
+
     if (!settings.contains("SubFeeFromAmount")) {
         settings.setValue("SubFeeFromAmount", false);
     }
     m_sub_fee_from_amount = settings.value("SubFeeFromAmount", false).toBool();
 #endif
 
+
     if (!settings.contains("fCheckForUpdates"))
         settings.setValue("fCheckForUpdates", DEFAULT_CHECK_FOR_UPDATES);
     fCheckForUpdates = settings.value("fCheckForUpdates").toBool();
+
     // Display
     if (settings.contains("FontForMoney")) {
         m_font_money = FontChoiceFromString(settings.value("FontForMoney").toString());
@@ -279,10 +284,12 @@ bool OptionsModel::Init(bilingual_str& error)
 
     m_mask_values = settings.value("mask_values", false).toBool();
 
+
     if (!settings.contains("Theme"))
         settings.setValue("Theme", "");
 
     theme = settings.value("Theme").toString();
+
     return true;
 }
 
@@ -345,10 +352,15 @@ static ProxySetting ParseProxyString(const QString& proxy)
     if (proxy.isEmpty()) {
         return default_val;
     }
-    // contains IP at index 0 and port at index 1
-    QStringList ip_port = GUIUtil::SplitSkipEmptyParts(proxy, ":");
-    if (ip_port.size() == 2) {
-        return {true, ip_port.at(0), ip_port.at(1)};
+    uint16_t port{0};
+    std::string hostname;
+    if (SplitHostPort(proxy.toStdString(), port, hostname) && port != 0) {
+        // Valid and port within the valid range
+        // Check if the hostname contains a colon, indicating an IPv6 address
+        if (hostname.find(':') != std::string::npos) {
+            hostname = "[" + hostname + "]"; // Wrap IPv6 address in brackets
+        }
+        return {true, QString::fromStdString(hostname), QString::number(port)};
     } else { // Invalid: return default
         return default_val;
     }
@@ -419,6 +431,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
     return successful;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 QVariant OptionsModel::getOption(OptionID option, const std::string& suffix) const
 {
     auto setting = [&]{ return node().getPersistentSetting(SettingName(option) + suffix); };
@@ -431,18 +444,8 @@ QVariant OptionsModel::getOption(OptionID option, const std::string& suffix) con
         return m_show_tray_icon;
     case MinimizeToTray:
         return fMinimizeToTray;
-    case MapPortUPnP:
-#ifdef USE_UPNP
-        return SettingToBool(setting(), DEFAULT_UPNP);
-#else
-        return false;
-#endif // USE_UPNP
     case MapPortNatpmp:
-#ifdef USE_NATPMP
         return SettingToBool(setting(), DEFAULT_NATPMP);
-#else
-        return false;
-#endif // USE_NATPMP
     case MinimizeOnClose:
         return fMinimizeOnClose;
 
@@ -480,12 +483,14 @@ QVariant OptionsModel::getOption(OptionID option, const std::string& suffix) con
         return QString::fromStdString(SettingToString(setting(), ""));
     case SubFeeFromAmount:
         return m_sub_fee_from_amount;
+
     case ZeroBalanceAddressToken:
         return settings.value("bZeroBalanceAddressToken");
     case ReserveBalance:
         return QString::fromStdString(SettingToString(setting(), FormatMoney(wallet::DEFAULT_RESERVE_BALANCE)));
     case SignPSBTWithHWITool:
         return SettingToBool(setting(), wallet::DEFAULT_SIGN_PSBT_WITH_HWI_TOOL);
+
 #endif
     case DisplayUnit:
         return QVariant::fromValue(m_display_bitcoin_unit);
@@ -506,7 +511,7 @@ QVariant OptionsModel::getOption(OptionID option, const std::string& suffix) con
                suffix.empty()          ? getOption(option, "-prev") :
                                          DEFAULT_PRUNE_TARGET_GB;
     case DatabaseCache:
-        return qlonglong(SettingToInt(setting(), nDefaultDbCache));
+        return qlonglong(SettingToInt(setting(), DEFAULT_DB_CACHE >> 20));
     case LogEvents:
         return SettingToBool(setting(), fLogEvents);
 #ifdef ENABLE_WALLET
@@ -545,6 +550,7 @@ QFont OptionsModel::getFontForChoice(const FontChoice& fc)
     QFont f;
     if (std::holds_alternative<FontChoiceAbstract>(fc)) {
         f = GUIUtil::fixedPitchFont(fc != UseBestSystemFont);
+
     } else {
         f = std::get<QFont>(fc);
     }
@@ -556,6 +562,7 @@ QFont OptionsModel::getFontForMoney() const
     return getFontForChoice(m_font_money);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::string& suffix)
 {
     auto changed = [&] { return value.isValid() && value != getOption(option, suffix); };
@@ -577,16 +584,10 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         fMinimizeToTray = value.toBool();
         settings.setValue("fMinimizeToTray", fMinimizeToTray);
         break;
-    case MapPortUPnP: // core option - can be changed on-the-fly
-        if (changed()) {
-            update(value.toBool());
-            node().mapPort(value.toBool(), getOption(MapPortNatpmp).toBool());
-        }
-        break;
     case MapPortNatpmp: // core option - can be changed on-the-fly
         if (changed()) {
             update(value.toBool());
-            node().mapPort(getOption(MapPortUPnP).toBool(), value.toBool());
+            node().mapPort(value.toBool());
         }
         break;
     case MinimizeOnClose:
@@ -671,6 +672,7 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         m_sub_fee_from_amount = value.toBool();
         settings.setValue("SubFeeFromAmount", m_sub_fee_from_amount);
         break;
+
     case ZeroBalanceAddressToken:
         bZeroBalanceAddressToken = value.toBool();
         settings.setValue("bZeroBalanceAddressToken", bZeroBalanceAddressToken);
@@ -682,6 +684,7 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
             setRestartRequired(true);
         }
         break;
+
 #endif
     case DisplayUnit:
         setDisplayUnit(value);
@@ -741,6 +744,7 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
             setRestartRequired(true);
         }
         break;
+
     case LogEvents:
         if (changed()) {
             update(value.toBool());
@@ -761,6 +765,7 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         }
         break;
 #endif
+
     case ThreadsScriptVerif:
         if (changed()) {
             update(static_cast<int64_t>(value.toLongLong()));
@@ -778,6 +783,7 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         m_mask_values = value.toBool();
         settings.setValue("mask_values", m_mask_values);
         break;
+
 #ifdef ENABLE_WALLET
     case UseChangeAddress:
         if (changed()) {
@@ -812,6 +818,7 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         }
         break;
 #endif
+
     default:
         break;
     }
@@ -858,7 +865,7 @@ void OptionsModel::checkAndMigrate()
         // see https://github.com/bitcoin/bitcoin/pull/8273
         // force people to upgrade to the new value if they are using 100MB
         if (settingsVersion < 130000 && settings.contains("nDatabaseCache") && settings.value("nDatabaseCache").toLongLong() == 100)
-            settings.setValue("nDatabaseCache", (qint64)nDefaultDbCache);
+            settings.setValue("nDatabaseCache", (qint64)(DEFAULT_DB_CACHE >> 20));
 
         settings.setValue(strSettingsVersionKey, CLIENT_VERSION);
     }
@@ -874,6 +881,7 @@ void OptionsModel::checkAndMigrate()
     if (settings.contains("addrSeparateProxyTor") && settings.value("addrSeparateProxyTor").toString().endsWith("%2")) {
         settings.setValue("addrSeparateProxyTor", GetDefaultProxyAddress());
     }
+
 
 #ifdef ENABLE_WALLET
     // Overwrite fNotUseChangeAddress for backward compatibility reason
@@ -898,6 +906,7 @@ void OptionsModel::checkAndMigrate()
         }
     }
 #endif
+
     // Migrate and delete legacy GUI settings that have now moved to <datadir>/settings.json.
     auto migrate_setting = [&](OptionID option, const QString& qt_name) {
         if (!settings.contains(qt_name)) return;
@@ -911,9 +920,11 @@ void OptionsModel::checkAndMigrate()
                 ProxySetting parsed = ParseProxyString(value.toString());
                 setOption(ProxyIPTor, parsed.ip);
                 setOption(ProxyPortTor, parsed.port);
+
             } else if (option == ReserveBalance) {
                 std::string balance = FormatMoney(value.toLongLong());
                 setOption(ReserveBalance, QString::fromStdString(balance));
+
             } else {
                 setOption(option, value);
             }
@@ -926,14 +937,15 @@ void OptionsModel::checkAndMigrate()
 #ifdef ENABLE_WALLET
     migrate_setting(SpendZeroConfChange, "bSpendZeroConfChange");
     migrate_setting(ExternalSignerPath, "external_signer_path");
+
     migrate_setting(HWIToolPath, "HWIToolPath");
     migrate_setting(StakeLedgerId, "StakeLedgerId");
     migrate_setting(SignPSBTWithHWITool, "signPSBTWithHWITool");
     migrate_setting(UseChangeAddress, "fUseChangeAddress");
     migrate_setting(ReserveBalance, "nReserveBalance");
     migrate_setting(SuperStaking, "fSuperStaking");
+
 #endif
-    migrate_setting(MapPortUPnP, "fUseUPnP");
     migrate_setting(MapPortNatpmp, "fUseNatpmp");
     migrate_setting(Listen, "fListen");
     migrate_setting(Server, "server");
@@ -948,11 +960,12 @@ void OptionsModel::checkAndMigrate()
 
     // In case migrating QSettings caused any settings value to change, rerun
     // parameter interaction code to update other settings. This is particularly
-    // important for the -listen setting, which should cause -listenonion, -upnp,
+    // important for the -listen setting, which should cause -listenonion
     // and other settings to default to false if it was set to false.
     // (https://github.com/bitcoin-core/gui/issues/567).
     node().initParameterInteraction();
 }
+
 
 bool OptionsModel::getRestartApp() const
 {

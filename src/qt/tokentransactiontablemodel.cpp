@@ -283,7 +283,7 @@ TokenTransactionTableModel::~TokenTransactionTableModel()
 void TokenTransactionTableModel::updateTransaction(const QString &hash, int status, bool showTransaction)
 {
     uint256 updated;
-    updated.SetHex(hash.toStdString());
+    updated.SetHexDeprecated(hash.toStdString());
 
     priv->updateWallet(walletModel->wallet(), updated, status, showTransaction);
 }

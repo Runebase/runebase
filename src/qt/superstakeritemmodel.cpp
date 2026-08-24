@@ -90,7 +90,7 @@ private Q_SLOTS:
         CAmount delegationsWeight = 0;
         std::string sAddress = stakerAddress.toStdString();
         uint256 id;
-        id.SetHex(hash.toStdString());
+        id.SetHexDeprecated(hash.toStdString());
         staking = walletModel->wallet().isSuperStakerStaking(id, delegationsWeight);
         walletModel->wallet().getStakerAddressBalance(sAddress, balance, stake, weight);
         Q_EMIT itemChanged(hash, balance, stake, weight, delegationsWeight, staking);
@@ -348,7 +348,7 @@ void SuperStakerItemModel::updateSuperStakerData(const QString &hash, int status
 {
     // Find superStaker in wallet
     uint256 updated;
-    updated.SetHex(hash.toStdString());
+    updated.SetHexDeprecated(hash.toStdString());
     interfaces::SuperStakerInfo superStaker =walletModel->wallet().getSuperStaker(updated);
     showSuperStaker &= superStaker.hash == updated;
 
@@ -443,7 +443,7 @@ void SuperStakerItemModel::itemChanged(QString hash, qint64 balance, qint64 stak
         return;
 
     uint256 updated;
-    updated.SetHex(hash.toStdString());
+    updated.SetHexDeprecated(hash.toStdString());
 
     // Update delegation
     for(int i = 0; i < priv->cachedSuperStakerItem.size(); i++)

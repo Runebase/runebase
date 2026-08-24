@@ -22,7 +22,7 @@ class RunebaseIdenticalRefunds(BitcoinTestFramework):
 
     def run_test(self):
         self.node = self.nodes[0]
-        self.node.generate(100+COINBASE_MATURITY)
+        self.generate(self.node, 100+COINBASE_MATURITY)
         """
         contract Test {
             function() payable {}
@@ -30,7 +30,7 @@ class RunebaseIdenticalRefunds(BitcoinTestFramework):
         """
         code = "60606040523415600e57600080fd5b5b603980601c6000396000f30060606040525b600b5b5b565b0000a165627a7a72305820e28f464040162c6b98c6be21a9de622f2c8f102259a90476df697d0beb9ac9880029"
         contract_address = self.node.createcontract(code)['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
         # Send 2 evm txs that will call the fallback function of the Test contract with the same sender.
         # This will result in the same amount of gas being spent and thus the same amount being refunded.
@@ -42,7 +42,7 @@ class RunebaseIdenticalRefunds(BitcoinTestFramework):
 
         # Check that all txs were accepted into the mempool.
         assert_equal(len(self.node.getrawmempool()), 4)
-        block_hash = self.node.generate(1)[0]
+        block_hash = self.generate(self.node, 1)[0]
 
         # Verify that all txs were included in the block.
         assert_equal(len(self.node.getrawmempool()), 0)
@@ -77,4 +77,4 @@ class RunebaseIdenticalRefunds(BitcoinTestFramework):
         assert_equal(self.node.getblockcount(), block_count)
         
 if __name__ == '__main__':
-    RunebaseIdenticalRefunds().main()
+    RunebaseIdenticalRefunds(__file__).main()

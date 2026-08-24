@@ -105,4 +105,4 @@ class RunebaseEVMLondonTest(BitcoinTestFramework):
             assert_equal(Decimal(balances[i-1]["amount"]), Decimal(self.nodes[i].qrc20balanceof(self.contract_address, self.node_addresses[i-1])))   
         
 if __name__ == '__main__':
-    RunebaseEVMLondonTest().main()
+    RunebaseEVMLondonTest(__file__).main()

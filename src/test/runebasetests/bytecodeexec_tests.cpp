@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 #include <test/util/setup_common.h>
-#include <runebasetests/test_utils.h>
+#include <test/runebasetests/test_utils.h>
 #include <chainparams.h>
 
 namespace ButecodeExecTest{

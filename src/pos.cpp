@@ -10,7 +10,6 @@
 #include <validation.h>
 #include <arith_uint256.h>
 #include <hash.h>
-#include <timedata.h>
 #include <chainparams.h>
 #include <script/sign.h>
 #include <consensus/consensus.h>
@@ -66,8 +65,10 @@ uint256 ComputeStakeModifier(const CBlockIndex* pindexPrev, const uint256& kerne
 //
 bool CheckStakeKernelHash(CBlockIndex* pindexPrev, unsigned int nBits, uint32_t blockFromTime, CAmount prevoutValue, const COutPoint& prevout, unsigned int nTimeBlock, uint256& hashProofOfStake, uint256& targetProofOfStake, bool fPrintProofOfStake)
 {
-    if (nTimeBlock < blockFromTime)  // Transaction timestamp violation
-        return error("CheckStakeKernelHash() : nTime violation");
+    if (nTimeBlock < blockFromTime) {  // Transaction timestamp violation
+        LogError("CheckStakeKernelHash() : nTime violation");
+        return false;
+    }
 
     // Get height
     int nHeight = pindexPrev->nHeight + 1;
@@ -120,10 +121,19 @@ bool CheckStakeKernelHash(CBlockIndex* pindexPrev, unsigned int nBits, uint32_t 
     return true;
 }
 
+bool ViewGetCoin(CCoinsViewCache& view, const COutPoint &outpoint, Coin &coin) {
+    auto coinIn = view.GetCoin(outpoint);
+    if (coinIn.has_value()) {
+        coin = std::move(*coinIn);
+        return true;
+    }
+    return false;
+}
+
 bool GetStakeCoin(const COutPoint& prevout, Coin& coinPrev, CBlockIndex*& blockFrom, CBlockIndex* pindexPrev, BlockValidationState& state, CCoinsViewCache& view)
 {
     // Get the coin
-    if(!view.GetCoin(prevout, coinPrev)){
+    if(!ViewGetCoin(view, prevout, coinPrev)){
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "stake-prevout-not-exist", strprintf("CheckProofOfStake() : Stake prevout does not exist %s", prevout.hash.ToString()));
     }
 
@@ -165,8 +175,10 @@ bool GetStakeCoin(const COutPoint& prevout, Coin& coinPrev, CBlockIndex*& blockF
 // Check kernel hash target and coinstake signature
 bool CheckProofOfStake(CBlockIndex* pindexPrev, BlockValidationState& state, const CTransaction& tx, unsigned int nBits, uint32_t nTimeBlock, const std::vector<unsigned char>& vchPoD,  const COutPoint& headerPrevout, uint256& hashProofOfStake, uint256& targetProofOfStake, CCoinsViewCache& view, Chainstate& chainstate)
 {
-    if (!tx.IsCoinStake())
-        return error("CheckProofOfStake() : called on non-coinstake %s", tx.GetHash().ToString());
+    if (!tx.IsCoinStake()) {
+        LogError("CheckProofOfStake() : called on non-coinstake %s", tx.GetHash().ToString());
+        return false;
+    }
 
     // Kernel (input 0) must match the stake hash target (nBits)
     const CTxIn& txin = tx.vin[0];
@@ -174,8 +186,10 @@ bool CheckProofOfStake(CBlockIndex* pindexPrev, BlockValidationState& state, con
     // Get the PoS transaction coin from the first input
     Coin coinTxPrev;
     CBlockIndex* blockTxFrom = 0;
-    if(!GetStakeCoin(txin.prevout, coinTxPrev, blockTxFrom, pindexPrev, state, view))
-        return error("CheckProofOfStake() : fail to get prevout %s", txin.prevout.hash.ToString());
+    if(!GetStakeCoin(txin.prevout, coinTxPrev, blockTxFrom, pindexPrev, state, view)) {
+        LogError("CheckProofOfStake() : fail to get prevout %s", txin.prevout.hash.ToString());
+        return false;
+    }
 
     // Get the PoS header coin from prevoutStake
     Coin coinHeaderPrev;
@@ -188,8 +202,10 @@ bool CheckProofOfStake(CBlockIndex* pindexPrev, BlockValidationState& state, con
     else
     {
         // The PoS transaction and PoS header coins are different when proof of delegation exist
-        if(!GetStakeCoin(headerPrevout, coinHeaderPrev, blockHeaderFrom, pindexPrev, state, view))
-            return error("CheckProofOfStake() : fail to get prevout %s", headerPrevout.hash.ToString());
+        if(!GetStakeCoin(headerPrevout, coinHeaderPrev, blockHeaderFrom, pindexPrev, state, view)) {
+            LogError("CheckProofOfStake() : fail to get prevout %s", headerPrevout.hash.ToString());
+            return false;
+        }
     }
 
     int nHeight = pindexPrev->nHeight + 1;
@@ -271,8 +287,9 @@ bool CheckProofOfStake(CBlockIndex* pindexPrev, BlockValidationState& state, con
 bool CheckBlockInputPubKeyMatchesOutputPubKey(const CBlock& block, CCoinsViewCache& view, bool delegateOutputExist) {
 
     Coin coinIn;
-    if(!view.GetCoin(block.prevoutStake, coinIn)) {
-        return error("%s: Could not fetch prevoutStake from UTXO set", __func__);
+    if(!ViewGetCoin(view, block.prevoutStake, coinIn)) {
+        LogError("%s: Could not fetch prevoutStake from UTXO set", __func__);
+        return false;
     }
 
     uint32_t hasDelegation = block.HasProofOfDelegation() ? 1 : 0;
@@ -281,7 +298,8 @@ bool CheckBlockInputPubKeyMatchesOutputPubKey(const CBlock& block, CCoinsViewCac
 
     CTransactionRef coinstakeTx = block.vtx[1];
     if(coinstakeTx->vout.size() < 2 + hasDelegation) {
-        return error("%s: coinstake transaction does not have the minimum number of outputs", __func__);
+        LogError("%s: coinstake transaction does not have the minimum number of outputs", __func__);
+        return false;
     }
 
     const CTxOut& txout = coinstakeTx->vout[1 + hasDelegation];
@@ -294,25 +312,30 @@ bool CheckBlockInputPubKeyMatchesOutputPubKey(const CBlock& block, CCoinsViewCac
     CTxDestination inputAddress;
     TxoutType inputTxType=TxoutType::NONSTANDARD;
     if(!ExtractDestination(coinIn.out.scriptPubKey, inputAddress, &inputTxType, true)) {
-        return error("%s: Could not extract address from input", __func__);
+        LogError("%s: Could not extract address from input", __func__);
+        return false;
     }
 
     if(inputTxType != TxoutType::PUBKEYHASH || !std::holds_alternative<PKHash>(inputAddress)) {
-        return error("%s: non-exact match input must be P2PKH", __func__);
+        LogError("%s: non-exact match input must be P2PKH", __func__);
+        return false;
     }
 
     CTxDestination outputAddress;
     TxoutType outputTxType=TxoutType::NONSTANDARD;
     if(!ExtractDestination(txout.scriptPubKey, outputAddress, &outputTxType, true)) {
-        return error("%s: Could not extract address from output", __func__);
+        LogError("%s: Could not extract address from output", __func__);
+        return false;
     }
 
     if(outputTxType != TxoutType::PUBKEY || !std::holds_alternative<PKHash>(outputAddress)) {
-        return error("%s: non-exact match output must be P2PK", __func__);
+        LogError("%s: non-exact match output must be P2PK", __func__);
+        return false;
     }
 
     if(std::get<PKHash>(inputAddress) != std::get<PKHash>(outputAddress)) {
-        return error("%s: input P2PKH pubkey does not match output P2PK pubkey", __func__);
+        LogError("%s: input P2PKH pubkey does not match output P2PK pubkey", __func__);
+        return false;
     }
 
     return true;
@@ -320,9 +343,10 @@ bool CheckBlockInputPubKeyMatchesOutputPubKey(const CBlock& block, CCoinsViewCac
 
 bool CheckRecoveredPubKeyFromBlockSignature(CBlockIndex* pindexPrev, const CBlockHeader& block, CCoinsViewCache& view, Chainstate& chainstate) {
     Coin coinPrev;
-    if(!view.GetCoin(block.prevoutStake, coinPrev)){
+    if(!ViewGetCoin(view, block.prevoutStake, coinPrev)){
         if(!GetSpentCoinFromMainChain(pindexPrev, block.prevoutStake, &coinPrev, chainstate)) {
-            return error("CheckRecoveredPubKeyFromBlockSignature(): Could not find %s and it was not at the tip", block.prevoutStake.hash.GetHex());
+            LogError("CheckRecoveredPubKeyFromBlockSignature(): Could not find %s and it was not at the tip", block.prevoutStake.hash.GetHex());
+            return false;
         }
     }
 
@@ -333,7 +357,8 @@ bool CheckRecoveredPubKeyFromBlockSignature(CBlockIndex* pindexPrev, const CBloc
     bool hasDelegation = block.HasProofOfDelegation();
 
     if(vchBlockSig.empty()) {
-        return error("CheckRecoveredPubKeyFromBlockSignature(): Signature is empty\n");
+        LogError("CheckRecoveredPubKeyFromBlockSignature(): Signature is empty\n");
+        return false;
     }
 
     // Recover the public key
@@ -407,23 +432,27 @@ bool CheckKernel(CBlockIndex* pindexPrev, unsigned int nBits, uint32_t nTimeBloc
     if(it == cache.end()) {
         //not found in cache (shouldn't happen during staking, only during verification which does not use cache)
         Coin coinPrev;
-        if(!view.GetCoin(prevout, coinPrev)){
+        if(!ViewGetCoin(view, prevout, coinPrev)){
             if(!GetSpentCoinFromMainChain(pindexPrev, prevout, &coinPrev, chainstate)) {
-                return error("CheckKernel(): Could not find coin and it was not at the tip");
+                LogError("CheckKernel(): Could not find coin and it was not at the tip");
+                return false;
             }
         }
 
         int nHeight = pindexPrev->nHeight + 1;
         int coinbaseMaturity = Params().GetConsensus().CoinbaseMaturity(nHeight);
         if(nHeight - coinPrev.nHeight < coinbaseMaturity){
-            return error("CheckKernel(): Coin not matured");
+            LogError("CheckKernel(): Coin not matured");
+            return false;
         }
         CBlockIndex* blockFrom = pindexPrev->GetAncestor(coinPrev.nHeight);
         if(!blockFrom) {
-            return error("CheckKernel(): Could not find block");
+            LogError("CheckKernel(): Could not find block");
+            return false;
         }
         if(coinPrev.IsSpent()){
-            return error("CheckKernel(): Coin is spent");
+            LogError("CheckKernel(): Coin is spent");
+            return false;
         }
 
         return CheckStakeKernelHash(pindexPrev, nBits, blockFrom->nTime, coinPrev.out.nValue, prevout,
@@ -459,7 +488,7 @@ void CacheKernel(std::map<COutPoint, CStakeCache>& cache, const COutPoint& prevo
     }
 
     Coin coinPrev;
-    if(!view.GetCoin(prevout, coinPrev)){
+    if(!ViewGetCoin(view, prevout, coinPrev)){
         return;
     }
 
@@ -620,7 +649,7 @@ bool AddMPoSScript(std::vector<BlockScript> &mposScriptList, int nHeight, const 
     CBlockIndex* pblockindex = chain[nHeight];
     if(!pblockindex)
     {
-        LogPrint(BCLog::COINSTAKE, "Block index not found\n");
+        LogDebug(BCLog::COINSTAKE, "Block index not found\n");
         return false;
     }
 
@@ -643,7 +672,7 @@ bool AddMPoSScript(std::vector<BlockScript> &mposScriptList, int nHeight, const 
     {
         if(stakeAddress == uint160())
         {
-            LogPrint(BCLog::COINSTAKE, "Fail to solve script for mpos reward recipient\n");
+            LogDebug(BCLog::COINSTAKE, "Fail to solve script for mpos reward recipient\n");
             //This should never fail, but in case it somehow did we don't want it to bring the network to a halt
             //So, use an OP_RETURN script to burn the coins for the unknown staker
             blockScript = CScript() << OP_RETURN;
@@ -662,7 +691,7 @@ bool AddMPoSScript(std::vector<BlockScript> &mposScriptList, int nHeight, const 
 
             if(delegateAddress == uint160())
             {
-                LogPrint(BCLog::COINSTAKE, "Fail to solve script for mpos delegate reward recipient\n");
+                LogDebug(BCLog::COINSTAKE, "Fail to solve script for mpos delegate reward recipient\n");
                 blockScript.delegateScript = CScript() << OP_RETURN;
             }else{
                 // Make public key hash script
@@ -688,7 +717,7 @@ bool AddMPoSScript(std::vector<BlockScript> &mposScriptList, int nHeight, const 
             return true;
 
         }
-        LogPrint(BCLog::COINSTAKE, "The block is not proof-of-stake\n");
+        LogDebug(BCLog::COINSTAKE, "The block is not proof-of-stake\n");
         return false;
     }
 
@@ -714,7 +743,7 @@ bool GetMPoSOutputs(std::vector<CTxOut>& mposOutputList, int64_t nRewardPiece, i
     std::vector<BlockScript> mposScriptList;
     if(!GetMPoSOutputScripts(mposScriptList, nHeight, consensusParams, chain, blockman))
     {
-        LogPrint(BCLog::COINSTAKE, "Fail to get the list of recipients\n");
+        LogDebug(BCLog::COINSTAKE, "Fail to get the list of recipients\n");
         return false;
     }
 
@@ -727,7 +756,7 @@ bool GetMPoSOutputs(std::vector<CTxOut>& mposOutputList, int64_t nRewardPiece, i
             int64_t nRewardDelegate, nRewardStaker;
             if(!SplitOfflineStakeReward(nRewardPiece, blockScript.fee, nRewardDelegate, nRewardStaker))
             {
-                LogPrint(BCLog::COINSTAKE, "Fail to split the offline staking reward\n");
+                LogDebug(BCLog::COINSTAKE, "Fail to split the offline staking reward\n");
                 return false;
             }
 

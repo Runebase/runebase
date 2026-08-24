@@ -99,10 +99,7 @@ public:
 
     TransactionTableModel *parent;
 
-    /* Local cache of wallet.
-     * As it is in the same order as the CWallet, by definition
-     * this is sorted by sha256.
-     */
+    //! Local cache of wallet sorted by transaction hash
     QList<TransactionRecord> cachedWallet;
     bool isDataLoading = true;
 
@@ -227,11 +224,10 @@ public:
     {
         if (idx >= 0 && idx < cachedWallet.size()) {
             TransactionRecord *rec = &cachedWallet[idx];
-            if(!isDataLoading)
-            {
+            if(!isDataLoading) {
                 // If a status update is needed (blocks came in since last check),
                 // try to update the status of this transaction from the wallet.
-                // Otherwise, simply re-use the cached status.
+                // Otherwise, simply reuse the cached status.
                 interfaces::WalletTxStatus wtx;
                 int numBlocks;
                 int64_t block_time;
@@ -296,7 +292,7 @@ void TransactionTableModel::updateAmountColumnTitle()
 void TransactionTableModel::updateTransaction(const QString &hash, int status, bool showTransaction)
 {
     uint256 updated;
-    updated.SetHex(hash.toStdString());
+    updated.SetHexDeprecated(hash.toStdString());
 
     priv->updateWallet(walletModel->wallet(), updated, status, showTransaction);
 }

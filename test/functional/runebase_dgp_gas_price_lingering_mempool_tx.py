@@ -49,7 +49,7 @@ class RunebaseDGPGasPriceLingeringMempoolTxTest(BitcoinTestFramework):
         self.node = self.nodes[0]
         self.GAS_PRICE_DGP = DGPState(self.node, "0000000000000000000000000000000000000082")
         self.connect_nodes(0, 1)
-        self.nodes[1].generate(1)
+        self.generate(self.nodes[1], 1)
         self.sync_all()
         generatesynchronized(self.node, 1000 + COINBASE_MATURITY, None, self.nodes)
         self.sync_all()
@@ -59,7 +59,7 @@ class RunebaseDGPGasPriceLingeringMempoolTxTest(BitcoinTestFramework):
 
         # Set ourself up as admin
         self.GAS_PRICE_DGP.send_set_initial_admin(admin_address)
-        self.node.generate(1)
+        self.node.generate(1, called_by_framework=True)
 
         # restart node 1, this will disconnect the nodes so that node 1 (B) is unaware of the gas price change
         # until they connect later on
@@ -70,7 +70,7 @@ class RunebaseDGPGasPriceLingeringMempoolTxTest(BitcoinTestFramework):
         # Set the minimum gas price to 100
         self.create_proposal_contract(100)
         self.GAS_PRICE_DGP.send_add_address_proposal(self.proposal_address, 2, admin_address)
-        self.node.generate(2) # Activate the proposal
+        self.node.generate(2, called_by_framework=True) # Activate the proposal
 
         # Reconnect and sync the blocks of the nodes
         self.connect_nodes(0, 1)
@@ -80,8 +80,8 @@ class RunebaseDGPGasPriceLingeringMempoolTxTest(BitcoinTestFramework):
         # Make sure that the nodes have the same tip
         assert_equal(self.nodes[0].getbestblockhash(), self.nodes[1].getbestblockhash())
 
-        self.nodes[1].generate(1)
+        self.nodes[1].generate(1, called_by_framework=True)
 
 
 if __name__ == '__main__':
-    RunebaseDGPGasPriceLingeringMempoolTxTest().main()
+    RunebaseDGPGasPriceLingeringMempoolTxTest(__file__).main()

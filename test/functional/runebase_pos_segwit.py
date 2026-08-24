@@ -90,7 +90,7 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
 
         self.node = self.nodes[0]
         self.node.setmocktime(int(time.time()) - 2*COINBASE_MATURITY)
-        self.node.generatetoaddress(50+COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        self.generatetoaddress(self.node, 50+COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
 
         staking_prevouts = self.collect_staking_prevouts()
 
@@ -101,7 +101,7 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
         tx.rehash()
         tx_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']
         txid = self.node.sendrawtransaction(tx_hex)
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
 
         self.node.setmocktime(int(time.time()))
@@ -152,4 +152,4 @@ class RunebasePOSSegwitTest(BitcoinTestFramework):
         assert_equal(self.node.getblockcount(), block_count+1)
 
 if __name__ == '__main__':
-    RunebasePOSSegwitTest().main()
+    RunebasePOSSegwitTest(__file__).main()

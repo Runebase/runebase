@@ -18,6 +18,7 @@
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
 #include <test/fuzz/util.h>
+#include <test/util/random.h>
 #include <util/chaintype.h>
 #include <util/strencodings.h>
 
@@ -32,12 +33,13 @@
 
 void initialize_key()
 {
-    ECC_Start();
+    static ECC_Context ecc_context{};
     SelectParams(ChainType::UNITTEST);
 }
 
 FUZZ_TARGET(key, .init = initialize_key)
 {
+    SeedRandomStateForTest(SeedRand::ZEROS);
     const CKey key = [&] {
         CKey k;
         k.Set(buffer.begin(), buffer.end(), true);
@@ -76,16 +78,6 @@ FUZZ_TARGET(key, .init = initialize_key)
         CKey copied_key;
         copied_key.Set(key.begin(), key.end(), key.IsCompressed());
         assert(copied_key == key);
-    }
-
-    {
-        CKey negated_key = key;
-        negated_key.Negate();
-        assert(negated_key.IsValid());
-        assert(!(negated_key == key));
-
-        negated_key.Negate();
-        assert(negated_key == key);
     }
 
     const uint256 random_uint256 = Hash(buffer);

@@ -79,9 +79,8 @@ class AddressTypeTest(BitcoinTestFramework):
             ["-changetype=p2sh-segwit"],
             [],
         ]
-        # whitelist all peers to speed up tx relay / mempool sync
-        for args in self.extra_args:
-            args.append("-whitelist=noban@127.0.0.1")
+        # whitelist peers to speed up tx relay / mempool sync
+        self.noban_tx_relay = True
         self.supports_cli = False
 
     def skip_test_if_missing_module(self):
@@ -231,9 +230,9 @@ class AddressTypeTest(BitcoinTestFramework):
         # no coinbases are maturing for the nodes-under-test during the test
         # send the new blocks in parts.
         for i in range(0, COINBASE_MATURITY, 100):
-            self.nodes[5].generate(100)
+            self.generate(self.nodes[5], 100)
             self.sync_blocks()
-        self.nodes[5].generate(1)
+        self.generate(self.nodes[5], 1)
         self.sync_blocks()
 
         uncompressed_1 = "0496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858ee"
@@ -375,6 +374,8 @@ class AddressTypeTest(BitcoinTestFramework):
         assert_raises_rpc_error(-5, "Unknown address type ''", self.nodes[3].getnewaddress, None, '')
         assert_raises_rpc_error(-5, "Unknown address type ''", self.nodes[3].getrawchangeaddress, '')
         assert_raises_rpc_error(-5, "Unknown address type 'bech23'", self.nodes[3].getrawchangeaddress, 'bech23')
+        if self.options.descriptors:
+            assert_raises_rpc_error(-5, "Unknown address type 'bech23'", self.nodes[3].createwalletdescriptor, "bech23")
 
         self.log.info("Nodes with changetype=p2sh-segwit never use a P2WPKH change output")
         self.test_change_output_type(4, [to_address_bech32_1], 'p2sh-segwit')
@@ -393,4 +394,4 @@ class AddressTypeTest(BitcoinTestFramework):
             assert_raises_rpc_error(-8, "Legacy wallets cannot provide bech32m addresses", self.nodes[0].getrawchangeaddress, "bech32m")
 
 if __name__ == '__main__':
-    AddressTypeTest().main()
+    AddressTypeTest(__file__).main()

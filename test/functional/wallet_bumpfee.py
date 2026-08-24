@@ -56,11 +56,12 @@ class BumpFeeTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = True
+        # whitelist peers to speed up tx relay / mempool sync
+        self.noban_tx_relay = True
         self.extra_args = [[
             "-walletrbf={}".format(i),
             "-mintxfee=0.005",
             "-addresstype=bech32",
-            "-whitelist=noban@127.0.0.1",
         ] for i in range(self.num_nodes)]
 
     def skip_test_if_missing_module(self):
@@ -83,8 +84,8 @@ class BumpFeeTest(BitcoinTestFramework):
         self.generate(peer_node, COINBASE_MATURITY + 10)
         for _ in range(25):
             peer_node.sendtoaddress(rbf_node_address, 0.1)
-        self.generate(peer_node, 1)
         self.sync_all()
+        self.generate(peer_node, 1)
         assert_equal(rbf_node.getbalance(), Decimal("2.5"))
 
         self.log.info("Running tests")
@@ -117,6 +118,7 @@ class BumpFeeTest(BitcoinTestFramework):
 
         # Context independent tests
         test_feerate_checks_replaced_outputs(self, rbf_node, peer_node)
+        test_bumpfee_with_feerate_ignores_walletincrementalrelayfee(self, rbf_node, peer_node)
 
     def test_invalid_parameters(self, rbf_node, peer_node, dest_address):
         self.log.info('Test invalid parameters')
@@ -269,10 +271,10 @@ class BumpFeeTest(BitcoinTestFramework):
     def test_single_output(self):
         self.log.info("Test that single output txs can be bumped")
         node = self.nodes[1]
-    
+
         node.createwallet("single_out_rbf")
         wallet = node.get_wallet_rpc("single_out_rbf")
-    
+
         addr = wallet.getnewaddress()
         amount = Decimal("0.009")
         # Make 2 UTXOs
@@ -280,12 +282,12 @@ class BumpFeeTest(BitcoinTestFramework):
         self.nodes[0].sendtoaddress(addr, amount)
         self.generate(self.nodes[0], 1)
         utxos = wallet.listunspent()
-    
+
         tx = wallet.sendall(recipients=[wallet.getnewaddress()], fee_rate=500, options={"inputs": [utxos[0]]})
-    
+
         # Set the only output with a crazy high feerate as change, should fail as the output would be dust
         assert_raises_rpc_error(-4, "The transaction amount is too small to pay the fee", wallet.bumpfee, txid=tx["txid"], options={"fee_rate": 9100, "original_change_index": 0})
-    
+
         # Specify single output as change successfully
         bumped = wallet.bumpfee(txid=tx["txid"], options={"fee_rate": 510, "original_change_index": 0})
         bumped_tx = wallet.gettransaction(txid=bumped["txid"], verbose=True)
@@ -293,14 +295,14 @@ class BumpFeeTest(BitcoinTestFramework):
         assert_equal(len(bumped_tx["decoded"]["vin"]), 1)
         assert_equal(bumped_tx["decoded"]["vout"][0]["value"] + bumped_tx["decoded"]["vout"][1]["value"] + bumped["fee"], amount)
         assert_fee_amount(bumped["fee"], bumped_tx["decoded"]["vsize"], Decimal(510) / Decimal(1e8) * 1000)
-    
+
         # Bumping without specifying change adds a new input and output
         bumped = wallet.bumpfee(txid=bumped["txid"], options={"fee_rate": 520})
         bumped_tx = wallet.gettransaction(txid=bumped["txid"], verbose=True)
         assert_equal(len(bumped_tx["decoded"]["vout"]), 2)
         assert_equal(len(bumped_tx["decoded"]["vin"]), 1)
         assert_fee_amount(bumped["fee"], bumped_tx["decoded"]["vsize"], Decimal(520) / Decimal(1e8) * 1000)
-    
+
         wallet.unloadwallet()
 
 def test_simple_bumpfee_succeeds(self, mode, rbf_node, peer_node, dest_address):
@@ -535,7 +537,7 @@ def test_dust_to_fee(self, rbf_node, dest_address):
 
 def test_settxfee(self, rbf_node, dest_address):
     self.log.info('Test settxfee')
-    assert_raises_rpc_error(-8, "txfee cannot be less than min relay tx fee", rbf_node.settxfee, Decimal('0.000005'))
+    assert_raises_rpc_error(-8, "txfee cannot be less than min relay tx fee", rbf_node.settxfee, Decimal('0.0000005'))
     assert_raises_rpc_error(-8, "txfee cannot be less than wallet min fee", rbf_node.settxfee, Decimal('0.0049'))
     # check that bumpfee reacts correctly to the use of settxfee (paytxfee)
     rbfid = spend_one_input(rbf_node, dest_address)
@@ -820,7 +822,7 @@ def test_feerate_checks_replaced_outputs(self, rbf_node, peer_node):
     # Since the bumped tx will replace all of the outputs with a single output, we can estimate that its size will 31 * (len(outputs) - 1) bytes smaller
     tx_size = tx_details["decoded"]["vsize"]
     est_bumped_size = tx_size - (len(tx_details["decoded"]["vout"]) - 1) * 31
-    inc_fee_rate = max(rbf_node.getmempoolinfo()["incrementalrelayfee"], Decimal(0.00005000)) # Wallet has a fixed incremental relay fee of 5 sat/vb
+    inc_fee_rate = rbf_node.getmempoolinfo()["incrementalrelayfee"]
     # RPC gives us fee as negative
     min_fee = (-tx_details["fee"] + get_fee(est_bumped_size, inc_fee_rate)) * Decimal(1e8)
     min_fee_rate = (min_fee / est_bumped_size).quantize(Decimal("1.000"))
@@ -834,5 +836,27 @@ def test_feerate_checks_replaced_outputs(self, rbf_node, peer_node):
     self.clear_mempool()
 
 
+def test_bumpfee_with_feerate_ignores_walletincrementalrelayfee(self, rbf_node, peer_node):
+    self.log.info('Test that bumpfee with fee_rate ignores walletincrementalrelayfee')
+    # Make sure there is enough balance
+    peer_node.sendtoaddress(rbf_node.getnewaddress(), 2)
+    self.generate(peer_node, 1)
+
+    dest_address = peer_node.getnewaddress(address_type="bech32")
+    tx = rbf_node.send(outputs=[{dest_address: 1}], fee_rate=500)
+
+    # Ensure you can not fee bump with a fee_rate below or equal to the original fee_rate
+    assert_raises_rpc_error(-8, "Insufficient total fee", rbf_node.bumpfee, tx["txid"], {"fee_rate": 400})
+    assert_raises_rpc_error(-8, "Insufficient total fee", rbf_node.bumpfee, tx["txid"], {"fee_rate": 500})
+
+    # Ensure you can not fee bump if the fee_rate is more than original fee_rate but the total fee from new fee_rate is
+    # less than (original fee + incrementalrelayfee)
+    assert_raises_rpc_error(-8, "Insufficient total fee", rbf_node.bumpfee, tx["txid"], {"fee_rate": 500.05})
+
+    # You can fee bump as long as the new fee set from fee_rate is at least (original fee + incrementalrelayfee)
+    rbf_node.bumpfee(tx["txid"], {"fee_rate": 750})
+    self.clear_mempool()
+
+
 if __name__ == "__main__":
-    BumpFeeTest().main()
+    BumpFeeTest(__file__).main()

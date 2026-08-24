@@ -1,8 +1,8 @@
 #include <boost/test/unit_test.hpp>
-#include <runebasetests/test_utils.h>
+#include <test/runebasetests/test_utils.h>
 #include <script/solver.h>
 #include <chainparams.h>
-#include <runebasetests/precompiled_utils.h>
+#include <test/runebasetests/precompiled_utils.h>
 #include <test/runebasetests/data/btc_ecrecover.json.h>
 #include <test/runebasetests/data/ecrecover.json.h>
 #include <test/runebasetests/data/sha256.json.h>

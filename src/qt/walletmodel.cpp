@@ -25,6 +25,7 @@
 #include <interfaces/node.h>
 #include <key_io.h>
 #include <node/interface_ui.h>
+#include <node/types.h>
 #include <psbt.h>
 #include <util/translation.h>
 #include <wallet/coincontrol.h>
@@ -82,6 +83,7 @@ WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel
     contractTableModel = new ContractTableModel(this);
     transactionTableModel = new TransactionTableModel(platformStyle, this);
     recentRequestsTableModel = new RecentRequestsTableModel(this);
+
     tokenItemModel = new TokenItemModel(this);
     tokenTransactionTableModel = new TokenTransactionTableModel(platformStyle, this);
     delegationItemModel = new DelegationItemModel(this);
@@ -102,7 +104,6 @@ WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel
 WalletModel::~WalletModel()
 {
     unsubscribeFromCoreSignals();
-
     join();
 }
 
@@ -203,7 +204,7 @@ void WalletModel::updateContractBook(const QString &address, const QString &labe
 
 bool WalletModel::checkBalanceChanged(const interfaces::WalletBalances& new_balances)
 {
-    if(new_balances.balanceChanged(m_cached_balances)) {
+    if (new_balances.balanceChanged(m_cached_balances)) {
         m_cached_balances = new_balances;
         Q_EMIT balanceChanged(new_balances);
         return true;
@@ -239,7 +240,6 @@ void WalletModel::checkSuperStakerChanged()
         superStakerItemModel->checkSuperStakerChanged();
     }
 }
-
 void WalletModel::updateTransaction()
 {
     // Balance and number of transactions might have changed
@@ -416,7 +416,6 @@ ContractTableModel *WalletModel::getContractTableModel() const
 {
     return contractTableModel;
 }
-
 TransactionTableModel* WalletModel::getTransactionTableModel() const
 {
     return transactionTableModel;
@@ -514,7 +513,6 @@ bool WalletModel::restoreWallet(const QString &filename, const QString &param)
 
     return false;
 }
-
 // Handlers for core signals
 static void NotifyUnload(WalletModel* walletModel)
 {
@@ -629,7 +627,6 @@ WalletModel::UnlockContext WalletModel::requestUnlock()
     if (m_wallet->privateKeysDisabled()) {
         return UnlockContext(this, /*valid=*/true, /*relock=*/false);
     }
-
     bool was_locked = getEncryptionStatus() == Locked;
     if ((!was_locked) && getWalletUnlockStakingOnly())
     {
@@ -666,13 +663,11 @@ WalletModel::UnlockContext::~UnlockContext()
     {
         wallet->setWalletLocked(true);
     }
-
     if(!relock)
     {
         wallet->setWalletUnlockStakingOnly(stakingOnly);
         wallet->updateStatus();
     }
-
 }
 
 bool WalletModel::bumpFee(uint256 hash, uint256& new_hash)
@@ -731,8 +726,8 @@ bool WalletModel::bumpFee(uint256 hash, uint256& new_hash)
         // "Create Unsigned" clicked
         PartiallySignedTransaction psbtx(mtx);
         bool complete = false;
-        const TransactionError err = wallet().fillPSBT(SIGHASH_ALL, /*sign=*/false, /*bip32derivs=*/true, nullptr, psbtx, complete);
-        if (err != TransactionError::OK || complete) {
+        const auto err{wallet().fillPSBT(SIGHASH_ALL, /*sign=*/false, /*bip32derivs=*/true, nullptr, psbtx, complete)};
+        if (err || complete) {
             QMessageBox::critical(nullptr, tr("Fee bump error"), tr("Can't draft transaction."));
             return false;
         }
@@ -765,16 +760,17 @@ bool WalletModel::bumpFee(uint256 hash, uint256& new_hash)
     return true;
 }
 
-bool WalletModel::displayAddress(std::string sAddress) const
+void WalletModel::displayAddress(std::string sAddress) const
 {
     CTxDestination dest = DecodeDestination(sAddress);
-    bool res = false;
     try {
-        res = m_wallet->displayAddress(dest);
+        util::Result<void> result = m_wallet->displayAddress(dest);
+        if (!result) {
+            QMessageBox::warning(nullptr, tr("Signer error"), QString::fromStdString(util::ErrorString(result).translated));
+        }
     } catch (const std::runtime_error& e) {
         QMessageBox::critical(nullptr, tr("Can't display address"), e.what());
     }
-    return res;
 }
 
 bool WalletModel::isWalletEnabled()
@@ -789,8 +785,7 @@ QString WalletModel::getWalletName() const
 
 QString WalletModel::getDisplayName() const
 {
-    const QString name = getWalletName();
-    return name.isEmpty() ? "["+tr("default wallet")+"]" : name;
+    return GUIUtil::WalletDisplayName(getWalletName());
 }
 
 bool WalletModel::isMultiwallet() const

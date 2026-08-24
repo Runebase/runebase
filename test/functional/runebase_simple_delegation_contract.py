@@ -32,7 +32,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         staker_privkey = self.staker.dumpprivkey(staker_address)
         staker_eckey = wif_to_ECKey(staker_privkey)
 
-        self.staker.generatetoaddress(1, staker_address)
+        self.generatetoaddress(self.staker, 1, staker_address)
         self.sync_all()
         generatesynchronized(self.delegator, COINBASE_MATURITY+100, delegator_address, self.nodes)
         self.sync_all()
@@ -46,7 +46,7 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
         fee = 99
         # send the evm tx that delegates the address to the staker address
         delegate_to_staker(self.delegator, delegator_address, staker_address, fee, pod)
-        self.delegator.generatetoaddress(1, delegator_address)
+        self.generatetoaddress(self.delegator, 1, delegator_address)
         self.sync_all()
 
         delegator_prevouts = collect_prevouts(self.delegator)
@@ -63,4 +63,4 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    RunebaseSimpleDelegationContractTest().main()
+    RunebaseSimpleDelegationContractTest(__file__).main()

@@ -5,7 +5,7 @@
 #ifndef BITCOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
 #define BITCOIN_QT_SIGNVERIFYMESSAGEDIALOG_H
 
-#include <util/message.h> // For MessageSign(), MessageVerify()
+#include <common/signmessage.h> // For MessageSign(), MessageVerify()
 #include <QDialog>
 
 class PlatformStyle;

@@ -1,10 +1,8 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
+#include <bitcoin-build-config.h> // IWYU pragma: keep
 
 #include <core_io.h>
 #include <key_io.h>
@@ -209,9 +207,9 @@ RPCHelpMan listaddressgroupings()
                     addressInfo.push_back(address_book_entry->GetLabel());
                 }
             }
-            jsonGrouping.push_back(addressInfo);
+            jsonGrouping.push_back(std::move(addressInfo));
         }
-        jsonGroupings.push_back(jsonGrouping);
+        jsonGroupings.push_back(std::move(jsonGrouping));
     }
     return jsonGroupings;
 },
@@ -290,9 +288,30 @@ RPCHelpMan addmultisigaddress()
         output_type = parsed.value();
     }
 
-    // Construct using pay-to-script-hash:
+    // Construct multisig scripts
+    FlatSigningProvider provider;
     CScript inner;
-    CTxDestination dest = AddAndGetMultisigDestination(required, pubkeys, output_type, spk_man, inner);
+    CTxDestination dest = AddAndGetMultisigDestination(required, pubkeys, output_type, provider, inner);
+
+    // Import scripts into the wallet
+    for (const auto& [id, script] : provider.scripts) {
+        // Due to a bug in the legacy wallet, the p2sh maximum script size limit is also imposed on 'p2sh-segwit' and 'bech32' redeem scripts.
+        // Even when redeem scripts over MAX_SCRIPT_ELEMENT_SIZE bytes are valid for segwit output types, we don't want to
+        // enable it because:
+        // 1) It introduces a compatibility-breaking change requiring downgrade protection; older wallets would be unable to interact with these "new" legacy wallets.
+        // 2) Considering the ongoing deprecation of the legacy spkm, this issue adds another good reason to transition towards descriptors.
+        if (script.size() > MAX_SCRIPT_ELEMENT_SIZE) throw JSONRPCError(RPC_WALLET_ERROR, "Unsupported multisig script size for legacy wallet. Upgrade to descriptors to overcome this limitation for p2sh-segwit or bech32 scripts");
+
+        if (!spk_man.AddCScript(script)) {
+            if (CScript inner_script; spk_man.GetCScript(CScriptID(script), inner_script)) {
+                CHECK_NONFATAL(inner_script == script); // Nothing to add, script already contained by the wallet
+                continue;
+            }
+            throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error importing script into the wallet"));
+        }
+    }
+
+    // Store destination in the addressbook
     pwallet->SetAddressBook(dest, label, AddressPurpose::SEND);
 
     // Make the descriptor
@@ -396,6 +415,7 @@ class DescribeWalletAddressVisitor
 public:
     const SigningProvider * const provider;
 
+    // NOLINTNEXTLINE(misc-no-recursion)
     void ProcessSubScript(const CScript& subscript, UniValue& obj) const
     {
         // Always present: script type and redeemscript
@@ -409,9 +429,9 @@ public:
             // Only when the script corresponds to an address.
             UniValue subobj(UniValue::VOBJ);
             UniValue detail = DescribeAddress(embedded);
-            subobj.pushKVs(detail);
+            subobj.pushKVs(std::move(detail));
             UniValue wallet_detail = std::visit(*this, embedded);
-            subobj.pushKVs(wallet_detail);
+            subobj.pushKVs(std::move(wallet_detail));
             subobj.pushKV("address", EncodeDestination(embedded));
             subobj.pushKV("scriptPubKey", HexStr(subscript));
             // Always report the pubkey at the top level, so that `getnewaddress()['pubkey']` always works.
@@ -446,6 +466,7 @@ public:
         return obj;
     }
 
+    // NOLINTNEXTLINE(misc-no-recursion)
     UniValue operator()(const ScriptHash& scripthash) const
     {
         UniValue obj(UniValue::VOBJ);
@@ -466,6 +487,7 @@ public:
         return obj;
     }
 
+    // NOLINTNEXTLINE(misc-no-recursion)
     UniValue operator()(const WitnessV0ScriptHash& id) const
     {
         UniValue obj(UniValue::VOBJ);
@@ -480,6 +502,7 @@ public:
     }
 
     UniValue operator()(const WitnessV1Taproot& id) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const PayToAnchor& id) const { return UniValue(UniValue::VOBJ); }
     UniValue operator()(const WitnessUnknown& id) const { return UniValue(UniValue::VOBJ); }
 };
 
@@ -490,7 +513,7 @@ UniValue DescribeWalletAddress(const CWallet& wallet, const CTxDestination& dest
     CScript script = GetScriptForDestination(dest);
     std::unique_ptr<SigningProvider> provider = nullptr;
     provider = wallet.GetSolvingProvider(script);
-    ret.pushKVs(detail);
+    ret.pushKVs(std::move(detail));
     ret.pushKVs(std::visit(DescribeWalletAddressVisitor(provider.get()), dest));
     return ret;
 }
@@ -507,13 +530,13 @@ RPCHelpMan getaddressinfo()
                     RPCResult::Type::OBJ, "", "",
                     {
                         {RPCResult::Type::STR, "address", "The runebase address validated."},
-                        {RPCResult::Type::STR_HEX, "scriptPubKey", "The hex-encoded scriptPubKey generated by the address."},
+                        {RPCResult::Type::STR_HEX, "scriptPubKey", "The hex-encoded output script generated by the address."},
                         {RPCResult::Type::BOOL, "ismine", "If the address is yours."},
                         {RPCResult::Type::BOOL, "iswatchonly", "If the address is watchonly."},
                         {RPCResult::Type::BOOL, "solvable", "If we know how to spend coins sent to this address, ignoring the possible lack of private keys."},
                         {RPCResult::Type::STR, "desc", /*optional=*/true, "A descriptor for spending coins sent to this address (only when solvable)."},
                         {RPCResult::Type::STR, "parent_desc", /*optional=*/true, "The descriptor used to derive this address if this is a descriptor wallet"},
-                        {RPCResult::Type::BOOL, "isscript", "If the key is a script."},
+                        {RPCResult::Type::BOOL, "isscript", /*optional=*/true, "If the key is a script."},
                         {RPCResult::Type::BOOL, "ischange", "If the address was used for change output."},
                         {RPCResult::Type::BOOL, "iswitness", "If the address is a witness address."},
                         {RPCResult::Type::NUM, "witness_version", /*optional=*/true, "The version number of the witness program."},
@@ -607,7 +630,7 @@ RPCHelpMan getaddressinfo()
     ret.pushKV("iswatchonly", bool(mine & ISMINE_WATCH_ONLY));
 
     UniValue detail = DescribeWalletAddress(*pwallet, dest);
-    ret.pushKVs(detail);
+    ret.pushKVs(std::move(detail));
 
     ret.pushKV("ischange", ScriptIsChange(*pwallet, scriptPubKey));
 
@@ -688,7 +711,7 @@ RPCHelpMan getaddressesbylabel()
             // which currently is O(1).
             UniValue value(UniValue::VOBJ);
             value.pushKV("purpose", _purpose ? PurposeToString(*_purpose) : "unknown");
-            ret.pushKVEnd(address, value);
+            ret.pushKVEnd(address, std::move(value));
         }
     });
 
@@ -787,9 +810,8 @@ RPCHelpMan walletdisplayaddress()
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
             }
 
-            if (!pwallet->DisplayAddress(dest)) {
-                throw JSONRPCError(RPC_MISC_ERROR, "Failed to display address");
-            }
+            util::Result<void> res = pwallet->DisplayAddress(dest);
+            if (!res) throw JSONRPCError(RPC_MISC_ERROR, util::ErrorString(res).original);
 
             UniValue result(UniValue::VOBJ);
             result.pushKV("address", request.params[0].get_str());
@@ -820,93 +842,91 @@ bool getAddressToPubKey(const CWallet& wallet, std::string addr, std::string& pu
 RPCHelpMan createmultisig()
 {
     return RPCHelpMan{"createmultisig",
-                "\nCreates a multi-signature address with n signature of m keys required.\n"
-                "It returns a json object with the address and redeemScript.\n",
+        "\nCreates a multi-signature address with n signature of m keys required.\n"
+        "It returns a json object with the address and redeemScript.\n",
+        {
+            {"nrequired", RPCArg::Type::NUM, RPCArg::Optional::NO, "The number of required signatures out of the n keys."},
+            {"keys", RPCArg::Type::ARR, RPCArg::Optional::NO, "A json array of keys which are runebase addresses or hex-encoded public keys.",
                 {
-                    {"nrequired", RPCArg::Type::NUM, RPCArg::Optional::NO, "The number of required signatures out of the n keys."},
-                    {"keys", RPCArg::Type::ARR, RPCArg::Optional::NO, "A json array of keys which are runebase addresses or hex-encoded public keys.",
-                        {
-                            {"key", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED, "runebase address or hex-encoded public key"},
-                        }},
-                    {"address_type", RPCArg::Type::STR, RPCArg::Default{"legacy"}, "The address type to use. Options are \"legacy\", \"p2sh-segwit\", and \"bech32\"."},
-                },
-                RPCResult{
-                    RPCResult::Type::OBJ, "", "",
-                    {
-                        {RPCResult::Type::STR, "address", "The value of the new multisig address."},
-                        {RPCResult::Type::STR_HEX, "redeemScript", "The string value of the hex-encoded redemption script."},
-                        {RPCResult::Type::STR, "descriptor", "The descriptor for this multisig"},
-                        {RPCResult::Type::ARR, "warnings", /* optional */ true, "Any warnings resulting from the creation of this multisig",
-                        {
-                            {RPCResult::Type::STR, "", ""},
-                        }},
-                    }
-                },
-                RPCExamples{
+                    {"key", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED, "runebase address or hex-encoded public key"},
+                }},
+            {"address_type", RPCArg::Type::STR, RPCArg::Default{"legacy"}, "The address type to use. Options are \"legacy\", \"p2sh-segwit\", and \"bech32\"."},
+        },
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::STR, "address", "The value of the new multisig address."},
+                {RPCResult::Type::STR_HEX, "redeemScript", "The string value of the hex-encoded redemption script."},
+                {RPCResult::Type::STR, "descriptor", "The descriptor for this multisig"},
+                {RPCResult::Type::ARR, "warnings", /*optional=*/true, "Any warnings resulting from the creation of this multisig",
+                {
+                    {RPCResult::Type::STR, "", ""},
+                }},
+            }
+        },
+        RPCExamples{
             "\nCreate a multisig address from 2 public keys\n"
             + HelpExampleCli("createmultisig", "2 \"[\\\"QjWnDZxwLhrJDcp4Hisse8RfBo2jRDZY5Z\\\",\\\"Q6sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\"]\"") +
             "\nAs a JSON-RPC call\n"
             + HelpExampleRpc("createmultisig", "2, [\"QjWnDZxwLhrJDcp4Hisse8RfBo2jRDZY5Z\",\"Q6sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\"]")
                 },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
-{
+        {
+            std::shared_ptr<CWallet> const pwallet = wallet::GetWalletForJSONRPCRequest(request);
+            if (!pwallet) return NullUniValue;
 
-    std::shared_ptr<CWallet> const pwallet = wallet::GetWalletForJSONRPCRequest(request);
-    if (!pwallet) return NullUniValue;
+            LOCK(pwallet->cs_wallet);
 
-    LOCK(pwallet->cs_wallet);
-    std::string pubkey;
+            int required = request.params[0].getInt<int>();
 
-    int required = request.params[0].getInt<int>();
+            // Get the public keys
+            const UniValue& keys = request.params[1].get_array();
+            std::vector<CPubKey> pubkeys;
+            pubkeys.reserve(keys.size());
+            for (unsigned int i = 0; i < keys.size(); ++i) {
+                std::string pubkey;
+                if (getAddressToPubKey(*pwallet, keys[i].get_str(), pubkey)){
+                    pubkeys.push_back(HexToPubKey(pubkey));
+                } else if (IsHex(keys[i].get_str())) {
+                    pubkeys.push_back(HexToPubKey(keys[i].get_str()));
+                } else {
+                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Invalid public key: %s\n.", keys[i].get_str()));
+                }
+            }
 
-    // Get the public keys
-    const UniValue& keys = request.params[1].get_array();
-    std::vector<CPubKey> pubkeys;
-    for (unsigned int i = 0; i < keys.size(); ++i) {
-        if (IsHex(keys[i].get_str()) && (keys[i].get_str().length() == 66 || keys[i].get_str().length() == 130)) {
-            pubkeys.push_back(HexToPubKey(keys[i].get_str()));
-        } else if (getAddressToPubKey(*pwallet, keys[i].get_str(), pubkey)){
-            pubkeys.push_back(HexToPubKey(pubkey));
-        } else {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Invalid public key: %s\n.", keys[i].get_str()));
-        }
-    }
+            // Get the output type
+            OutputType output_type = OutputType::LEGACY;
+            if (!request.params[2].isNull()) {
+                std::optional<OutputType> parsed = ParseOutputType(request.params[2].get_str());
+                if (!parsed) {
+                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Unknown address type '%s'", request.params[2].get_str()));
+                } else if (parsed.value() == OutputType::BECH32M) {
+                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "createmultisig cannot create bech32m multisig addresses");
+                }
+                output_type = parsed.value();
+            }
 
-    // Get the output type
-    OutputType output_type = OutputType::LEGACY;
-    if (!request.params[2].isNull()) {
-        std::optional<OutputType> parsed = ParseOutputType(request.params[2].get_str());
-        if (!parsed) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Unknown address type '%s'", request.params[2].get_str()));
-        } else if (parsed.value() == OutputType::BECH32M) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "createmultisig cannot create bech32m multisig addresses");
-        }
-        output_type = parsed.value();
-    }
+            FlatSigningProvider keystore;
+            CScript inner;
+            const CTxDestination dest = AddAndGetMultisigDestination(required, pubkeys, output_type, keystore, inner);
 
-    // Construct using pay-to-script-hash:
-    FillableSigningProvider keystore;
-    CScript inner;
-    const CTxDestination dest = AddAndGetMultisigDestination(required, pubkeys, output_type, keystore, inner);
+            // Make the descriptor
+            std::unique_ptr<Descriptor> descriptor = InferDescriptor(GetScriptForDestination(dest), keystore);
 
-    // Make the descriptor
-    std::unique_ptr<Descriptor> descriptor = InferDescriptor(GetScriptForDestination(dest), keystore);
+            UniValue result(UniValue::VOBJ);
+            result.pushKV("address", EncodeDestination(dest));
+            result.pushKV("redeemScript", HexStr(inner));
+            result.pushKV("descriptor", descriptor->ToString());
 
-    UniValue result(UniValue::VOBJ);
-    result.pushKV("address", EncodeDestination(dest));
-    result.pushKV("redeemScript", HexStr(inner));
-    result.pushKV("descriptor", descriptor->ToString());
+            UniValue warnings(UniValue::VARR);
+            if (descriptor->GetOutputType() != output_type) {
+                // Only warns if the user has explicitly chosen an address type we cannot generate
+                warnings.push_back("Unable to make chosen address type, please ensure no uncompressed public keys are present.");
+            }
+            PushWarnings(warnings, result);
 
-    UniValue warnings(UniValue::VARR);
-    if (descriptor->GetOutputType() != output_type) {
-        // Only warns if the user has explicitly chosen an address type we cannot generate
-        warnings.push_back("Unable to make chosen address type, please ensure no uncompressed public keys are present.");
-    }
-    PushWarnings(warnings, result);
-
-    return result;
-},
+            return result;
+        },
     };
 }
-
 } // namespace wallet

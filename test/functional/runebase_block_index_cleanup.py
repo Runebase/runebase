@@ -150,4 +150,4 @@ class RunebaseBlockIndexCleanupTest(BitcoinTestFramework):
             assert_equal(self.node.getchaintips(), n.getchaintips())
 
 if __name__ == '__main__':
-    RunebaseBlockIndexCleanupTest().main()
+    RunebaseBlockIndexCleanupTest(__file__).main()

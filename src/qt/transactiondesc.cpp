@@ -425,8 +425,6 @@ QString TransactionDesc::toHTML(interfaces::Node& node, interfaces::Wallet& wall
             COutPoint prevout = txin.prevout;
 
             if (auto prev{node.getUnspentOutput(prevout)}) {
-
-
                 {
                     strHTML += "<li>";
                     const CTxOut& vout = prev->out;

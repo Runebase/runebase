@@ -92,7 +92,7 @@ void SendTokenPage::setModel(WalletModel *_model)
 
     if (bCreateUnsigned) {
         ui->confirmButton->setText(tr("Cr&eate Unsigned"));
-        ui->confirmButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+        ui->confirmButton->setToolTip(tr("Creates a Partially Signed Runebase Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
     }
 }
 
@@ -194,7 +194,7 @@ void SendTokenPage::on_confirmClicked()
         if (bCreateUnsigned) {
             questionString.append(tr("Do you want to draft this send token transaction?"));
             questionString.append("<br /><span style='font-size:10pt;'>");
-            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(PACKAGE_NAME));
+            questionString.append(tr("Please, review your transaction proposal. This will produce a Partially Signed Runebase Transaction (PSBT) which you can copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.").arg(CLIENT_NAME));
             questionString.append("</span><br /><br />");
         } else {
             questionString.append(tr("Are you sure you want to send? <br /><br />"));
@@ -245,7 +245,7 @@ void SendTokenPage::on_confirmClicked()
                         tokenTx.receiver_address = toAddress;
                         dev::u256 nValue(amountToSend);
                         tokenTx.value = u256Touint(nValue);
-                        tokenTx.tx_hash = uint256S(m_tokenABI->getTxId());
+                        tokenTx.tx_hash = uint256::FromHex(m_tokenABI->getTxId()).value_or(uint256::ZERO);
                         tokenTx.label = label;
                         m_model->wallet().addTokenTxEntry(tokenTx);
                     }
@@ -282,8 +282,8 @@ void SendTokenPage::setTokenData(std::string address, std::string sender, std::s
     QString unit = QString::fromStdString(symbol);
 
     // Convert values for different number of decimals
-    int256_t totalSupply(balance);
-    int256_t value(ui->lineEditAmount->value());
+    dev::s256 totalSupply(balance);
+    dev::s256 value(ui->lineEditAmount->value());
     if(value != 0)
     {
         for(int i = 0; i < decimalDiff; i++)

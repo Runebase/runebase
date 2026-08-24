@@ -9,7 +9,7 @@ const QDateTime TokenFilterProxy::MIN_DATE = QDateTime::fromTime_t(0);
 // Last date that can be represented (far in the future)
 const QDateTime TokenFilterProxy::MAX_DATE = QDateTime::fromTime_t(0xFFFFFFFF);
 
-int256_t abs_int256(const int256_t& value)
+dev::s256 abs_int256(const dev::s256& value)
 {
     return value > 0 ? value : -value;
 }
@@ -46,7 +46,7 @@ void TokenFilterProxy::setTypeFilter(quint32 modes)
     invalidateFilter();
 }
 
-void TokenFilterProxy::setMinAmount(const int256_t &minimum)
+void TokenFilterProxy::setMinAmount(const dev::s256 &minimum)
 {
     this->minAmount = minimum;
     invalidateFilter();
@@ -82,7 +82,7 @@ bool TokenFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex &source
     int type = index.data(TokenTransactionTableModel::TypeRole).toInt();
     QDateTime datetime = index.data(TokenTransactionTableModel::DateRole).toDateTime();
     QString address = index.data(TokenTransactionTableModel::AddressRole).toString();
-    int256_t amount(index.data(TokenTransactionTableModel::AmountRole).toString().toStdString());
+    dev::s256 amount(index.data(TokenTransactionTableModel::AmountRole).toString().toStdString());
     amount = abs_int256(amount);
     QString tokenName = index.data(TokenTransactionTableModel::NameRole).toString();
 
@@ -105,10 +105,10 @@ bool TokenFilterProxy::lessThan(const QModelIndex &left, const QModelIndex &righ
     if(left.column() == TokenTransactionTableModel::Amount &&
             right.column() == TokenTransactionTableModel::Amount)
     {
-        int256_t amountLeft(left.data(TokenTransactionTableModel::AmountRole).toString().toStdString());
+        dev::s256 amountLeft(left.data(TokenTransactionTableModel::AmountRole).toString().toStdString());
         amountLeft = abs_int256(amountLeft);
 
-        int256_t amountRight(right.data(TokenTransactionTableModel::AmountRole).toString().toStdString());
+        dev::s256 amountRight(right.data(TokenTransactionTableModel::AmountRole).toString().toStdString());
         amountRight = abs_int256(amountRight);
 
         return amountLeft < amountRight;

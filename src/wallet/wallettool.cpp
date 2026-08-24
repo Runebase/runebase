@@ -2,9 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
+#include <bitcoin-build-config.h> // IWYU pragma: keep
 
 #include <wallet/wallettool.h>
 
@@ -77,10 +75,10 @@ static std::shared_ptr<CWallet> MakeWallet(const std::string& name, const fs::pa
                 name);
         } else if (load_wallet_ret == DBErrors::TOO_NEW) {
             tfm::format(std::cerr, "Error loading %s: Wallet requires newer version of %s",
-                name, PACKAGE_NAME);
+                name, CLIENT_NAME);
             return nullptr;
         } else if (load_wallet_ret == DBErrors::NEED_REWRITE) {
-            tfm::format(std::cerr, "Wallet needed to be rewritten: restart %s to complete", PACKAGE_NAME);
+            tfm::format(std::cerr, "Wallet needed to be rewritten: restart %s to complete", CLIENT_NAME);
             return nullptr;
         } else if (load_wallet_ret == DBErrors::NEED_RESCAN) {
             tfm::format(std::cerr, "Error reading %s! Some transaction data might be missing or"
@@ -194,6 +192,11 @@ bool ExecuteWalletToolFunc(const ArgsManager& args, const std::string& command)
         ReadDatabaseArgs(args, options);
         options.require_existing = true;
         DatabaseStatus status;
+
+        if (args.GetBoolArg("-withinternalbdb", false) && IsBDBFile(BDBDataFile(path))) {
+            options.require_format = DatabaseFormat::BERKELEY_RO;
+        }
+
         bilingual_str error;
         std::unique_ptr<WalletDatabase> database = MakeDatabase(path, options, status, error);
         if (!database) {

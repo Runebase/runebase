@@ -18,13 +18,13 @@ class RunebaseEVMcancunTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
-        self.extra_args = [['-txindex', '-logevents=1', '-londonheight=10000', '-shanghaiheight=1000000', '-cancunheight=100000']]
+        self.extra_args = [['-txindex', '-logevents=1', '-londonheight=10000', '-shanghaiheight=1000000', '-cancunheight=100000', '-pectraheight=100000']]
     
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
         
     def run_test(self):
-        self.nodes[0].generate(COINBASE_MATURITY+50)
+        self.generate(self.nodes[0], COINBASE_MATURITY+50)
         self.node = self.nodes[0]
         
         """
@@ -83,32 +83,32 @@ class RunebaseEVMcancunTest(BitcoinTestFramework):
         create_contract = self.node.createcontract(bytecode)
         self.contract_address = create_contract['address']
         self.sender = create_contract['sender']
-        self.node.generate(1)
+        self.generate(self.node, 1)
         
         self.log.info('Call getBaseFee()')
         info = self.node.callcontract(self.contract_address, "15e812ad")
-        self.node.generate(1)
+        self.generate(self.node, 1)
         assert_equal(info['executionResult']['excepted'], 'BadInstruction')
         
         self.log.info('Call getExtcodesize(address)')
         info = self.node.callcontract(self.contract_address, "458f6cf8"+self.contract_address.zfill(64))
-        self.node.generate(1)
+        self.generate(self.node, 1)
         assert_approx(info['executionResult']['gasUsed'], 23519, 12)
         
         self.log.info('Call getStore()')
         info = self.node.sendtocontract(self.contract_address, "c2722ecc", 0, 4000000, RUNEBASE_MIN_GAS_PRICE_STR, self.sender)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         receipt=self.node.gettransactionreceipt(info['txid'])[0];
         assert_equal(receipt['gasUsed'], 27894)
         
         self.log.info('Call getLoad()')
         info = self.node.callcontract(self.contract_address, "dfa2062e")
-        self.node.generate(1)
+        self.generate(self.node, 1)
         assert_equal(info['executionResult']['gasUsed'], 24465)
         
         self.log.info('Call close()')
         info = self.node.sendtocontract(self.contract_address, "43d726d6", 0, 4000000, RUNEBASE_MIN_GAS_PRICE_STR, self.sender)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         receipt=self.node.gettransactionreceipt(info['txid'])[0];
         assert_equal(receipt['gasUsed'], 13528)
         assert(self.contract_address not in self.node.listcontracts())
@@ -120,7 +120,7 @@ class RunebaseEVMcancunTest(BitcoinTestFramework):
         
         self.log.info('Create test contract')
         self.contract_address = self.node.createcontract(bytecode)['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
         
         self.log.info('Call getBaseFee()')
         info = self.node.callcontract(self.contract_address, "15e812ad")
@@ -132,7 +132,7 @@ class RunebaseEVMcancunTest(BitcoinTestFramework):
         
         self.log.info('Call getStore()')
         info = self.node.sendtocontract(self.contract_address, "c2722ecc", 0, 4000000, RUNEBASE_MIN_GAS_PRICE_STR, self.sender)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         receipt=self.node.gettransactionreceipt(info['txid'])[0];
         assert_equal(receipt['gasUsed'], 26494)
         
@@ -142,10 +142,10 @@ class RunebaseEVMcancunTest(BitcoinTestFramework):
         
         self.log.info('Call close()')
         info = self.node.sendtocontract(self.contract_address, "43d726d6", 0, 4000000, RUNEBASE_MIN_GAS_PRICE_STR, self.sender)
-        hash=self.node.generate(1)
+        hash=self.generate(self.node, 1)
         receipt=self.node.gettransactionreceipt(info['txid'])[0];
         assert_equal(receipt['gasUsed'], 30955)
         assert(self.contract_address not in self.node.listcontracts())
         
 if __name__ == '__main__':
-    RunebaseEVMcancunTest().main()
+    RunebaseEVMcancunTest(__file__).main()

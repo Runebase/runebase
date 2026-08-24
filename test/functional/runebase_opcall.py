@@ -40,7 +40,7 @@ class OpCallTest(BitcoinTestFramework):
         else:
             self.node.sendrawtransaction(tx)
 
-        self.node.generate(1)
+        self.generate(self.node, 1)
         self.sync_blocks()
         for i in range(2):
             # 61bc221a counter()
@@ -66,7 +66,7 @@ class OpCallTest(BitcoinTestFramework):
             unspents = self.node.listunspent()
             i += 1
         
-        self.node.generate(1)
+        self.generate(self.node, 1)
         self.sync_blocks()
         for i in range(2):
             # 61bc221a counter()
@@ -93,7 +93,7 @@ class OpCallTest(BitcoinTestFramework):
         contract_data = self.node.createcontract("6060604052341561000c57fe5b5b61011e8061001c6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806312065fe0146058578063371303c014607b57806361bc221a14608a578063d0e30db01460ad575bfe5b3415605f57fe5b606560b5565b6040518082815260200191505060405180910390f35b3415608257fe5b608860d5565b005b3415609157fe5b609760e9565b6040518082815260200191505060405180910390f35b60b360ef565b005b60003073ffffffffffffffffffffffffffffffffffffffff163190505b90565b60016000600082825401925050819055505b565b60005481565b5b5600a165627a7a72305820fe93d8cc66557a2a6c8347f481f6d334402a7f90f8b2288668a874c34416a4dc0029", 1000000)
         self.contract_address = contract_data['address']
         block_height = self.node.getblockcount()
-        self.node.generate(1)
+        self.generate(self.node, 1)
         self.sync_blocks()
         for i in range(2):
             assert(self.nodes[i].getblockcount() == block_height+1)
@@ -218,4 +218,4 @@ class OpCallTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    OpCallTest().main()
+    OpCallTest(__file__).main()

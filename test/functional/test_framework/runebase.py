@@ -20,7 +20,7 @@ def generatesynchronized(node, numblocks, address=None, sync_with_nodes=[], mock
     startTime = time.time()
     blockhashes = []
     for i in range(0, max(numblocks//16, 0)):
-        blockhashes += node.generatetoaddress(16, address)
+        blockhashes += node.generatetoaddress(16, address, called_by_framework=True)
         wait_until_helper_internal(lambda: all(n.getbestblockhash() == node.getbestblockhash() for n in sync_with_nodes))
 
         # If more than 60 seconds elapses during the block generation, the nodes will disconnect since
@@ -28,7 +28,7 @@ def generatesynchronized(node, numblocks, address=None, sync_with_nodes=[], mock
 
  
     if numblocks % 16:
-        blockhashes += node.generatetoaddress(numblocks % 16, address)
+        blockhashes += node.generatetoaddress(numblocks % 16, address, called_by_framework=True)
         wait_until_helper_internal(lambda: all(n.getbestblockhash() == node.getbestblockhash() for n in sync_with_nodes))
     return blockhashes
 
@@ -37,7 +37,7 @@ def generateinitial(node, numblocks, address=None, sync_with_nodes=[]):
     for n in [node] + sync_with_nodes:
         n.setmocktime(mocktime)
 
-    blockhashes = node.generatetoaddress(numblocks, address)
+    blockhashes = node.generatetoaddress(numblocks, address, called_by_framework=True)
 
     for n in [node] + sync_with_nodes:
         n.setmocktime(0)
@@ -58,7 +58,7 @@ def make_vin(node, value):
     addr = node.getnewaddress()
     txid_hex = node.sendtoaddress(addr, value/COIN)
     txid = int(txid_hex, 16)
-    node.generate(1)
+    node.generate(1, called_by_framework=True)
     raw_tx = node.decoderawtransaction(node.gettransaction(txid_hex)['hex'])
 
     for vout_index, txout in enumerate(raw_tx['vout']):
@@ -483,7 +483,7 @@ def create_unsigned_mpos_block(node, staking_prevouts, nTime=None, block_fees=0)
 def activate_mpos(node, use_cache=True):
     if not node.getblockcount():
         node.setmocktime(int(time.time()) - 1000000)
-    node.generatetoaddress(4990-COINBASE_MATURITY-node.getblockcount(), "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+    node.generatetoaddress(4990-COINBASE_MATURITY-node.getblockcount(), "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq", called_by_framework=True)
     staking_prevouts = collect_prevouts(node, address="qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
 
     for i in range(COINBASE_MATURITY+10):
@@ -524,7 +524,7 @@ def create_POD(delegator, delegator_address, staker_address):
 
 def assert_delegation_reverted_with_message(delegator, abi, sender, message, gas=2250000):
     txid = delegator.sendtocontract(DELEGATION_CONTRACT_ADDRESS, abi, 0, gas, 0.00000040, sender)['txid']
-    delegator.generate(1)
+    delegator.generate(1, called_by_framework=True)
     receipt = delegator.gettransactionreceipt(txid)[0]
     assert_equal(receipt['excepted'], 'Revert')
     assert_equal(receipt['exceptedMessage'], message)
@@ -532,7 +532,7 @@ def assert_delegation_reverted_with_message(delegator, abi, sender, message, gas
 
 def assert_delegation_events_emitted(delegator, abi, sender, events=[], delegations={}, gas=2250000, expected_gas_consumed=0):
     txid = delegator.sendtocontract(DELEGATION_CONTRACT_ADDRESS, abi, 0, gas, 0.00000040, sender)['txid']
-    delegator.generate(1)
+    delegator.generate(1, called_by_framework=True)
     receipt = delegator.gettransactionreceipt(txid)[0]
 
     # Verify the fields of the log are as expected

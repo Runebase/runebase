@@ -57,7 +57,7 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         assert_equal(self.alt_node.getbestblockhash(), alt_block.hash)
 
         # Build a longer chain on alt_node
-        self.alt_node.generate(1)
+        self.generate(self.alt_node, 1)
         self.sync_all()
         self._remove_from_staking_prevouts(self.staking_prevouts, block.prevoutStake)
 
@@ -90,7 +90,7 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         assert_equal(self.node.getbestblockhash(), block.hash)
         assert_equal(self.alt_node.getbestblockhash(), alt_block.hash)
         # Build a longer chain on alt_node
-        self.alt_node.generate(1)
+        self.generate(self.alt_node, 1)
         self.sync_all()
         self._remove_from_staking_prevouts(self.staking_prevouts, block.prevoutStake)
         self._remove_from_staking_prevouts(self.alt_staking_prevouts, alt_block.prevoutStake)
@@ -182,4 +182,4 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    RunebaseDuplicateStakeTest().main()
+    RunebaseDuplicateStakeTest(__file__).main()

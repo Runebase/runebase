@@ -29,13 +29,13 @@ class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
         self.node.importprivkey(privkey)
 
         self.node.setmocktime(int(time.time()) - 1000000)
-        self.node.generatetoaddress(200 + COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        self.generatetoaddress(self.node, 200 + COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
 
         activate_mpos(self.node)
         # First setup a dummy contract
         bytecode = "60606040523415600e57600080fd5b603280601b6000396000f30060606040520000a165627a7a7230582008e466283dd617547ad26d9f100792d4f3e1ec49377f8f53ce3ba3d135beb5b30029"
         address = self.node.createcontract(bytecode)['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
         staking_prevouts = collect_prevouts(self.node, amount=20000)
         tip = self.node.getblock(self.node.getbestblockhash())
@@ -77,4 +77,4 @@ class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
         assert_equal(self.node.getblockcount(), blockcount)
 
 if __name__ == '__main__':
-    RunebaseAssignMPoSFeesToGasRefundTest().main()
+    RunebaseAssignMPoSFeesToGasRefundTest(__file__).main()

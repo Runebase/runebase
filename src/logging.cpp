@@ -1,18 +1,24 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <logging.h>
+#include <memusage.h>
+#include <util/check.h>
 #include <util/fs.h>
 #include <util/string.h>
 #include <util/threadnames.h>
 #include <util/time.h>
 
-#include <algorithm>
 #include <array>
-#include <mutex>
+#include <cstring>
+#include <map>
 #include <optional>
+#include <utility>
+
+using util::Join;
+using util::RemovePrefixView;
 
 const char * const DEFAULT_DEBUGLOGFILE = "debug.log";
 const char * const DEFAULT_DEBUGVMLOGFILE = "vm.log";
@@ -41,7 +47,7 @@ BCLog::Logger& LogInstance()
 
 bool fLogIPs = DEFAULT_LOGIPS;
 
-static int FileWriteStr(const std::string &str, FILE *fp)
+static int FileWriteStr(std::string_view str, FILE *fp)
 {
     return fwrite(str.data(), 1, str.size(), fp);
 }
@@ -73,20 +79,25 @@ bool BCLog::Logger::StartLogging()
 
     // dump buffered messages from before we opened the log
     m_buffering = false;
-    while (!m_msgs_before_open.empty()) {
-        LogMsg logmsg= m_msgs_before_open.front();
-
-        FILE* file = logmsg.useVMLog ? m_fileoutVM : m_fileout;
-        if (file && m_print_to_file) FileWriteStr(logmsg.msg, file);
-        bool print_to_console = m_print_to_console;
-        if(print_to_console && logmsg.useVMLog && !m_show_evm_logs) print_to_console = false;
-        if (print_to_console) fwrite(logmsg.msg.data(), 1, logmsg.msg.size(), stdout);
-        for (const auto& cb : m_print_callbacks) {
-            cb(logmsg.msg);
-        }
-
-        m_msgs_before_open.pop_front();
+    if (m_buffer_lines_discarded > 0) {
+        LogPrintStr_(strprintf("Early logging buffer overflowed, %d log lines discarded.\n", m_buffer_lines_discarded), std::source_location::current(), BCLog::ALL, Level::Info, /*should_ratelimit=*/false, false);
     }
+    while (!m_msgs_before_open.empty()) {
+        const auto& buflog = m_msgs_before_open.front();
+        FILE* file = buflog.useVMLog ? m_fileoutVM : m_fileout;
+        bool print_to_console = m_print_to_console;
+        if(print_to_console && buflog.useVMLog && !m_show_evm_logs) print_to_console = false;
+        std::string s{buflog.str};
+        FormatLogStrInPlace(s, buflog.category, buflog.level, buflog.source_loc, buflog.threadname, buflog.now, buflog.mocktime, buflog.useVMLog, buflog.vmFunction);
+        m_msgs_before_open.pop_front();
+
+        if (file && m_print_to_file) FileWriteStr(s, file);
+        if (print_to_console) fwrite(s.data(), 1, s.size(), stdout);
+        for (const auto& cb : m_print_callbacks) {
+            cb(s);
+        }
+    }
+    m_cur_buffer_memusage = 0;
     if (m_print_to_console) fflush(stdout);
 
     return true;
@@ -101,6 +112,22 @@ void BCLog::Logger::DisconnectTestLogger()
     if (m_fileoutVM != nullptr) fclose(m_fileoutVM);
     m_fileoutVM = nullptr;
     m_print_callbacks.clear();
+    m_max_buffer_memusage = DEFAULT_MAX_LOG_BUFFER;
+    m_cur_buffer_memusage = 0;
+    m_buffer_lines_discarded = 0;
+    m_msgs_before_open.clear();
+}
+
+void BCLog::Logger::DisableLogging()
+{
+    {
+        StdLockGuard scoped_lock(m_cs);
+        assert(m_buffering);
+        assert(m_print_callbacks.empty());
+    }
+    m_print_to_file = false;
+    m_print_to_console = false;
+    StartLogging();
 }
 
 void BCLog::Logger::EnableCategory(BCLog::LogFlags flag)
@@ -108,7 +135,7 @@ void BCLog::Logger::EnableCategory(BCLog::LogFlags flag)
     m_categories |= flag;
 }
 
-bool BCLog::Logger::EnableCategory(const std::string& str)
+bool BCLog::Logger::EnableCategory(std::string_view str)
 {
     BCLog::LogFlags flag;
     if (!GetLogCategory(flag, str)) return false;
@@ -121,7 +148,7 @@ void BCLog::Logger::DisableCategory(BCLog::LogFlags flag)
     m_categories &= ~flag;
 }
 
-bool BCLog::Logger::DisableCategory(const std::string& str)
+bool BCLog::Logger::DisableCategory(std::string_view str)
 {
     BCLog::LogFlags flag;
     if (!GetLogCategory(flag, str)) return false;
@@ -152,65 +179,65 @@ bool BCLog::Logger::DefaultShrinkDebugFile() const
     return m_categories == BCLog::NONE;
 }
 
-struct CLogCategoryDesc {
-    BCLog::LogFlags flag;
-    std::string category;
-};
-
-const CLogCategoryDesc LogCategories[] =
-{
-    {BCLog::NONE, "0"},
-    {BCLog::NONE, ""},
-    {BCLog::NET, "net"},
-    {BCLog::TOR, "tor"},
-    {BCLog::MEMPOOL, "mempool"},
-    {BCLog::HTTP, "http"},
-    {BCLog::BENCH, "bench"},
-    {BCLog::ZMQ, "zmq"},
-    {BCLog::WALLETDB, "walletdb"},
-    {BCLog::RPC, "rpc"},
-    {BCLog::ESTIMATEFEE, "estimatefee"},
-    {BCLog::ADDRMAN, "addrman"},
-    {BCLog::SELECTCOINS, "selectcoins"},
-    {BCLog::REINDEX, "reindex"},
-    {BCLog::CMPCTBLOCK, "cmpctblock"},
-    {BCLog::RAND, "rand"},
-    {BCLog::PRUNE, "prune"},
-    {BCLog::PROXY, "proxy"},
-    {BCLog::MEMPOOLREJ, "mempoolrej"},
-    {BCLog::LIBEVENT, "libevent"},
-    {BCLog::COINDB, "coindb"},
-    {BCLog::QT, "qt"},
-    {BCLog::LEVELDB, "leveldb"},
-    {BCLog::VALIDATION, "validation"},
-    {BCLog::I2P, "i2p"},
-    {BCLog::IPC, "ipc"},
+static const std::map<std::string, BCLog::LogFlags, std::less<>> LOG_CATEGORIES_BY_STR{
+    {"net", BCLog::NET},
+    {"tor", BCLog::TOR},
+    {"mempool", BCLog::MEMPOOL},
+    {"http", BCLog::HTTP},
+    {"bench", BCLog::BENCH},
+    {"zmq", BCLog::ZMQ},
+    {"walletdb", BCLog::WALLETDB},
+    {"rpc", BCLog::RPC},
+    {"estimatefee", BCLog::ESTIMATEFEE},
+    {"addrman", BCLog::ADDRMAN},
+    {"selectcoins", BCLog::SELECTCOINS},
+    {"reindex", BCLog::REINDEX},
+    {"cmpctblock", BCLog::CMPCTBLOCK},
+    {"rand", BCLog::RAND},
+    {"prune", BCLog::PRUNE},
+    {"proxy", BCLog::PROXY},
+    {"mempoolrej", BCLog::MEMPOOLREJ},
+    {"libevent", BCLog::LIBEVENT},
+    {"coindb", BCLog::COINDB},
+    {"qt", BCLog::QT},
+    {"leveldb", BCLog::LEVELDB},
+    {"validation", BCLog::VALIDATION},
+    {"i2p", BCLog::I2P},
+    {"ipc", BCLog::IPC},
 #ifdef DEBUG_LOCKCONTENTION
-    {BCLog::LOCK, "lock"},
+    {"lock", BCLog::LOCK},
 #endif
-    {BCLog::UTIL, "util"},
-    {BCLog::BLOCKSTORAGE, "blockstorage"},
-    {BCLog::TXRECONCILIATION, "txreconciliation"},
-    {BCLog::SCAN, "scan"},
-    {BCLog::TXPACKAGES, "txpackages"},
-    {BCLog::COINSTAKE, "coinstake"},
-    {BCLog::HTTPPOLL, "http-poll"},
-    {BCLog::INDEX, "index"},
-    {BCLog::ALL, "1"},
-    {BCLog::ALL, "all"},
+    {"blockstorage", BCLog::BLOCKSTORAGE},
+    {"txreconciliation", BCLog::TXRECONCILIATION},
+    {"scan", BCLog::SCAN},
+    {"txpackages", BCLog::TXPACKAGES},
+    {"coinstake", BCLog::COINSTAKE},
+    {"http-poll", BCLog::HTTPPOLL},
+    {"index", BCLog::INDEX},
 };
 
-bool GetLogCategory(BCLog::LogFlags& flag, const std::string& str)
+static const std::unordered_map<BCLog::LogFlags, std::string> LOG_CATEGORIES_BY_FLAG{
+    // Swap keys and values from LOG_CATEGORIES_BY_STR.
+    [](const auto& in) {
+        std::unordered_map<BCLog::LogFlags, std::string> out;
+        for (const auto& [k, v] : in) {
+            const bool inserted{out.emplace(v, k).second};
+            assert(inserted);
+        }
+        return out;
+    }(LOG_CATEGORIES_BY_STR)
+};
+
+bool GetLogCategory(BCLog::LogFlags& flag, std::string_view str)
 {
-    if (str.empty()) {
+    if (str.empty() || str == "1" || str == "all") {
         flag = BCLog::ALL;
         return true;
     }
-    for (const CLogCategoryDesc& category_desc : LogCategories) {
-        if (category_desc.category == str) {
-            flag = category_desc.flag;
-            return true;
-        }
+    auto it = LOG_CATEGORIES_BY_STR.find(str);
+    if (it != LOG_CATEGORIES_BY_STR.end()) {
+        flag = it->second;
+        return true;
     }
     return false;
 }
@@ -232,87 +259,17 @@ std::string BCLog::Logger::LogLevelToStr(BCLog::Level level)
     assert(false);
 }
 
-std::string LogCategoryToStr(BCLog::LogFlags category)
+static std::string LogCategoryToStr(BCLog::LogFlags category)
 {
-    // Each log category string representation should sync with LogCategories
-    switch (category) {
-    case BCLog::LogFlags::NONE:
-        return "";
-    case BCLog::LogFlags::NET:
-        return "net";
-    case BCLog::LogFlags::TOR:
-        return "tor";
-    case BCLog::LogFlags::MEMPOOL:
-        return "mempool";
-    case BCLog::LogFlags::HTTP:
-        return "http";
-    case BCLog::LogFlags::BENCH:
-        return "bench";
-    case BCLog::LogFlags::ZMQ:
-        return "zmq";
-    case BCLog::LogFlags::WALLETDB:
-        return "walletdb";
-    case BCLog::LogFlags::RPC:
-        return "rpc";
-    case BCLog::LogFlags::ESTIMATEFEE:
-        return "estimatefee";
-    case BCLog::LogFlags::ADDRMAN:
-        return "addrman";
-    case BCLog::LogFlags::SELECTCOINS:
-        return "selectcoins";
-    case BCLog::LogFlags::REINDEX:
-        return "reindex";
-    case BCLog::LogFlags::CMPCTBLOCK:
-        return "cmpctblock";
-    case BCLog::LogFlags::RAND:
-        return "rand";
-    case BCLog::LogFlags::PRUNE:
-        return "prune";
-    case BCLog::LogFlags::PROXY:
-        return "proxy";
-    case BCLog::LogFlags::MEMPOOLREJ:
-        return "mempoolrej";
-    case BCLog::LogFlags::LIBEVENT:
-        return "libevent";
-    case BCLog::LogFlags::COINDB:
-        return "coindb";
-    case BCLog::LogFlags::QT:
-        return "qt";
-    case BCLog::LogFlags::LEVELDB:
-        return "leveldb";
-    case BCLog::LogFlags::VALIDATION:
-        return "validation";
-    case BCLog::LogFlags::I2P:
-        return "i2p";
-    case BCLog::LogFlags::IPC:
-        return "ipc";
-#ifdef DEBUG_LOCKCONTENTION
-    case BCLog::LogFlags::LOCK:
-        return "lock";
-#endif
-    case BCLog::LogFlags::UTIL:
-        return "util";
-    case BCLog::LogFlags::BLOCKSTORAGE:
-        return "blockstorage";
-    case BCLog::LogFlags::TXRECONCILIATION:
-        return "txreconciliation";
-    case BCLog::LogFlags::SCAN:
-        return "scan";
-    case BCLog::LogFlags::TXPACKAGES:
-        return "txpackages";
-    case BCLog::LogFlags::COINSTAKE:
-        return "coinstake";
-    case BCLog::LogFlags::HTTPPOLL:
-        return "http-poll";
-    case BCLog::LogFlags::INDEX:
-        return "index";
-    case BCLog::LogFlags::ALL:
+    if (category == BCLog::ALL) {
         return "all";
     }
-    assert(false);
+    auto it = LOG_CATEGORIES_BY_FLAG.find(category);
+    assert(it != LOG_CATEGORIES_BY_FLAG.end());
+    return it->second;
 }
 
-static std::optional<BCLog::Level> GetLogLevel(const std::string& level_str)
+static std::optional<BCLog::Level> GetLogLevel(std::string_view level_str)
 {
     if (level_str == "trace") {
         return BCLog::Level::Trace;
@@ -331,18 +288,10 @@ static std::optional<BCLog::Level> GetLogLevel(const std::string& level_str)
 
 std::vector<LogCategory> BCLog::Logger::LogCategoriesList() const
 {
-    // Sort log categories by alphabetical order.
-    std::array<CLogCategoryDesc, std::size(LogCategories)> categories;
-    std::copy(std::begin(LogCategories), std::end(LogCategories), categories.begin());
-    std::sort(categories.begin(), categories.end(), [](auto a, auto b) { return a.category < b.category; });
-
     std::vector<LogCategory> ret;
-    for (const CLogCategoryDesc& category_desc : categories) {
-        if (category_desc.flag == BCLog::NONE || category_desc.flag == BCLog::ALL) continue;
-        LogCategory catActive;
-        catActive.category = category_desc.category;
-        catActive.active = WillLogCategory(category_desc.flag);
-        ret.push_back(catActive);
+    ret.reserve(LOG_CATEGORIES_BY_STR.size());
+    for (const auto& [category, flag] : LOG_CATEGORIES_BY_STR) {
+        ret.push_back(LogCategory{.category = category, .active = WillLogCategory(flag)});
     }
     return ret;
 }
@@ -359,28 +308,23 @@ std::string BCLog::Logger::LogLevelsString() const
     return Join(std::vector<BCLog::Level>{levels.begin(), levels.end()}, ", ", [](BCLog::Level level) { return LogLevelToStr(level); });
 }
 
-std::string BCLog::Logger::LogTimestampStr(const std::string& str)
+std::string BCLog::Logger::LogTimestampStr(SystemClock::time_point now, std::chrono::seconds mocktime) const
 {
     std::string strStamped;
 
     if (!m_log_timestamps)
-        return str;
+        return strStamped;
 
-    if (m_started_new_line) {
-        const auto now{SystemClock::now()};
-        const auto now_seconds{std::chrono::time_point_cast<std::chrono::seconds>(now)};
-        strStamped = FormatISO8601DateTime(TicksSinceEpoch<std::chrono::seconds>(now_seconds));
-        if (m_log_time_micros && !strStamped.empty()) {
-            strStamped.pop_back();
-            strStamped += strprintf(".%06dZ", Ticks<std::chrono::microseconds>(now - now_seconds));
-        }
-        std::chrono::seconds mocktime = GetMockTime();
-        if (mocktime > 0s) {
-            strStamped += " (mocktime: " + FormatISO8601DateTime(count_seconds(mocktime)) + ")";
-        }
-        strStamped += ' ' + str;
-    } else
-        strStamped = str;
+    const auto now_seconds{std::chrono::time_point_cast<std::chrono::seconds>(now)};
+    strStamped = FormatISO8601DateTime(TicksSinceEpoch<std::chrono::seconds>(now_seconds));
+    if (m_log_time_micros && !strStamped.empty()) {
+        strStamped.pop_back();
+        strStamped += strprintf(".%06dZ", Ticks<std::chrono::microseconds>(now - now_seconds));
+    }
+    if (mocktime > 0s) {
+        strStamped += " (mocktime: " + FormatISO8601DateTime(count_seconds(mocktime)) + ")";
+    }
+    strStamped += ' ';
 
     return strStamped;
 }
@@ -393,7 +337,7 @@ namespace BCLog {
      * It escapes instead of removes them to still allow for troubleshooting
      * issues where they accidentally end up in strings.
      */
-    std::string LogEscapeMessage(const std::string& str) {
+    std::string LogEscapeMessage(std::string_view str) {
         std::string ret;
         for (char ch_in : str) {
             uint8_t ch = (uint8_t)ch_in;
@@ -433,43 +377,135 @@ std::string BCLog::Logger::GetLogPrefix(BCLog::LogFlags category, BCLog::Level l
     return s;
 }
 
-void BCLog::Logger::LogPrintStr(const std::string& str, const std::string& logging_function, const std::string& source_file, int source_line, BCLog::LogFlags category, BCLog::Level level, bool useVMLog)
+static size_t MemUsage(const BCLog::Logger::BufferedLog& buflog)
 {
-    StdLockGuard scoped_lock(m_cs);
-    std::string str_prefixed = LogEscapeMessage(str);
+    return memusage::DynamicUsage(buflog.str) +
+           memusage::DynamicUsage(buflog.threadname) +
+           memusage::MallocUsage(sizeof(memusage::list_node<BCLog::Logger::BufferedLog>));
+}
 
-    if (m_started_new_line) {
-        str_prefixed.insert(0, GetLogPrefix(category, level));
+BCLog::LogRateLimiter::LogRateLimiter(uint64_t max_bytes, std::chrono::seconds reset_window)
+    : m_max_bytes{max_bytes}, m_reset_window{reset_window} {}
+
+std::shared_ptr<BCLog::LogRateLimiter> BCLog::LogRateLimiter::Create(
+    SchedulerFunction&& scheduler_func, uint64_t max_bytes, std::chrono::seconds reset_window)
+{
+    auto limiter{std::shared_ptr<LogRateLimiter>(new LogRateLimiter(max_bytes, reset_window))};
+    std::weak_ptr<LogRateLimiter> weak_limiter{limiter};
+    auto reset = [weak_limiter] {
+        if (auto shared_limiter{weak_limiter.lock()}) shared_limiter->Reset();
+    };
+    scheduler_func(reset, limiter->m_reset_window);
+    return limiter;
+}
+
+BCLog::LogRateLimiter::Status BCLog::LogRateLimiter::Consume(
+    const std::source_location& source_loc,
+    const std::string& str)
+{
+    StdLockGuard scoped_lock(m_mutex);
+    auto& stats{m_source_locations.try_emplace(source_loc, m_max_bytes).first->second};
+    Status status{stats.m_dropped_bytes > 0 ? Status::STILL_SUPPRESSED : Status::UNSUPPRESSED};
+
+    if (!stats.Consume(str.size()) && status == Status::UNSUPPRESSED) {
+        status = Status::NEWLY_SUPPRESSED;
+        m_suppression_active = true;
     }
 
-    if (m_log_sourcelocations && m_started_new_line) {
+    return status;
+}
+
+void BCLog::Logger::FormatLogStrInPlace(std::string& str, BCLog::LogFlags category, BCLog::Level level, const std::source_location& source_loc, std::string_view threadname, SystemClock::time_point now, std::chrono::seconds mocktime, bool useVMLog, const std::string& vmFunction) const
+{
+    if (!str.ends_with('\n')) str.push_back('\n');
+
+    str.insert(0, GetLogPrefix(category, level));
+
+    if (m_log_sourcelocations) {
         if(useVMLog) {
-            str_prefixed.insert(0, "[" + logging_function + "] ");
+            str.insert(0, strprintf("[%s] ", vmFunction));
         }
         else {
-            str_prefixed.insert(0, "[" + RemovePrefix(source_file, "./") + ":" + ToString(source_line) + "] [" + logging_function + "] ");
+            str.insert(0, strprintf("[%s:%d] [%s] ", RemovePrefixView(source_loc.file_name(), "./"), source_loc.line(), source_loc.function_name()));
         }
     }
 
-    if (m_log_threadnames && m_started_new_line) {
-        const auto& threadname = util::ThreadGetInternalName();
-        str_prefixed.insert(0, "[" + (threadname.empty() ? "unknown" : threadname) + "] ");
+    if (m_log_threadnames) {
+        str.insert(0, strprintf("[%s] ", (threadname.empty() ? "unknown" : threadname)));
     }
 
-    str_prefixed = LogTimestampStr(str_prefixed);
+    str.insert(0, LogTimestampStr(now, mocktime));
+}
 
-    m_started_new_line = !str.empty() && str[str.size()-1] == '\n';
+void BCLog::Logger::LogPrintStr(std::string_view str, std::source_location&& source_loc, BCLog::LogFlags category, BCLog::Level level, bool should_ratelimit, bool useVMLog, const std::string& vmFunction)
+{
+    StdLockGuard scoped_lock(m_cs);
+    return LogPrintStr_(str, std::move(source_loc), category, level, should_ratelimit, useVMLog, vmFunction);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void BCLog::Logger::LogPrintStr_(std::string_view str, std::source_location&& source_loc, BCLog::LogFlags category, BCLog::Level level, bool should_ratelimit, bool useVMLog, const std::string& vmFunction)
+{
+    std::string str_prefixed = LogEscapeMessage(str);
 
     if (m_buffering) {
-        // buffer if we haven't started logging yet
-        LogMsg logmsg(str_prefixed, useVMLog);
-        m_msgs_before_open.push_back(logmsg);
+        {
+            BufferedLog buf{
+                .now = SystemClock::now(),
+                .mocktime = GetMockTime(),
+                .str = str_prefixed,
+                .threadname = util::ThreadGetInternalName(),
+                .source_loc = std::move(source_loc),
+                .category = category,
+                .level = level,
+                .useVMLog=useVMLog,
+                .vmFunction=vmFunction,
+            };
+            m_cur_buffer_memusage += MemUsage(buf);
+            m_msgs_before_open.push_back(std::move(buf));
+        }
+
+        while (m_cur_buffer_memusage > m_max_buffer_memusage) {
+            if (m_msgs_before_open.empty()) {
+                m_cur_buffer_memusage = 0;
+                break;
+            }
+            m_cur_buffer_memusage -= MemUsage(m_msgs_before_open.front());
+            m_msgs_before_open.pop_front();
+            ++m_buffer_lines_discarded;
+        }
+
         return;
+    }
+
+    FormatLogStrInPlace(str_prefixed, category, level, source_loc, util::ThreadGetInternalName(), SystemClock::now(), GetMockTime(), useVMLog, vmFunction);
+    bool ratelimit{false};
+    if (should_ratelimit && m_limiter) {
+        auto status{m_limiter->Consume(source_loc, str_prefixed)};
+        if (status == LogRateLimiter::Status::NEWLY_SUPPRESSED) {
+            // NOLINTNEXTLINE(misc-no-recursion)
+            LogPrintStr_(strprintf(
+                             "Excessive logging detected from %s:%d (%s): >%d bytes logged during "
+                             "the last time window of %is. Suppressing logging to disk from this "
+                             "source location until time window resets. Console logging "
+                             "unaffected. Last log entry.",
+                             source_loc.file_name(), source_loc.line(), source_loc.function_name(),
+                             m_limiter->m_max_bytes,
+                             Ticks<std::chrono::seconds>(m_limiter->m_reset_window)),
+                         std::source_location::current(), LogFlags::ALL, Level::Warning, /*should_ratelimit=*/false, useVMLog, vmFunction); // with should_ratelimit=false, this cannot lead to infinite recursion
+        } else if (status == LogRateLimiter::Status::STILL_SUPPRESSED) {
+            ratelimit = true;
+        }
+    }
+
+    // To avoid confusion caused by dropped log messages when debugging an issue,
+    // we prefix log lines with "[*]" when there are any suppressed source locations.
+    if (m_limiter && m_limiter->SuppressionsActive()) {
+        str_prefixed.insert(0, "[*] ");
     }
 
     bool print_to_console = m_print_to_console;
     if(print_to_console && useVMLog && !m_show_evm_logs) print_to_console = false;
-
     if (print_to_console) {
         // print to console
         fwrite(str_prefixed.data(), 1, str_prefixed.size(), stdout);
@@ -478,7 +514,7 @@ void BCLog::Logger::LogPrintStr(const std::string& str, const std::string& loggi
     for (const auto& cb : m_print_callbacks) {
         cb(str_prefixed);
     }
-    if (m_print_to_file) {
+    if (m_print_to_file && !ratelimit) {
         assert(m_fileout != nullptr);
         assert(m_fileoutVM != nullptr);
 
@@ -551,7 +587,37 @@ void BCLog::Logger::ShrinkDebugFile()
         fclose(file);
 }
 
-bool BCLog::Logger::SetLogLevel(const std::string& level_str)
+void BCLog::LogRateLimiter::Reset()
+{
+    decltype(m_source_locations) source_locations;
+    {
+        StdLockGuard scoped_lock(m_mutex);
+        source_locations.swap(m_source_locations);
+        m_suppression_active = false;
+    }
+    for (const auto& [source_loc, stats] : source_locations) {
+        if (stats.m_dropped_bytes == 0) continue;
+        LogPrintLevel_(
+            LogFlags::ALL, Level::Warning, /*should_ratelimit=*/false,
+            "Restarting logging from %s:%d (%s): %d bytes were dropped during the last %ss.",
+            source_loc.file_name(), source_loc.line(), source_loc.function_name(),
+            stats.m_dropped_bytes, Ticks<std::chrono::seconds>(m_reset_window));
+    }
+}
+
+bool BCLog::LogRateLimiter::Stats::Consume(uint64_t bytes)
+{
+    if (bytes > m_available_bytes) {
+        m_dropped_bytes += bytes;
+        m_available_bytes = 0;
+        return false;
+    }
+
+    m_available_bytes -= bytes;
+    return true;
+}
+
+bool BCLog::Logger::SetLogLevel(std::string_view level_str)
 {
     const auto level = GetLogLevel(level_str);
     if (!level.has_value() || level.value() > MAX_USER_SETABLE_SEVERITY_LEVEL) return false;
@@ -559,7 +625,7 @@ bool BCLog::Logger::SetLogLevel(const std::string& level_str)
     return true;
 }
 
-bool BCLog::Logger::SetCategoryLogLevel(const std::string& category_str, const std::string& level_str)
+bool BCLog::Logger::SetCategoryLogLevel(std::string_view category_str, std::string_view level_str)
 {
     BCLog::LogFlags flag;
     if (!GetLogCategory(flag, category_str)) return false;

@@ -118,7 +118,7 @@ class CondensingTxsTest(BitcoinTestFramework):
         sender3_bytecode = "6060604052341561000c57fe5b5b5b5b6104a88061001e6000396000f3006060604052361561006b576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680633ccfd60b146100745780635579818d14610086578063622836a3146100db578063a8d5fd651461012d578063f34e0e7b14610137575b6100725b5b565b005b341561007c57fe5b610084610189565b005b341561008e57fe5b6100d9600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190803573ffffffffffffffffffffffffffffffffffffffff169060200190919050506101dc565b005b34156100e357fe5b6100eb610263565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b610135610289565b005b341561013f57fe5b610147610456565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b3373ffffffffffffffffffffffffffffffffffffffff166108fc3073ffffffffffffffffffffffffffffffffffffffff16319081150290604051809050600060405180830381858888f19350505050505b565b81600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555080600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505b5050565b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166002348115156102ce57fe5b0460405180807f7368617265282900000000000000000000000000000000000000000000000000815250600701905060405180910390207c01000000000000000000000000000000000000000000000000000000009004906040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180905060006040518083038185886187965a03f1935050505050600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166004348115156103b357fe5b0460405180807f6b65657028290000000000000000000000000000000000000000000000000000815250600601905060405180910390207c01000000000000000000000000000000000000000000000000000000009004906040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180905060006040518083038185886187965a03f19350505050505b565b600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a72305820cb1b06b481990e1e218f7d0b51a3ffdf5b7439cfdd9bb2dccc1476cb84dfc95b0029"
         self.sender3 = self.node.createcontract(sender3_bytecode, 1000000)['address']
 
-        self.node.generate(1)
+        self.generate(self.node, 1)
         assert(len(self.node.listcontracts()) == 3+NUM_DEFAULT_DGP_CONTRACTS)
 
         self.keep_abi = "e4d06d82"
@@ -137,7 +137,7 @@ class CondensingTxsTest(BitcoinTestFramework):
         self.node.sendtocontract(self.sender1, self.setSenders_abi + padded_sender2 + padded_sender3)
         self.node.sendtocontract(self.sender2, self.setSenders_abi + padded_sender1 + padded_sender3)
         self.node.sendtocontract(self.sender3, self.setSenders_abi + padded_sender1 + padded_sender2)
-        self.node.generate(1)
+        self.generate(self.node, 1)
 
         # Verify that the senders have been set correctly
         assert_equal(self.node.callcontract(self.sender1, self.sender2_abi)['executionResult']['output'][24:], self.sender2)
@@ -151,18 +151,18 @@ class CondensingTxsTest(BitcoinTestFramework):
 
     def run_test(self):
         self.node = self.nodes[0]
-        self.node.generate(COINBASE_MATURITY+50)
+        self.generate(self.node, COINBASE_MATURITY+50)
         print("Setting up contracts and calling setSenders")
         self.setup_contracts()
         A1 = self.node.getnewaddress()
         self.node.sendtoaddress(A1, 1)
-        self.node.generate(1)
+        self.generate(self.node, 1)
         assert("vin" not in self.node.getaccountinfo(self.sender1))
         assert("vin" not in self.node.getaccountinfo(self.sender2))
         assert("vin" not in self.node.getaccountinfo(self.sender3))
 
         T1_id = self.node.sendtocontract(self.sender1, self.share_abi, 8)['txid']
-        B2_id = self.node.generate(1)[0]
+        B2_id = self.generate(self.node, 1)[0]
         B2 = self.node.getblock(B2_id)
 
         # Since this is a ṔoW block we only require 3 txs atm (coinbase, T1 and COND tx)
@@ -180,7 +180,7 @@ class CondensingTxsTest(BitcoinTestFramework):
         # We set the tx fee of T2 to a higher value such that it will be prioritized (be at index 1 in the block)
         T2_id = self.node.sendtocontract(self.sender1, self.keep_abi, 2, 50000, 0.0001)['txid']
         T3_id = self.node.sendtocontract(self.sender1, self.sendAll_abi, 2)['txid']
-        B3_id = self.node.generate(1)[0]
+        B3_id = self.generate(self.node, 1)[0]
         B3 = self.node.getblock(B3_id)
 
         # coinbase, T2, C2, T3, C3
@@ -203,7 +203,7 @@ class CondensingTxsTest(BitcoinTestFramework):
         T4_raw = make_transaction(self.node, [make_vin(self.node, 3*COIN)], [make_op_call_output(2*COIN, b"\x04", 22000, CScriptNum(RUNEBASE_MIN_GAS_PRICE), hex_str_to_bytes(self.share_abi), hex_str_to_bytes(self.sender2))])
         T4_id = self.node.sendrawtransaction(T4_raw, 0)
         T5_id = self.node.sendtocontract(self.sender2, self.withdrawAll_abi, 0, 1000000, RUNEBASE_MIN_GAS_PRICE_STR, A1)['txid']
-        B4_id = self.node.generate(1)[0]
+        B4_id = self.generate(self.node, 1)[0]
         B4 = self.node.getblock(B4_id)
 
         # Coinbase, T4, R1, T5, C4
@@ -224,4 +224,4 @@ class CondensingTxsTest(BitcoinTestFramework):
         assert("vin" not in self.node.getaccountinfo(self.sender3))
 
 if __name__ == '__main__':
-    CondensingTxsTest().main()
+    CondensingTxsTest(__file__).main()

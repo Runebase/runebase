@@ -118,6 +118,8 @@ struct Params {
     int nShanghaiHeight;
     /** Block height at which EVM Cancun fork becomes active */
     int nCancunHeight;
+    /** Block height at which EVM Pectra fork becomes active */
+    int nPectraHeight;
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.
@@ -132,6 +134,11 @@ struct Params {
     uint256 QIP9PosLimit;
     uint256 RBTPosLimit;
     bool fPowAllowMinDifficultyBlocks;
+    /**
+      * Enforce BIP94 timewarp attack mitigation. On testnet4 this also enforces
+      * the block storm mitigation.
+      */
+    bool enforce_BIP94;
     bool fPowNoRetargeting;
     bool fPoSNoRetargeting;
     int64_t nPowTargetSpacing;
@@ -187,6 +194,7 @@ struct Params {
     int nCheckpointSpan;
     int nRBTCheckpointSpan;
     uint160 delegationsAddress;
+    uint160 historyStorageAddress;
     int nLastMPoSBlock;
     int nLastBigReward;
     uint32_t nStakeTimestampMask;

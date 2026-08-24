@@ -19,8 +19,8 @@ from test_framework.wallet import (
     getnewdestination,
 )
 from test_framework.runebase import convert_btc_address_to_runebase
-
 import random 
+
 
 class ScanblocksTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -138,4 +138,4 @@ class ScanblocksTest(BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    ScanblocksTest().main()
+    ScanblocksTest(__file__).main()

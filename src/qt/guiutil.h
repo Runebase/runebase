@@ -104,7 +104,6 @@ namespace GUIUtil
        @see  QRCToken::copyTokenAddress
      */
     void copyEntryDataFromList(QAbstractItemView *view, int role=Qt::EditRole);
-
     /** Return a field of the currently selected entry as a QString. Does nothing if nothing
         is selected.
        @param[in] column  Data column to extract from the model
@@ -287,8 +286,8 @@ namespace GUIUtil
     /** Format a CNodeStats.m_last_ping_time into a user-readable string or display N/A, if 0 */
     QString formatPingTime(std::chrono::microseconds ping_time);
 
-    /** Format a CNodeCombinedStats.nTimeOffset into a user-readable string */
-    QString formatTimeOffset(int64_t nTimeOffset);
+    /** Format a CNodeStateStats.time_offset into a user-readable string */
+    QString formatTimeOffset(int64_t time_offset);
 
     QString formatNiceTimeOffset(qint64 secs);
 
@@ -483,6 +482,9 @@ namespace GUIUtil
         return false;
     }
 
+    QString WalletDisplayName(const std::string& name);
+    QString WalletDisplayName(const QString& name);
+
     void formatToolButtons(QToolButton* btn1, QToolButton* btn2 = 0, QToolButton* btn3 = 0);
 
     QString cutString(const QString& text, int length);
@@ -500,7 +502,6 @@ namespace GUIUtil
      * @return headers left
      */
     int estimateNumberHeadersLeft(qint64 timeSpan, int bestHeaderHeight);
-
 
 } // namespace GUIUtil
 

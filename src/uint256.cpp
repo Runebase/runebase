@@ -30,58 +30,56 @@ std::string base_blob<BITS>::GetReverseHex() const
 }
 
 template <unsigned int BITS>
-void base_blob<BITS>::SetHex(const char* psz)
+void base_blob<BITS>::SetHexDeprecated(const std::string_view str)
 {
     std::fill(m_data.begin(), m_data.end(), 0);
 
-    // skip leading spaces
-    while (IsSpace(*psz))
-        psz++;
+    const auto trimmed = util::RemovePrefixView(util::TrimStringView(str), "0x");
 
-    // skip 0x
-    if (psz[0] == '0' && ToLower(psz[1]) == 'x')
-        psz += 2;
-
-    // hex string to uint
+    // Note: if we are passed a greater number of digits than would fit as bytes
+    // in m_data, we will be discarding the leftmost ones.
+    // str="12bc" in a WIDTH=1 m_data => m_data[] == "\0xbc", not "0x12".
     size_t digits = 0;
-    while (::HexDigit(psz[digits]) != -1)
-        digits++;
+    for (const char c : trimmed) {
+        if (::HexDigit(c) == -1) break;
+        ++digits;
+    }
     unsigned char* p1 = m_data.data();
     unsigned char* pend = p1 + WIDTH;
     while (digits > 0 && p1 < pend) {
-        *p1 = ::HexDigit(psz[--digits]);
+        *p1 = ::HexDigit(trimmed[--digits]);
         if (digits > 0) {
-            *p1 |= ((unsigned char)::HexDigit(psz[--digits]) << 4);
+            *p1 |= ((unsigned char)::HexDigit(trimmed[--digits]) << 4);
             p1++;
         }
     }
 }
 
 template <unsigned int BITS>
-void base_blob<BITS>::SetHex(const std::string& str)
+void base_blob<BITS>::SetReverseHex(const std::string_view str)
 {
-    SetHex(str.c_str());
-}
+    std::fill(m_data.begin(), m_data.end(), 0);
 
-template <unsigned int BITS>
-void base_blob<BITS>::SetReverseHex(const char* psz)
-{
-    SetHex(psz);
-    //reverse in-place
-    int left = 0;
-    int right = size()-1;
-    unsigned char* p1 = m_data.data();
-    while(left < right){
-        int temp=p1[left];
-        p1[left++] = p1[right];
-        p1[right--] = temp;
+    const auto trimmed = util::RemovePrefixView(util::TrimStringView(str), "0x");
+
+    // Note: if we are passed a greater number of digits than would fit as bytes
+    // in m_data, we will be discarding the leftmost ones.
+    // str="12bc" in a WIDTH=1 m_data => m_data[] == "\0xbc", not "0x12".
+    size_t digits = 0;
+    for (const char c : trimmed) {
+        if (::HexDigit(c) == -1) break;
+        ++digits;
     }
-}
-
-template <unsigned int BITS>
-void base_blob<BITS>::SetReverseHex(const std::string& str)
-{
-    SetReverseHex(str.c_str());
+    unsigned char* p1 = m_data.data();
+    unsigned char* pend = p1 + WIDTH;
+    size_t num_digits = digits;
+    while (digits > 0 && p1 < pend) {
+        *p1 = (::HexDigit(trimmed[num_digits - digits--]) << 4);
+        if (digits > 0) {
+            *p1 |= (unsigned char)::HexDigit(trimmed[num_digits - digits--]);
+            p1++;
+        }
+    }
 }
 
 template <unsigned int BITS>
@@ -93,20 +91,16 @@ std::string base_blob<BITS>::ToString() const
 // Explicit instantiations for base_blob<160>
 template std::string base_blob<160>::GetHex() const;
 template std::string base_blob<160>::ToString() const;
-template void base_blob<160>::SetHex(const char*);
-template void base_blob<160>::SetHex(const std::string&);
+template void base_blob<160>::SetHexDeprecated(std::string_view);
 template std::string base_blob<160>::GetReverseHex() const;
-template void base_blob<160>::SetReverseHex(const char*);
-template void base_blob<160>::SetReverseHex(const std::string&);
+template void base_blob<160>::SetReverseHex(std::string_view);
 
 // Explicit instantiations for base_blob<256>
 template std::string base_blob<256>::GetHex() const;
 template std::string base_blob<256>::ToString() const;
-template void base_blob<256>::SetHex(const char*);
-template void base_blob<256>::SetHex(const std::string&);
+template void base_blob<256>::SetHexDeprecated(std::string_view);
 template std::string base_blob<256>::GetReverseHex() const;
-template void base_blob<256>::SetReverseHex(const char*);
-template void base_blob<256>::SetReverseHex(const std::string&);
+template void base_blob<256>::SetReverseHex(std::string_view);
 
 const uint256 uint256::ZERO(0);
 const uint256 uint256::ONE(1);

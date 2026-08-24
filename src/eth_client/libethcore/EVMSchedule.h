@@ -32,6 +32,7 @@ struct EVMSchedule
     bool eip1559Mode = false;
     bool eip6049Mode = false;
     bool eip1153Mode = false;
+    bool eip7600Mode = false;
     bool haveBitwiseShifting = false;
     bool haveRevert = false;
     bool haveReturnData = false;
@@ -211,6 +212,14 @@ static const EVMSchedule CancunSchedule = [] {
     EVMSchedule schedule = ShanghaiSchedule;
     // Cancun revision
     schedule.eip1153Mode = true;
+
+    return schedule;
+}();
+
+static const EVMSchedule PectraSchedule = [] {
+    EVMSchedule schedule = CancunSchedule;
+    // Pectra revision
+    schedule.eip7600Mode = true;
 
     return schedule;
 }();

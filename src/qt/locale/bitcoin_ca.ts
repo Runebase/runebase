@@ -184,6 +184,14 @@ Només és possible firmar amb adreces del tipus "legacy".</translation>
         <translation type="unfinished">Introduïu la contrasenya antiga i la contrasenya nova a la cartera.</translation>
     </message>
     <message>
+        <source>Continue</source>
+        <translation type="unfinished">Continua</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished">Enrere</translation>
+    </message>
+    <message>
         <source>Remember that encrypting your wallet cannot fully protect your runebases from being stolen by malware infecting your computer.</source>
         <translation type="unfinished">Recorda que tot i xifrant la teva cartera, els teus runebases no estan completament protegits de robatori a través de programari maliciós que estigui infectant el teu ordinador.</translation>
     </message>
@@ -273,7 +281,11 @@ Només és possible firmar amb adreces del tipus "legacy".</translation>
         <source>Internal error</source>
         <translation type="unfinished">Error intern</translation>
     </message>
-    </context>
+    <message>
+        <source>An internal error occurred. %1 will attempt to continue safely. This is an unexpected bug which can be reported as described below.</source>
+        <translation type="unfinished">S'ha produït un error intern. %1 intentarà continuar amb seguretat. Es tracta d’un error inesperat que es pot informar tal com es descriu a continuació.</translation>
+    </message>
+</context>
 <context>
     <name>QObject</name>
     <message>
@@ -299,12 +311,20 @@ Només és possible firmar amb adreces del tipus "legacy".</translation>
         <translation type="unfinished">desconegut</translation>
     </message>
     <message>
+        <source>Custom…</source>
+        <translation type="unfinished">Personalitzat…</translation>
+    </message>
+    <message>
         <source>Amount</source>
         <translation type="unfinished">Import</translation>
     </message>
     <message>
         <source>Enter a Runebase address (e.g. %1)</source>
         <translation type="unfinished">Introduïu una adreça de Runebase (p. ex. %1)</translation>
+    </message>
+    <message>
+        <source>Ctrl+W</source>
+        <translation type="unfinished">Control+W</translation>
     </message>
     <message>
         <source>Unroutable</source>
@@ -396,7 +416,11 @@ Només és possible firmar amb adreces del tipus "legacy".</translation>
             <numerusform>%n anys</numerusform>
         </translation>
     </message>
-    </context>
+    <message>
+        <source>default wallet</source>
+        <translation type="unfinished">cartera predeterminada</translation>
+    </message>
+</context>
 <context>
     <name>BitcoinGUI</name>
     <message>
@@ -704,10 +728,6 @@ Només és possible firmar amb adreces del tipus "legacy".</translation>
     <message>
         <source>Mask the values in the Overview tab</source>
         <translation type="unfinished">Emmascara els valors en la pestanya Visió general</translation>
-    </message>
-    <message>
-        <source>default wallet</source>
-        <translation type="unfinished">cartera predeterminada</translation>
     </message>
     <message>
         <source>No wallets available</source>
@@ -1116,10 +1136,6 @@ El procés de migració crearà una còpia de seguretat de la cartera abans de m
         <translation type="unfinished">Avís en l'obertura de la cartera</translation>
     </message>
     <message>
-        <source>default wallet</source>
-        <translation type="unfinished">cartera predeterminada</translation>
-    </message>
-    <message>
         <source>Open Wallet</source>
         <extracomment>Title of window indicating the progress of opening of a wallet.</extracomment>
         <translation type="unfinished">Obre la cartera</translation>
@@ -1189,7 +1205,7 @@ El procés de migració crearà una còpia de seguretat de la cartera abans de m
     </message>
     <message>
         <source>You are one step away from creating your new wallet!</source>
-        <translation type="unfinished">Només et queda un pas per a crear la teva nova cartera</translation>
+        <translation type="unfinished">A un pas de crear la teva nova cartera</translation>
     </message>
     <message>
         <source>Please provide a name and, if desired, enable any advanced options</source>
@@ -1552,6 +1568,10 @@ Això és ideal per a carteres de mode només lectura.</translation>
         <translation type="unfinished">Nombre de fils de &amp;verificació d'scripts</translation>
     </message>
     <message>
+        <source>Full path to a %1 compatible script (e.g. C:\Downloads\hwi.exe or /Users/you/Downloads/hwi.py). Beware: malware can steal your coins!</source>
+        <translation type="unfinished">Camí complet a %1 script compatible amb Runebase Core (per exemple, C:\Downloads\hwi.exe o /Users/you/Downloads/hwi.py). Aneu amb compte: el programari maliciós pot robar-vos les monedes!</translation>
+    </message>
+    <message>
         <source>IP address of the proxy (e.g. IPv4: 127.0.0.1 / IPv6: ::1)</source>
         <translation type="unfinished">Adreça IP del proxy (p. ex. IPv4: 127.0.0.1 / IPv6: ::1)</translation>
     </message>
@@ -1562,6 +1582,10 @@ Això és ideal per a carteres de mode només lectura.</translation>
     <message>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Exit in the menu.</source>
         <translation type="unfinished">Minimitza en comptes de sortir de l'aplicació quan la finestra es tanca. Quan s'habilita aquesta opció l'aplicació es tancarà només quan se selecciona Surt del menú. </translation>
+    </message>
+    <message>
+        <source>Font in the Overview tab: </source>
+        <translation type="unfinished">Tipus de lletra a la pestanya Visió general:</translation>
     </message>
     <message>
         <source>Options set in this dialog are overridden by the command line:</source>
@@ -1596,8 +1620,18 @@ Això és ideal per a carteres de mode només lectura.</translation>
         <translation type="unfinished">Revertir aquesta configuració requereix tornar a descarregar la cadena de blocs sencera un altre cop.</translation>
     </message>
     <message>
+        <source>Set the number of script verification threads. Negative values correspond to the number of cores you want to leave free to the system.</source>
+        <extracomment>Tooltip text for Options window setting that sets the number of script verification threads. Explains that negative values mean to leave these many cores free to the system.</extracomment>
+        <translation type="unfinished">Estableix el nombre de fils de verificació de l'script.  Els valors negatius corresponen al nombre de nuclis que voleu deixar lliures al sistema.</translation>
+    </message>
+    <message>
         <source>(0 = auto, &lt;0 = leave that many cores free)</source>
         <translation type="unfinished">(0 = auto, &lt;0 = deixa tants nuclis lliures)</translation>
+    </message>
+    <message>
+        <source>This allows you or a third party tool to communicate with the node through command-line and JSON-RPC commands.</source>
+        <extracomment>Tooltip text for Options window setting that enables the RPC server.</extracomment>
+        <translation type="unfinished">Això us permet a vosaltres o a una eina de tercers comunicar-vos amb el node mitjançant ordres de línia d'ordres i JSON-RPC.</translation>
     </message>
     <message>
         <source>Enable R&amp;PC server</source>
@@ -1607,6 +1641,16 @@ Això és ideal per a carteres de mode només lectura.</translation>
     <message>
         <source>W&amp;allet</source>
         <translation type="unfinished">&amp;Moneder</translation>
+    </message>
+    <message>
+        <source>Whether to set subtract fee from amount as default or not.</source>
+        <extracomment>Tooltip text for Options window setting that sets subtracting the fee from a sending amount as default.</extracomment>
+        <translation type="unfinished">Si s'ha d'establir la quota de resta de l'import per defecte o no.</translation>
+    </message>
+    <message>
+        <source>Subtract &amp;fee from amount by default</source>
+        <extracomment>An Options window setting to set subtracting the fee from a sending amount as default.</extracomment>
+        <translation type="unfinished">De manera predeterminada, resta &amp;fee de l'import</translation>
     </message>
     <message>
         <source>Enable coin &amp;control features</source>
@@ -1626,28 +1670,17 @@ Això és ideal per a carteres de mode només lectura.</translation>
         <translation type="unfinished">Activa els controls &amp;PSBT</translation>
     </message>
     <message>
+        <source>Whether to show PSBT controls.</source>
+        <extracomment>Tooltip text for options window setting that enables PSBT controls.</extracomment>
+        <translation type="unfinished">Si voleu mostrar els controls PSBT.</translation>
+    </message>
+    <message>
         <source>External Signer (e.g. hardware wallet)</source>
         <translation type="unfinished">Signador extern (per exemple, cartera de maquinari)</translation>
     </message>
     <message>
         <source>&amp;External signer script path</source>
         <translation type="unfinished">&amp;Camí de l'script del signatari extern</translation>
-    </message>
-    <message>
-        <source>Automatically open the Runebase client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation type="unfinished">Obre el port del client de Runebase al router de forma automàtica. Això només funciona quan el router implementa UPnP i l'opció està activada.</translation>
-    </message>
-    <message>
-        <source>Map port using &amp;UPnP</source>
-        <translation type="unfinished">Port obert amb &amp;UPnP</translation>
-    </message>
-    <message>
-        <source>Automatically open the Runebase client port on the router. This only works when your router supports NAT-PMP and it is enabled. The external port could be random.</source>
-        <translation type="unfinished">Obriu automàticament el port client de Runebase al router. Això només funciona quan el vostre router admet NAT-PMP i està activat. El port extern podria ser aleatori.</translation>
-    </message>
-    <message>
-        <source>Map port using NA&amp;T-PMP</source>
-        <translation type="unfinished">Port del mapa mitjançant NA&amp;T-PMP</translation>
     </message>
     <message>
         <source>Accept connections from outside.</source>
@@ -1809,6 +1842,13 @@ Això és ideal per a carteres de mode només lectura.</translation>
     </message>
 </context>
 <context>
+    <name>OptionsModel</name>
+    <message>
+        <source>Could not read setting "%1", %2.</source>
+        <translation type="unfinished">No s'ha pogut llegir la configuració "%1", %2.</translation>
+    </message>
+</context>
+<context>
     <name>OverviewPage</name>
     <message>
         <source>Form</source>
@@ -1914,6 +1954,10 @@ Això és ideal per a carteres de mode només lectura.</translation>
         <translation type="unfinished">Ha fallat la firma de la transacció: %1</translation>
     </message>
     <message>
+        <source>Cannot sign inputs while wallet is locked.</source>
+        <translation type="unfinished">No es poden signar les entrades mentre la cartera està bloquejada.</translation>
+    </message>
+    <message>
         <source>Could not sign any more inputs.</source>
         <translation type="unfinished">No s'han pogut firmar més entrades.</translation>
     </message>
@@ -1949,6 +1993,10 @@ Això és ideal per a carteres de mode només lectura.</translation>
     <message>
         <source>PSBT saved to disk.</source>
         <translation type="unfinished">PSBT guardada al disc.</translation>
+    </message>
+    <message>
+        <source>Sends %1 to %2</source>
+        <translation type="unfinished">Envia %1 a %2</translation>
     </message>
     <message>
         <source>own address</source>
@@ -2215,6 +2263,14 @@ Si rebeu aquest error, haureu de sol·licitar al comerciant que proporcioni un U
         <translation type="unfinished">Seleccioneu un igual per a mostrar informació detallada.</translation>
     </message>
     <message>
+        <source>Transport</source>
+        <translation type="unfinished">Transporta</translation>
+    </message>
+    <message>
+        <source>Session ID</source>
+        <translation type="unfinished">Sessió ID</translation>
+    </message>
+    <message>
         <source>Version</source>
         <translation type="unfinished">Versió</translation>
     </message>
@@ -2443,6 +2499,10 @@ Si rebeu aquest error, haureu de sol·licitar al comerciant que proporcioni un U
         <translation type="unfinished">Activitat de xarxa inhabilitada</translation>
     </message>
     <message>
+        <source>None</source>
+        <translation type="unfinished">Cap</translation>
+    </message>
+    <message>
         <source>Executing command without any wallet</source>
         <translation type="unfinished">S'està executant l'ordre sense cap cartera</translation>
     </message>
@@ -2640,8 +2700,7 @@ No utilitzeu aquesta consola sense entendre completament les ramificacions d'una
     </message>
     <message>
         <source>&amp;Verify</source>
-        <translation type="unfinished">&amp;Verifica
-</translation>
+        <translation type="unfinished">&amp;Verifica</translation>
     </message>
     <message>
         <source>Verify this address on e.g. a hardware wallet screen</source>
@@ -3116,10 +3175,6 @@ Nota: atès que la tarifa es calcula per byte, una tarifa de "100 satoshis per k
         <translation type="unfinished">&amp;Signa el missatge</translation>
     </message>
     <message>
-        <source>You can sign messages/agreements with your addresses to prove you can receive runebases sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation type="unfinished">Podeu signar missatges/acords amb les vostres adreces per a provar que rebeu les runebases que s'hi envien. Aneu amb compte no signar res que sigui vague o aleatori, perquè en alguns atacs de suplantació es pot provar que hi signeu la vostra identitat. Només signeu aquelles declaracions completament detallades en què hi esteu d'acord. </translation>
-    </message>
-    <message>
         <source>The Runebase address to sign the message with</source>
         <translation type="unfinished">L'adreça Runebase amb què signar el missatge</translation>
     </message>
@@ -3206,10 +3261,6 @@ Nota: atès que la tarifa es calcula per byte, una tarifa de "100 satoshis per k
     <message>
         <source>Please check the address and try again.</source>
         <translation type="unfinished">Comproveu l'adreça i torneu-ho a provar.</translation>
-    </message>
-    <message>
-        <source>The entered address does not refer to a key.</source>
-        <translation type="unfinished">L'adreça introduïda no referencia a cap clau.</translation>
     </message>
     <message>
         <source>Wallet unlock was cancelled.</source>
@@ -3328,10 +3379,8 @@ Nota: atès que la tarifa es calcula per byte, una tarifa de "100 satoshis per k
     <message numerus="yes">
         <source>matures in %n more block(s)</source>
         <translation type="unfinished">
-            <numerusform>madura en %n bloc més
-</numerusform>
-            <numerusform>madura en %n blocs més
-</numerusform>
+            <numerusform>madura en %n bloc més</numerusform>
+            <numerusform>madura en %n blocs més</numerusform>
         </translation>
     </message>
     <message>
@@ -3752,11 +3801,6 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
         <translation type="unfinished">PSBT copiada</translation>
     </message>
     <message>
-        <source>Copied to clipboard</source>
-        <comment>Fee-bump PSBT saved</comment>
-        <translation type="unfinished">Copiat al portaretalls</translation>
-    </message>
-    <message>
         <source>Can't sign transaction.</source>
         <translation type="unfinished">No es pot signar la transacció.</translation>
     </message>
@@ -3767,10 +3811,6 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
     <message>
         <source>Can't display address</source>
         <translation type="unfinished">No es pot mostrar l'adreça</translation>
-    </message>
-    <message>
-        <source>default wallet</source>
-        <translation type="unfinished">cartera predeterminada</translation>
     </message>
 </context>
 <context>
@@ -3828,10 +3868,6 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
         <translation type="unfinished">No es pot degradar la cartera de la versió %i a la versió %i. La versió de la cartera no ha canviat.</translation>
     </message>
     <message>
-        <source>Cannot obtain a lock on data directory %s. %s is probably already running.</source>
-        <translation type="unfinished">No es pot obtenir un bloqueig al directori de dades %s. %s probablement ja s'estigui executant.</translation>
-    </message>
-    <message>
         <source>Cannot upgrade a non HD split wallet from version %i to version %i without upgrading to support pre-split keypool. Please use version %i or no version specified.</source>
         <translation type="unfinished">No es pot actualitzar una cartera dividida no HD de la versió %i a la versió %i sense actualitzar-la per a admetre l'agrupació de claus dividida prèviament. Utilitzeu la versió %i o cap versió especificada.</translation>
     </message>
@@ -3874,10 +3910,6 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
     <message>
         <source>No wallet file format provided. To use createfromdump, -format=&lt;format&gt; must be provided.</source>
         <translation type="unfinished">No s'ha proporcionat cap format de fitxer de cartera. Per a utilitzar createfromdump, s'ha de proporcionar&lt;format&gt;.</translation>
-    </message>
-    <message>
-        <source>Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly.</source>
-        <translation type="unfinished">Comproveu que la data i hora de l'ordinador són correctes. Si el rellotge és incorrecte, %s no funcionarà correctament.</translation>
     </message>
     <message>
         <source>Please contribute if you find %s useful. Visit %s for further information about the software.</source>
@@ -3964,10 +3996,6 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
         <translation type="unfinished">-maxmempool ha de tenir almenys %d MB</translation>
     </message>
     <message>
-        <source>A fatal internal error occurred, see debug.log for details</source>
-        <translation type="unfinished">S'ha produït un error intern fatal. Consulteu debug.log per a més detalls</translation>
-    </message>
-    <message>
         <source>Cannot resolve -%s address: '%s'</source>
         <translation type="unfinished">No es pot resoldre -%s adreça: '%s'</translation>
     </message>
@@ -3976,13 +4004,8 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
         <translation type="unfinished">No es poden configurar -peerblockfilters sense -blockfilterindex.</translation>
     </message>
     <message>
-        <source>Cannot write to data directory '%s'; check permissions.</source>
-        <translation type="unfinished">No es pot escriure en el directori de dades "%s". Reviseu-ne els permisos.</translation>
-    </message>
-    <message>
         <source>%s is set very high! Fees this large could be paid on a single transaction.</source>
-        <translation type="unfinished">%s especificat molt alt! Tarifes tan grans podrien pagar-se en una única transacció.
-</translation>
+        <translation type="unfinished">%s especificat molt alt! Tarifes tan grans podrien pagar-se en una única transacció.</translation>
     </message>
     <message>
         <source>Error reading %s! All keys read correctly, but transaction data or address metadata may be missing or incorrect.</source>
@@ -3994,7 +4017,7 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
     </message>
     <message>
         <source>Invalid amount for %s=&lt;amount&gt;: '%s' (must be at least the minrelay fee of %s to prevent stuck transactions)</source>
-        <translation type="unfinished">Import no vàlid per a %s=&lt;amount&gt;: '%s' (cal que sigui com a mínim la comissió de minrelay de %s per evitar que les comissions s'encallin)</translation>
+        <translation type="unfinished">Import no vàlid per a %s=&lt;amount&gt;: '%s' (cal que sigui com a mínim la tarifa de minrelay de %s per evi tar que les tarifes s'encallin)</translation>
     </message>
     <message>
         <source>Config setting for %s only applied on %s network when in [%s] section.</source>
@@ -4015,10 +4038,6 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
     <message>
         <source>Disk space is too low!</source>
         <translation type="unfinished">L'espai de disc és insuficient!</translation>
-    </message>
-    <message>
-        <source>Do you want to rebuild the block database now?</source>
-        <translation type="unfinished">Voleu reconstruir la base de dades de blocs ara?</translation>
     </message>
     <message>
         <source>Done loading</source>
@@ -4150,6 +4169,10 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
         <translation type="unfinished">S'ha produït un error en la verificació de sanejament d'inicialització. S'està tancant %s.</translation>
     </message>
     <message>
+        <source>Input not found or already spent</source>
+        <translation type="unfinished">Input no trobat o s'ha gastat</translation>
+    </message>
+    <message>
         <source>Insufficient funds</source>
         <translation type="unfinished">Balanç insuficient</translation>
     </message>
@@ -4208,10 +4231,6 @@ Ves a Arxiu &gt; Obrir Cartera per a carregar cartera.
     <message>
         <source>Need to specify a port with -whitebind: '%s'</source>
         <translation type="unfinished">Cal especificar un port amb -whitebind: «%s»</translation>
-    </message>
-    <message>
-        <source>Not enough file descriptors available.</source>
-        <translation type="unfinished">No hi ha suficient descriptors de fitxers disponibles.</translation>
     </message>
     <message>
         <source>Prune cannot be configured with a negative value.</source>

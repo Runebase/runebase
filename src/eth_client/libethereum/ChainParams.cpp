@@ -14,6 +14,7 @@
 #include <libethcore/Precompiled.h>
 #include <libethcore/SealEngine.h>
 #include <boost/algorithm/string.hpp>
+#include <runebase/runebaseutils.h>
 
 using namespace std;
 using namespace dev;
@@ -131,6 +132,7 @@ void ChainParams::loadConfig(
     setOptionalU256Parameter(qip6ForkBlock, c_qip6ForkBlock);
     setOptionalU256Parameter(shanghaiForkBlock, c_shanghaiForkBlock);
     setOptionalU256Parameter(cancunForkBlock, c_cancunForkBlock);
+    setOptionalU256Parameter(pectraForkBlock, c_pectraForkBlock);
 
     lastForkBlock = findMaxForkBlockNumber(params);
     lastForkWithAdditionalEIPsSchedule = forkScheduleForBlockNumber(lastForkBlock);
@@ -155,20 +157,38 @@ void ChainParams::loadConfig(
         genesisState = jsonToAccountMap(genesisStateStr, accountStartNonce, nullptr, _configPath);
     }
 
-    precompiled.insert({Address{0x1}, PrecompiledContract{"ecrecover"}});
-    precompiled.insert({Address{0x2}, PrecompiledContract{"sha256"}});
-    precompiled.insert({Address{0x3}, PrecompiledContract{"ripemd160"}});
-    precompiled.insert({Address{0x4}, PrecompiledContract{"identity"}});
-    precompiled.insert({Address{0x5}, PrecompiledContract{"modexp", byzantiumForkBlock}});
-    precompiled.insert({Address{0x6}, PrecompiledContract{"alt_bn128_G1_add", byzantiumForkBlock}});
-    precompiled.insert({Address{0x7}, PrecompiledContract{"alt_bn128_G1_mul", byzantiumForkBlock}});
+    precompiled.insert({Address{0x01}, PrecompiledContract{"ecrecover"}});
+    precompiled.insert({Address{0x02}, PrecompiledContract{"sha256"}});
+    precompiled.insert({Address{0x03}, PrecompiledContract{"ripemd160"}});
+    precompiled.insert({Address{0x04}, PrecompiledContract{"identity"}});
+    precompiled.insert({Address{0x05}, PrecompiledContract{"modexp", byzantiumForkBlock}});
+    precompiled.insert({Address{0x06}, PrecompiledContract{"alt_bn128_G1_add", byzantiumForkBlock}});
+    precompiled.insert({Address{0x07}, PrecompiledContract{"alt_bn128_G1_mul", byzantiumForkBlock}});
     precompiled.insert(
-        {Address{0x8}, PrecompiledContract{"alt_bn128_pairing_product", byzantiumForkBlock}});
+        {Address{0x08}, PrecompiledContract{"alt_bn128_pairing_product", byzantiumForkBlock}});
     precompiled.insert(
-        {Address{0x9}, PrecompiledContract{"blake2_compression", istanbulForkBlock}});
+        {Address{0x09}, PrecompiledContract{"blake2_compression", istanbulForkBlock}});
     precompiled.insert(
-        {Address{0xa}, PrecompiledContract{"point_evaluation", cancunForkBlock + 1}});
+        {Address{0x0a}, PrecompiledContract{"point_evaluation", cancunForkBlock + 1}});
+    precompiled.insert(
+        {Address{0x0b}, PrecompiledContract{"add_G1_bls", pectraForkBlock + 1}});
+    precompiled.insert(
+        {Address{0x0c}, PrecompiledContract{"msm_G1_bls", pectraForkBlock + 1}});
+    precompiled.insert(
+        {Address{0x0d}, PrecompiledContract{"add_G2_bls", pectraForkBlock + 1}});
+    precompiled.insert(
+        {Address{0x0e}, PrecompiledContract{"msm_G2_bls", pectraForkBlock + 1}});
+    precompiled.insert(
+        {Address{0x0f}, PrecompiledContract{"pairing_check_bls", pectraForkBlock + 1}});
+    precompiled.insert(
+        {Address{0x10}, PrecompiledContract{"map_fp_to_G1_bls", pectraForkBlock + 1}});
+    precompiled.insert(
+        {Address{0x11}, PrecompiledContract{"map_fp2_to_G2_bls", pectraForkBlock + 1}});
+    // 0x80 to 0x84 used for DGP
     precompiled.insert({Address{0x85}, PrecompiledContract{"btc_ecrecover", qip6ForkBlock}});
+    // 0x86 used for Delegation Contract
+    precompiled.insert(
+        {runebaseutils::eth_getHistoryStorageAddress(), PrecompiledContract{"historical_hashes", pectraForkBlock + 1}});
 
     stateRoot = _stateRoot ? _stateRoot : calculateStateRoot(true);
 }

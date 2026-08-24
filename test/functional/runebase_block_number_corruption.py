@@ -20,7 +20,7 @@ class RunebaseBlockNumberCorruptionTest(BitcoinTestFramework):
         self.skip_if_no_wallet()
 
     def run_test(self):
-        self.nodes[0].generate(COINBASE_MATURITY+50)
+        self.generate(self.nodes[0], COINBASE_MATURITY+50)
         self.node = self.nodes[0]
         """
         pragma solidity ^0.5;
@@ -34,11 +34,11 @@ class RunebaseBlockNumberCorruptionTest(BitcoinTestFramework):
         """
         bytecode = '6080604052348015600f57600080fd5b50605e80601d6000396000f3fe6080604052600043908060018154018082558091505090600182039060005260206000200160009091929091909150555000fea165627a7a72305820eb843d8a9f268dc45a6823f885215f9b11d9192710d7631d71a29d4e78ea21cb0029'
         contract_address = self.node.createcontract(bytecode)['address']
-        self.node.generate(1)
+        self.generate(self.node, 1)
         self.node.sendtocontract(contract_address, '00')
-        self.node.generate(1)
+        self.generate(self.node, 1)
         self.restart_node(0, ['-checklevel=4'])
 
 
 if __name__ == '__main__':
-    RunebaseBlockNumberCorruptionTest().main()
+    RunebaseBlockNumberCorruptionTest(__file__).main()

@@ -72,7 +72,7 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.bootstrap_p2p()
         # returns a test case that asserts that the current tip was accepted
         # First generate some blocks so we have some spendable coins
-        block_hashes = self.node.generatetoaddress(100, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        block_hashes = self.generatetoaddress(self.node, 100, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
 
         for i in range(COINBASE_MATURITY):
             self.tip = create_block(int(self.node.getbestblockhash(), 16), create_coinbase(self.node.getblockcount()+1), int(time.time()))
@@ -81,7 +81,7 @@ class RunebasePOSTest(BitcoinTestFramework):
 
         for _ in range(10):
             self.node.sendtoaddress("qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq", 1000)
-        block_hashes += self.node.generatetoaddress(1, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        block_hashes += self.generatetoaddress(self.node, 1, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
 
         blocks = []
         for block_hash in block_hashes:
@@ -397,4 +397,4 @@ class RunebasePOSTest(BitcoinTestFramework):
         return (block, block_sig_key)
 
 if __name__ == '__main__':
-    RunebasePOSTest().main()
+    RunebasePOSTest(__file__).main()

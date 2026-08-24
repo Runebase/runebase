@@ -146,8 +146,8 @@ AMOUNT_DUST = 0.00000546
 
 
 def get_rand_amount(min_amount=AMOUNT_DUST):
-    assert min_amount <= 1
-    r = random.uniform(min_amount, 1)
+    # assert min_amount <= 1
+    r = random.uniform(min_amount, 100)
     # note: min_amount can get rounded down here
     return Decimal(str(round(r, 8)))
 
@@ -160,6 +160,8 @@ class ImportRescanTest(BitcoinTestFramework):
         self.num_nodes = 2 + len(IMPORT_NODES)
         self.supports_cli = False
         self.rpc_timeout = 120
+        # whitelist peers to speed up tx relay / mempool sync
+        self.noban_tx_relay = True
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -201,7 +203,7 @@ class ImportRescanTest(BitcoinTestFramework):
                 address_type=variant.address_type.value,
             ))
             variant.key = self.nodes[1].dumpprivkey(variant.address["address"])
-            variant.initial_amount = get_rand_amount()
+            variant.initial_amount = get_rand_amount(10)
             variant.initial_txid = self.nodes[0].sendtoaddress(variant.address["address"], variant.initial_amount)
             last_variants.append(variant)
 
@@ -336,4 +338,4 @@ class ImportRescanTest(BitcoinTestFramework):
 
 
 if __name__ == "__main__":
-    ImportRescanTest().main()
+    ImportRescanTest(__file__).main()

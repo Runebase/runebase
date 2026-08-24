@@ -44,7 +44,7 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
                 assert(False)
             return self.node.getbestblockhash()
         else:
-            return self.node.generate(1)[0]
+            return self.generate(self.node, 1)[0]
 
     def send_transaction_with_fee(self, fee):
         for unspent in self.node.listunspent():
@@ -262,7 +262,7 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
     def run_test(self):
         self.node = self.nodes[0]
         self.node.setmocktime(int(time.time())- 100000)
-        self.node.generate(500+COINBASE_MATURITY)
+        self.generate(self.node, 500+COINBASE_MATURITY)
         self.node.setmocktime(0)
         print("running pow tests")
         self.verify_contract_txs_are_added_last_test()
@@ -303,4 +303,4 @@ class RunebaseTransactionPrioritizationTest(BitcoinTestFramework):
         self.verify_contract_ancestor_txs_test(with_restart=True, use_staking=True)
 
 if __name__ == '__main__':
-    RunebaseTransactionPrioritizationTest().main()
+    RunebaseTransactionPrioritizationTest(__file__).main()

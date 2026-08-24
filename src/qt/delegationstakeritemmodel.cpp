@@ -301,7 +301,7 @@ void DelegationStakerItemModel::updateDelegationStakerData(const QString &hash, 
 {
     // Find delegationStaker in wallet
     uint160 updated;
-    updated.SetHex(hash.toStdString());
+    updated.SetHexDeprecated(hash.toStdString());
     interfaces::DelegationStakerInfo delegationStaker =walletModel->wallet().getDelegationStaker(updated);
     showDelegationStaker &= delegationStaker.hash == updated;
 

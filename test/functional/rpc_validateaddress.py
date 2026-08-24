@@ -167,6 +167,7 @@ VALID_DATA = [
         convert_btc_bech32_address_to_runebase("bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0", main=True),
         "512079be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
     ),
+    # PayToAnchor(P2A)
     (
         "QcE4AavBwevi38EkYfaweLtSkix6cyuwCy",
         "76a914ab5c3f6a583e6242da2f118a8b8d761e529453cf88ac",
@@ -205,4 +206,4 @@ class ValidateAddressMainTest(BitcoinTestFramework):
 
 
 if __name__ == "__main__":
-    ValidateAddressMainTest().main()
+    ValidateAddressMainTest(__file__).main()

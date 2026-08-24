@@ -1,6 +1,4 @@
-#if defined(HAVE_CONFIG_H)
-#include <config/bitcoin-config.h>
-#endif
+#include <bitcoin-build-config.h> // IWYU pragma: keep
 
 #include <qt/delegationlistwidget.h>
 #include <qt/platformstyle.h>

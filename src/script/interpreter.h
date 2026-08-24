@@ -251,10 +251,10 @@ extern const HashWriter HASHER_TAPLEAF;    //!< Hasher with tag "TapLeaf" pre-fe
 extern const HashWriter HASHER_TAPBRANCH;  //!< Hasher with tag "TapBranch" pre-fed to it.
 
 template <class T>
-uint256 SignatureHash(const CScript& scriptCode, const T& txTo, unsigned int nIn, int nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache = nullptr);
+uint256 SignatureHash(const CScript& scriptCode, const T& txTo, unsigned int nIn, int32_t nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache = nullptr);
 
 template <class T>
-uint256 SignatureHashOutput(const CScript& scriptCode, const T& txTo, unsigned int nOut, int nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache = nullptr);
+uint256 SignatureHashOutput(const CScript& scriptCode, const T& txTo, unsigned int nOut, int32_t nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache = nullptr);
 
 class BaseSignatureChecker
 {
@@ -279,7 +279,7 @@ public:
          return false;
     }
 
-    virtual ~BaseSignatureChecker() {}
+    virtual ~BaseSignatureChecker() = default;
 };
 
 /** Enum to specify what *TransactionSignatureChecker's behavior should be

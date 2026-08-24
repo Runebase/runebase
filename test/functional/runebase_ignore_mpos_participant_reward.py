@@ -36,7 +36,7 @@ class RunebaseIgnoreMPOSParticipantRewardTest(BitcoinTestFramework):
 
         self.node = self.nodes[0]
         self.node.setmocktime(int(time.time()) - 1000000)
-        self.node.generatetoaddress(10 + COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
+        self.generatetoaddress(self.node, 10 + COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
 
         """
         pragma solidity ^0.4.12;
@@ -97,4 +97,4 @@ class RunebaseIgnoreMPOSParticipantRewardTest(BitcoinTestFramework):
         assert_equal(self.node.getblockcount(), blockcount)
         
 if __name__ == '__main__':
-    RunebaseIgnoreMPOSParticipantRewardTest().main()
+    RunebaseIgnoreMPOSParticipantRewardTest(__file__).main()

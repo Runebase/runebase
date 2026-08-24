@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <mutex>
 #include <condition_variable>
@@ -15,8 +16,17 @@ namespace util {
 class SignalInterrupt;
 } // namespace util
 
-static const int DEFAULT_HTTP_THREADS=4;
-static const int DEFAULT_HTTP_WORKQUEUE=16;
+/**
+ * The default value for `-rpcthreads`. This number of threads will be created at startup.
+ */
+static const int DEFAULT_HTTP_THREADS=16;
+
+/**
+ * The default value for `-rpcworkqueue`. This is the maximum depth of the work queue,
+ * we don't allocate this number of work queue items upfront.
+ */
+static const int DEFAULT_HTTP_WORKQUEUE=64;
+
 static const int DEFAULT_HTTP_SERVER_TIMEOUT=30;
 
 struct evhttp_request;
@@ -137,12 +147,16 @@ public:
     /**
      * Write HTTP reply.
      * nStatus is the HTTP status code to send.
-     * strReply is the body of the reply. Keep it empty to send a standard message.
+     * reply is the body of the reply. Keep it empty to send a standard message.
      *
      * @note Can be called only once. As this will give the request back to the
      * main thread, do not call any other HTTPRequest methods after calling this.
      */
-    void WriteReply(int nStatus, const std::string& strReply = "");
+    void WriteReply(int nStatus, std::string_view reply = "")
+    {
+        WriteReply(nStatus, std::as_bytes(std::span{reply}));
+    }
+    void WriteReply(int nStatus, std::span<const std::byte> reply);
 
     /**
      * Start chunk transfer. Assume to be 200.
@@ -180,7 +194,7 @@ class HTTPClosure
 {
 public:
     virtual void operator()() = 0;
-    virtual ~HTTPClosure() {}
+    virtual ~HTTPClosure() = default;
 };
 
 /** Event class. This can be used either as a cross-thread trigger or as a timer.
