@@ -10,7 +10,7 @@ from test_framework.p2p import *
 from test_framework.blocktools import *
 from test_framework.address import *
 from test_framework.key import ECKey
-from test_framework.runebaseconfig import TIMESTAMP_MASK
+from test_framework.runebaseconfig import TIMESTAMP_MASK, block_subsidy_at
 import io
 import struct
 
@@ -129,7 +129,7 @@ class RunebasePOSTest(BitcoinTestFramework):
 
 
         # 2 A block that with a too high reward
-        (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, outNValue=30006)
+        (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, outNValue=150)  # 1.5x the valid reward, must be rejected
         self.tip.sign_block(block_sig_key)
         self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
@@ -345,7 +345,7 @@ class RunebasePOSTest(BitcoinTestFramework):
 
 
 
-    def create_unsigned_pos_block(self, staking_prevouts, nTime=None, outNValue=10002, signStakeTx=True, bestBlockHash=None, coinStakePrevout=None):
+    def create_unsigned_pos_block(self, staking_prevouts, nTime=None, outNValue=None, signStakeTx=True, bestBlockHash=None, coinStakePrevout=None):
         if not nTime:
             current_time = int(time.time()) + TIMESTAMP_MASK
             nTime = current_time & (0xffffffff - TIMESTAMP_MASK)
@@ -382,6 +382,11 @@ class RunebasePOSTest(BitcoinTestFramework):
 
         stake_tx_unsigned.vin.append(CTxIn(coinStakePrevout))
         stake_tx_unsigned.vout.append(CTxOut())
+        if outNValue is None:
+            # default was 10002, i.e. half of Qtum's 20000 stake + 4 reward.
+            # Derive it: (prevout value + subsidy at this height) split in two.
+            _txout = self.node.gettxout(hex(coinStakePrevout.hash)[2:].zfill(64), coinStakePrevout.n)
+            outNValue = (float(str(_txout['value'])) + block_subsidy_at(self.node.getblockcount()+1)) / 2
         stake_tx_unsigned.vout.append(CTxOut(int(outNValue*COIN), scriptPubKey))
         stake_tx_unsigned.vout.append(CTxOut(int(outNValue*COIN), scriptPubKey))
 

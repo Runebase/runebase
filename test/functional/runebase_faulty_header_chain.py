@@ -39,7 +39,7 @@ class RunebaseHeaderSpamTest(BitcoinTestFramework):
         block_sig_key.set(hash256(struct.pack('<I', 0)), False)
         block.sign_block(block_sig_key)
 
-    def create_pos_block(self, staking_prevouts, parent_block, parent_block_stake_modifier, block_height, block_reward=2000400000000):
+    def create_pos_block(self, staking_prevouts, parent_block, parent_block_stake_modifier, block_height, block_reward=None):
         coinbase = create_coinbase(block_height+1)
         coinbase.vout[0].nValue = 0
         coinbase.vout[0].scriptPubKey = b""
@@ -57,7 +57,11 @@ class RunebaseHeaderSpamTest(BitcoinTestFramework):
 
         stake_tx_unsigned.vin.append(CTxIn(block.prevoutStake))
         stake_tx_unsigned.vout.append(CTxOut())
-        stake_tx_unsigned.vout.append(CTxOut(2000400000000, scriptPubKey))
+        # was hardcoded to 2000400000000, i.e. Qtum's 20000 stake + 4 reward.
+        # Derive it: prevout value + the subsidy at this height.
+        coinstake_txout = self.node.gettxout(hex(block.prevoutStake.hash)[2:].zfill(64), block.prevoutStake.n)
+        stake_out_value = int((float(str(coinstake_txout['value'])) + block_subsidy_at(block_height+1)) * COIN)
+        stake_tx_unsigned.vout.append(CTxOut(stake_out_value, scriptPubKey))
 
         stake_tx_signed_raw_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(stake_tx_unsigned.serialize()))['hex']
         f = io.BytesIO(hex_str_to_bytes(stake_tx_signed_raw_hex))
