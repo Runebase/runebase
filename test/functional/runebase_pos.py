@@ -385,8 +385,15 @@ class RunebasePOSTest(BitcoinTestFramework):
         if outNValue is None:
             # default was 10002, i.e. half of Qtum's 20000 stake + 4 reward.
             # Derive it: (prevout value + subsidy at this height) split in two.
-            _txout = self.node.gettxout(hex(coinStakePrevout.hash)[2:].zfill(64), coinStakePrevout.n)
-            outNValue = (float(str(_txout['value'])) + block_subsidy_at(self.node.getblockcount()+1)) / 2
+            _txid = hex(coinStakePrevout.hash)[2:].zfill(64)
+            _txout = self.node.gettxout(_txid, coinStakePrevout.n, True)
+            if _txout is None:
+                # unconfirmed / already-spent prevout: read the value from the tx itself
+                _raw = self.node.decoderawtransaction(self.node.gettransaction(_txid)['hex'])
+                _value = _raw['vout'][coinStakePrevout.n]['value']
+            else:
+                _value = _txout['value']
+            outNValue = (float(str(_value)) + block_subsidy_at(self.node.getblockcount()+1)) / 2
         stake_tx_unsigned.vout.append(CTxOut(int(outNValue*COIN), scriptPubKey))
         stake_tx_unsigned.vout.append(CTxOut(int(outNValue*COIN), scriptPubKey))
 

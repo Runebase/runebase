@@ -26,7 +26,7 @@ class RunebaseGasLimitOverflowTest(BitcoinTestFramework):
         self.node = self.nodes[0]
         self.node.setmocktime(int(time.time()) - 1000000)
         self.generate(self.node, 200 + COINBASE_MATURITY)
-        unspents = [unspent for unspent in self.node.listunspent() if unspent['amount'] == 20000]
+        unspents = [unspent for unspent in self.node.listunspent() if unspent['amount'] == INITIAL_BLOCK_REWARD]
         unspent = unspents.pop(0)
 
         tx = CTransaction()

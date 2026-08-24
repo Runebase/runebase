@@ -63,10 +63,10 @@ class RunebaseCreateEthOpCodeTest(BitcoinTestFramework):
         assert_equal(self.node.listcontracts(), deployed_contracts)
 
         # Make sure that the call to create resulted in an out of gas exception (all gas will have been assigned to the miner)
-        # The total gas is equal to 1 runebase (10^6 * 10^2) + a minor txfee
+        # The total gas is equal to 1 RUNES (10^6 * 10^2) + a minor txfee
         block = self.node.getblock(blockhash)
         coinbase_tx = self.node.decoderawtransaction(self.node.gettransaction(block['tx'][0])['hex'])
-        assert(coinbase_tx['vout'][0]['value'] >= 20000+1)
+        assert(coinbase_tx['vout'][0]['value'] >= INITIAL_BLOCK_REWARD+1)
         
         # Since the call to the contract threw an out of gas exception the origin contract should have a zero balance
         assert_equal(deployed_contracts[factory_with_value_contract_address], 0)
