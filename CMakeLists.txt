@@ -218,6 +218,20 @@ target_link_libraries(core_interface INTERFACE
   $<$<CONFIG:Debug>:core_interface_debug>
 )
 
+# Runebase: define signed-integer overflow as wrapping.
+#
+# Runebase's MAX_MONEY (52,636,000,000 RUNES = 5.2636e18 sat) leaves only ~1x
+# headroom below INT64_MAX, where Bitcoin's leaves ~4392x. The amount-summing
+# loops in tx_check.cpp, tx_verify.cpp and primitives/transaction.cpp check
+# MoneyRange() after (or within) the addition, so two MAX_MONEY outputs
+# overflow. Without -fwrapv that is undefined behaviour and GCC/Clang at -O2
+# elide the check entirely, silently disabling bad-txns-txouttotal-toolarge.
+#
+# Verified: without this flag a transaction with two MAX_MONEY outputs passes
+# CheckTransaction; with it, it is correctly rejected. Upstream Bitcoin does
+# not need this because its MAX_MONEY cannot overflow a sum.
+try_append_cxx_flags("-fwrapv" TARGET core_interface SKIP_LINK)
+
 if(BUILD_FOR_FUZZING)
   message(WARNING "BUILD_FOR_FUZZING=ON will disable all other targets and force BUILD_FUZZ_BINARY=ON.")
   set(BUILD_DAEMON OFF)
