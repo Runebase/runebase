@@ -476,7 +476,7 @@ public:
 
         checkpointData = {
             {
-                {},
+                {0, uint256{"0000daebea5f2d5097dfd4726531aeed8dd6b2e9a334f3c2a442c3e253168f44"}},
             }
         };
 
@@ -614,8 +614,8 @@ public:
 
         genesis = CreateGenesisBlock(1683912586, 34165, 0x1f00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256{"0000e0d4bc95abd1c0fcef0abb2795b6e8525f406262d59dc60cd3c490641347"});
-        assert(genesis.hashMerkleRoot == uint256{"ed34050eb5909ee535fcb07af292ea55f3d2f291187617b44d3282231405b96d"});
+        assert(consensus.hashGenesisBlock == uint256{"0000fc31891dcbd9744efe507816d6884027c8dd8cb499f1333374ed3ce315ab"});
+        assert(genesis.hashMerkleRoot == uint256{"4d050108faee132d46f0c26c346fee17e804d20f658e0b61afe3fd083c8281af"});
 
         m_assumeutxo_data = {
             {}
@@ -766,7 +766,7 @@ public:
 
         checkpointData = {
             {
-                {0, uint256{"665ed5b402ac0b44efc37d8926332994363e8a7278b7ee9a58fb972efadae943"}},
+                {0, uint256{"7bf779b04828d0fd6de63c64c1de4980eb16afe40aa0dd7e0f865edf92438e69"}},
             }
         };
 
