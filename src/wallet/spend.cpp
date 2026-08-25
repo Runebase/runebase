@@ -1002,6 +1002,14 @@ size_t GetSerializeSizeForRecipient(const CRecipient& recipient)
     return ::GetSerializeSize(CTxOut(recipient.nAmount, GetScriptForDestination(recipient.dest)));
 }
 
+//! Runebase: worst-case size of the sender signature that SignTransactionOutput
+//! embeds into each OP_SENDER output AFTER the transaction fee has been
+//! computed (1-byte push prefix + 72-byte DER signature with its push byte +
+//! 33-byte compressed pubkey with its push byte). Fee estimation cannot see it,
+//! so it must be added explicitly; at Runebase's 100x relay-fee scale the
+//! shortfall otherwise strands the transaction outside the mempool.
+static constexpr int OP_SENDER_SIGNATURE_SIZE = 108;
+
 bool IsDust(const CRecipient& recipient, const CFeeRate& dustRelayFee)
 {
     return ::IsDust(CTxOut(recipient.nAmount, GetScriptForDestination(recipient.dest)), dustRelayFee);
@@ -1055,6 +1063,10 @@ static util::Result<CreatedTransactionResult> CreateTransactionInternal(
 
         // Include the fee cost for outputs.
         coin_selection_params.tx_noinputs_size += GetSerializeSizeForRecipient(recipient);
+        // Runebase: leave room for the sender signature added after fee calculation
+        if (GetScriptForDestination(recipient.dest).HasOpSender()) {
+            coin_selection_params.tx_noinputs_size += OP_SENDER_SIGNATURE_SIZE;
+        }
         recipients_sum += recipient.nAmount;
 
         if (recipient.fSubtractFeeFromAmount) {
@@ -1299,6 +1311,18 @@ static util::Result<CreatedTransactionResult> CreateTransactionInternal(
     int nBytes = tx_sizes.vsize;
     if (nBytes == -1) {
         return util::Error{_("Missing solving data for estimating transaction size")};
+    }
+    // Runebase: OP_SENDER outputs are signed only after the fee is finalized
+    // (SignTransactionOutput below), growing each such output by up to
+    // OP_SENDER_SIGNATURE_SIZE bytes that CalculateMaximumSignedTxSize cannot
+    // see. Account for them here so the paid fee still clears the relay
+    // minimum once the sender signatures are embedded.
+    if (txNew.HasOpSender()) {
+        for (const CTxOut& txo : txNew.vout) {
+            if (txo.scriptPubKey.HasOpSender()) {
+                nBytes += OP_SENDER_SIGNATURE_SIZE;
+            }
+        }
     }
     CAmount fee_needed = coin_selection_params.m_effective_feerate.GetFee(nBytes) + result.GetTotalBumpFees() + nGasFee;
     const CAmount output_value = CalculateOutputValue(txNew);

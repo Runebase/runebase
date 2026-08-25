@@ -279,7 +279,11 @@ static RPCHelpMan testmempoolaccept()
                     // Check that fee does not exceed maximum fee
                     const int64_t virtual_size = tx_result.m_vsize.value();
                     const CAmount max_raw_tx_fee = max_raw_tx_fee_rate.GetFee(virtual_size);
-                    if (max_raw_tx_fee && fee > max_raw_tx_fee) {
+                    // Runebase: contract transactions carry their gas inside the fee and are
+                    // exempt from the absolute fee cap on the broadcast path
+                    // (node/transaction.cpp); mirror that here so testmempoolaccept does not
+                    // report max-fee-exceeded for a transaction sendrawtransaction accepts.
+                    if (max_raw_tx_fee && fee > max_raw_tx_fee && !tx->HasCreateOrCall()) {
                         result_inner.pushKV("allowed", false);
                         result_inner.pushKV("reject-reason", "max-fee-exceeded");
                         exit_early = true;

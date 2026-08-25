@@ -52,10 +52,7 @@ class RunebaseGasPriceForkTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
-        # -paytxfee works around the pre-existing sendtocontract fee bug
-        # (wallet underpays relay fee when an OP_CALL output is present; see
-        # CLAUDE.md "OPEN BUG"). It is unrelated to what this test proves.
-        self.extra_args = [['-rip1height=%d' % FORK_HEIGHT, '-logevents', '-txindex', '-paytxfee=1.00']]
+        self.extra_args = [['-rip1height=%d' % FORK_HEIGHT, '-logevents', '-txindex']]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -150,6 +147,21 @@ class RunebaseGasPriceForkTest(BitcoinTestFramework):
         self.generate(self.node, 1)
         assert_equal(self.counter_value(), 5)
 
+        self.log.info('POST-FORK: a heavy call carrying >1000 RUNES of gas clears every fee cap')
+        # 20M gas is the single-output standardness ceiling (half the 40M block
+        # gas limit, solver.cpp); at 0.00006 RUNES/gas that is 1200 RUNES of gas
+        # riding in the fee. Contract transactions are exempt from -maxtxfee and
+        # maxfeerate by design, so this must relay.
+        balance_before = self.node.getbalance()
+        heavy = self.node.sendtocontract(self.contract_address, COUNTER_INC, 0, 20000000, "0.00006000")['txid']
+        assert heavy in self.node.getrawmempool()
+        self.generate(self.node, 1)
+        receipt = self.node.gettransactionreceipt(heavy)[0]
+        assert_equal(receipt['excepted'], 'None')
+        fee_paid = balance_before - self.node.getbalance()
+        assert fee_paid > 1000, "expected >1000 RUNES total cost, got %s" % fee_paid
+        assert_equal(self.counter_value(), 6)
+
         self.log.info('POST-FORK: wallet defaults follow the DGP: createcontract with no explicit price')
         new_contract = self.node.createcontract(COUNTER_BYTECODE)['address']
         self.generate(self.node, 1)
@@ -171,7 +183,7 @@ class RunebaseGasPriceForkTest(BitcoinTestFramework):
         self.wait_until(lambda: self.node.getblockcount() == tip_height, timeout=900)
         assert_equal(self.node.getbestblockhash(), tip_hash)
         assert_equal(self.node.getdgpinfo()['mingasprice'], NEW_MIN_GAS_PRICE)
-        assert_equal(self.counter_value(), 5)
+        assert_equal(self.counter_value(), 6)
         self.log.info('Reindexed to the same tip: pre-fork 40-gas blocks and post-fork 4000-gas blocks both validate')
 
 
