@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -48,6 +48,7 @@
 #include <util/check.h>
 #include <util/fs.h>
 #include <util/strencodings.h>
+#include <util/syserror.h>
 #include <util/translation.h>
 #include <validation.h>
 #include <validationinterface.h>
@@ -61,7 +62,7 @@
 #include <util/tokenstr.h>
 #include <rpc/contract_util.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <condition_variable>
 #include <iterator>
@@ -73,6 +74,7 @@
 using kernel::CCoinsStats;
 using kernel::CoinStatsHashType;
 
+using interfaces::BlockRef;
 using interfaces::Mining;
 using node::BlockManager;
 using node::NodeContext;
@@ -90,7 +92,7 @@ UniValue WriteUTXOSnapshot(
     CCoinsViewCursor* pcursor,
     CCoinsStats* maybe_stats,
     const CBlockIndex* tip,
-    AutoFile& afile,
+    AutoFile&& afile,
     const fs::path& path,
     const fs::path& temppath,
     const std::function<void()>& interruption_point = {});
@@ -272,7 +274,7 @@ UniValue blockheaderToJSON(const CBlockIndex& tip, const CBlockIndex& blockindex
     result.pushKV("mediantime", blockindex.GetMedianTimePast());
     result.pushKV("nonce", blockindex.nNonce);
     result.pushKV("bits", strprintf("%08x", blockindex.nBits));
-    result.pushKV("target", GetTarget(tip, pow_limit).GetHex());
+    result.pushKV("target", GetTarget(blockindex, pow_limit).GetHex());
     result.pushKV("difficulty", GetDifficulty(blockindex));
     result.pushKV("chainwork", blockindex.nChainWork.GetHex());
     result.pushKV("nTx", blockindex.nTx);
@@ -314,6 +316,7 @@ UniValue blockToJSON(BlockManager& blockman, const CBlock& block, const CBlockIn
     result.pushKV("size", (int)::GetSerializeSize(TX_WITH_WITNESS(block)));
     result.pushKV("weight", (int)::GetBlockWeight(block));
     UniValue txs(UniValue::VARR);
+    txs.reserve(block.vtx.size());
 
     switch (verbosity) {
         case TxVerbosity::SHOW_TXID:
@@ -349,7 +352,7 @@ UniValue blockToJSON(BlockManager& blockman, const CBlock& block, const CBlockIn
 static RPCHelpMan getestimatedannualroi()
 {
     return RPCHelpMan{"getestimatedannualroi",
-                "\nReturns the estimated annual roi.\n",
+                "Returns the estimated annual roi.\n",
                 {},
                 RPCResult{
                     RPCResult::Type::NUM, "", "The current estimated annual roi"},
@@ -368,8 +371,9 @@ static RPCHelpMan getestimatedannualroi()
 
 static RPCHelpMan getblockcount()
 {
-    return RPCHelpMan{"getblockcount",
-                "\nReturns the height of the most-work fully-validated chain.\n"
+    return RPCHelpMan{
+        "getblockcount",
+        "Returns the height of the most-work fully-validated chain.\n"
                 "The genesis block has height 0.\n",
                 {},
                 RPCResult{
@@ -389,8 +393,9 @@ static RPCHelpMan getblockcount()
 
 static RPCHelpMan getbestblockhash()
 {
-    return RPCHelpMan{"getbestblockhash",
-                "\nReturns the hash of the best (tip) block in the most-work fully-validated chain.\n",
+    return RPCHelpMan{
+        "getbestblockhash",
+        "Returns the hash of the best (tip) block in the most-work fully-validated chain.\n",
                 {},
                 RPCResult{
                     RPCResult::Type::STR_HEX, "", "the block hash, hex-encoded"},
@@ -409,12 +414,14 @@ static RPCHelpMan getbestblockhash()
 
 static RPCHelpMan waitfornewblock()
 {
-    return RPCHelpMan{"waitfornewblock",
-                "\nWaits for any new block and returns useful info about it.\n"
+    return RPCHelpMan{
+        "waitfornewblock",
+        "Waits for any new block and returns useful info about it.\n"
                 "\nReturns the current block on timeout or exit.\n"
                 "\nMake sure to use no RPC timeout (runebase-cli -rpcclienttimeout=0)",
                 {
                     {"timeout", RPCArg::Type::NUM, RPCArg::Default{0}, "Time in milliseconds to wait for a response. 0 indicates no timeout."},
+                    {"current_tip", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED, "Method waits for the chain tip to differ from this."},
                 },
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
@@ -436,14 +443,29 @@ static RPCHelpMan waitfornewblock()
     NodeContext& node = EnsureAnyNodeContext(request.context);
     Mining& miner = EnsureMining(node);
 
-    auto block{CHECK_NONFATAL(miner.getTip()).value()};
-    if (IsRPCRunning()) {
-        block = timeout ? miner.waitTipChanged(block.hash, std::chrono::milliseconds(timeout)) : miner.waitTipChanged(block.hash);
-    }
+    // If the caller provided a current_tip value, pass it to waitTipChanged().
+    //
+    // If the caller did not provide a current tip hash, call getTip() to get
+    // one and wait for the tip to be different from this value. This mode is
+    // less reliable because if the tip changed between waitfornewblock calls,
+    // it will need to change a second time before this call returns.
+    BlockRef current_block{CHECK_NONFATAL(miner.getTip()).value()};
+
+    uint256 tip_hash{request.params[1].isNull()
+        ? current_block.hash
+        : ParseHashV(request.params[1], "current_tip")};
+
+    // If the user provided an invalid current_tip then this call immediately
+    // returns the current tip.
+    std::optional<BlockRef> block = timeout ? miner.waitTipChanged(tip_hash, std::chrono::milliseconds(timeout)) :
+                                              miner.waitTipChanged(tip_hash);
+
+    // Return current block upon shutdown
+    if (block) current_block = *block;
 
     UniValue ret(UniValue::VOBJ);
-    ret.pushKV("hash", block.hash.GetHex());
-    ret.pushKV("height", block.height);
+    ret.pushKV("hash", current_block.hash.GetHex());
+    ret.pushKV("height", current_block.height);
     return ret;
 },
     };
@@ -451,8 +473,9 @@ static RPCHelpMan waitfornewblock()
 
 static RPCHelpMan waitforblock()
 {
-    return RPCHelpMan{"waitforblock",
-                "\nWaits for a specific new block and returns useful info about it.\n"
+    return RPCHelpMan{
+        "waitforblock",
+        "Waits for a specific new block and returns useful info about it.\n"
                 "\nReturns the current block on timeout or exit.\n"
                 "\nMake sure to use no RPC timeout (runebase-cli -rpcclienttimeout=0)",
                 {
@@ -482,22 +505,28 @@ static RPCHelpMan waitforblock()
     NodeContext& node = EnsureAnyNodeContext(request.context);
     Mining& miner = EnsureMining(node);
 
-    auto block{CHECK_NONFATAL(miner.getTip()).value()};
+    // Abort if RPC came out of warmup too early
+    BlockRef current_block{CHECK_NONFATAL(miner.getTip()).value()};
+
     const auto deadline{std::chrono::steady_clock::now() + 1ms * timeout};
-    while (IsRPCRunning() && block.hash != hash) {
+    while (current_block.hash != hash) {
+        std::optional<BlockRef> block;
         if (timeout) {
             auto now{std::chrono::steady_clock::now()};
             if (now >= deadline) break;
             const MillisecondsDouble remaining{deadline - now};
-            block = miner.waitTipChanged(block.hash, remaining);
+            block = miner.waitTipChanged(current_block.hash, remaining);
         } else {
-            block = miner.waitTipChanged(block.hash);
+            block = miner.waitTipChanged(current_block.hash);
         }
+        // Return current block upon shutdown
+        if (!block) break;
+        current_block = *block;
     }
 
     UniValue ret(UniValue::VOBJ);
-    ret.pushKV("hash", block.hash.GetHex());
-    ret.pushKV("height", block.height);
+    ret.pushKV("hash", current_block.hash.GetHex());
+    ret.pushKV("height", current_block.height);
     return ret;
 },
     };
@@ -505,8 +534,9 @@ static RPCHelpMan waitforblock()
 
 static RPCHelpMan waitforblockheight()
 {
-    return RPCHelpMan{"waitforblockheight",
-                "\nWaits for (at least) block height and returns the height and hash\n"
+    return RPCHelpMan{
+        "waitforblockheight",
+        "Waits for (at least) block height and returns the height and hash\n"
                 "of the current tip.\n"
                 "\nReturns the current block on timeout or exit.\n"
                 "\nMake sure to use no RPC timeout (runebase-cli -rpcclienttimeout=0)",
@@ -537,23 +567,29 @@ static RPCHelpMan waitforblockheight()
     NodeContext& node = EnsureAnyNodeContext(request.context);
     Mining& miner = EnsureMining(node);
 
-    auto block{CHECK_NONFATAL(miner.getTip()).value()};
+    // Abort if RPC came out of warmup too early
+    BlockRef current_block{CHECK_NONFATAL(miner.getTip()).value()};
+
     const auto deadline{std::chrono::steady_clock::now() + 1ms * timeout};
 
-    while (IsRPCRunning() && block.height < height) {
+    while (current_block.height < height) {
+        std::optional<BlockRef> block;
         if (timeout) {
             auto now{std::chrono::steady_clock::now()};
             if (now >= deadline) break;
             const MillisecondsDouble remaining{deadline - now};
-            block = miner.waitTipChanged(block.hash, remaining);
+            block = miner.waitTipChanged(current_block.hash, remaining);
         } else {
-            block = miner.waitTipChanged(block.hash);
+            block = miner.waitTipChanged(current_block.hash);
         }
+        // Return current block on shutdown
+        if (!block) break;
+        current_block = *block;
     }
 
     UniValue ret(UniValue::VOBJ);
-    ret.pushKV("hash", block.hash.GetHex());
-    ret.pushKV("height", block.height);
+    ret.pushKV("hash", current_block.hash.GetHex());
+    ret.pushKV("height", current_block.height);
     return ret;
 },
     };
@@ -561,8 +597,9 @@ static RPCHelpMan waitforblockheight()
 
 static RPCHelpMan syncwithvalidationinterfacequeue()
 {
-    return RPCHelpMan{"syncwithvalidationinterfacequeue",
-                "\nWaits for the validation interface queue to catch up on everything that was there when we entered this function.\n",
+    return RPCHelpMan{
+        "syncwithvalidationinterfacequeue",
+        "Waits for the validation interface queue to catch up on everything that was there when we entered this function.\n",
                 {},
                 RPCResult{RPCResult::Type::NONE, "", ""},
                 RPCExamples{
@@ -580,9 +617,10 @@ static RPCHelpMan syncwithvalidationinterfacequeue()
 
 static RPCHelpMan getdifficulty()
 {
-    return RPCHelpMan{"getdifficulty",
-                "\nReturns the proof-of-work difficulty as a multiple of the minimum difficulty.\n"
-                "\nReturns the proof-of-stake difficulty as a multiple of the minimum difficulty.\n",
+    return RPCHelpMan{
+        "getdifficulty",
+        "Returns the proof-of-work difficulty as a multiple of the minimum difficulty.\n"
+        "Returns the proof-of-stake difficulty as a multiple of the minimum difficulty.\n",
                 {},
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
@@ -665,8 +703,9 @@ static RPCHelpMan getblockfrompeer()
 
 static RPCHelpMan getblockhash()
 {
-    return RPCHelpMan{"getblockhash",
-                "\nReturns hash of block in best-block-chain at height provided.\n",
+    return RPCHelpMan{
+        "getblockhash",
+        "Returns hash of block in best-block-chain at height provided.\n",
                 {
                     {"height", RPCArg::Type::NUM, RPCArg::Optional::NO, "The height index"},
                 },
@@ -695,7 +734,7 @@ static RPCHelpMan getblockhash()
 static RPCHelpMan getaccountinfo()
 {
     return RPCHelpMan{"getaccountinfo",
-                "\nGet contract details including balance, storage data and code.\n",
+                "Get contract details including balance, storage data and code.\n",
                 {
                     {"address", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                 },
@@ -773,7 +812,7 @@ static RPCHelpMan getaccountinfo()
 static RPCHelpMan getcontractcode()
 {
     return RPCHelpMan{"getcontractcode",
-                "\nGet contract code.\n",
+                "Get contract code.\n",
                 {
                     {"address", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                     {"blocknum", RPCArg::Type::NUM,  RPCArg::Default{-1}, "Number of block to get state from."},
@@ -827,7 +866,7 @@ static RPCHelpMan getcontractcode()
 static RPCHelpMan getstorage()
 {
     return RPCHelpMan{"getstorage",
-                "\nGet contract storage data.\n",
+                "Get contract storage data.\n",
                 {
                     {"address", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                     {"blocknum", RPCArg::Type::NUM,  RPCArg::Default{-1}, "Number of block to get state from."},
@@ -913,8 +952,9 @@ static RPCHelpMan getstorage()
 
 static RPCHelpMan getblockheader()
 {
-    return RPCHelpMan{"getblockheader",
-                "\nIf verbose is false, returns a string that is serialized, hex-encoded data for blockheader 'hash'.\n"
+    return RPCHelpMan{
+        "getblockheader",
+        "If verbose is false, returns a string that is serialized, hex-encoded data for blockheader 'hash'.\n"
                 "If verbose is true, returns an Object with information about blockheader <hash>.\n",
                 {
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The block hash"},
@@ -1023,9 +1063,9 @@ static CBlock GetBlockChecked(BlockManager& blockman, const CBlockIndex& blockin
     return block;
 }
 
-static std::vector<uint8_t> GetRawBlockChecked(BlockManager& blockman, const CBlockIndex& blockindex)
+static std::vector<std::byte> GetRawBlockChecked(BlockManager& blockman, const CBlockIndex& blockindex)
 {
-    std::vector<uint8_t> data{};
+    std::vector<std::byte> data{};
     FlatFilePos pos{};
     {
         LOCK(cs_main);
@@ -1087,8 +1127,9 @@ const RPCResult getblock_vin{
 
 static RPCHelpMan getblock()
 {
-    return RPCHelpMan{"getblock",
-                "\nIf verbosity is 0, returns a string that is serialized, hex-encoded data for block 'hash'.\n"
+    return RPCHelpMan{
+        "getblock",
+        "If verbosity is 0, returns a string that is serialized, hex-encoded data for block 'hash'.\n"
                 "If verbosity is 1, returns an Object with information about block <hash>.\n"
                 "If verbosity is 2, returns an Object with information about block <hash> and information about each transaction.\n"
                 "If verbosity is 3, returns an Object with information about block <hash> and information about each transaction, including prevout information for inputs (only for unpruned blocks in the current best chain).\n",
@@ -1183,7 +1224,7 @@ static RPCHelpMan getblock()
         }
     }
 
-    const std::vector<uint8_t> block_data{GetRawBlockChecked(chainman.m_blockman, *pblockindex)};
+    const std::vector<std::byte> block_data{GetRawBlockChecked(chainman.m_blockman, *pblockindex)};
 
     if (verbosity <= 0) {
         return HexStr(block_data);
@@ -1211,7 +1252,7 @@ static RPCHelpMan getblock()
 RPCHelpMan callcontract()
 {
     return RPCHelpMan{"callcontract",
-                "\nCall contract methods offline, or test contract deployment offline.\n",
+                "Call contract methods offline, or test contract deployment offline.\n",
                 {
                     {"address", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address, or empty address \"\""},
                     {"data", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The data hex string"},
@@ -1447,7 +1488,7 @@ RPCHelpMan waitforlogs()
             while (true) {
                 request.PollPing();
                 auto latestblock = miner.waitTipChanged(currentblock.hash, std::chrono::milliseconds(1000));
-                if (latestblock.height > currentblock.height) {
+                if (CHECK_NONFATAL(latestblock).value().height > currentblock.height) {
                     break;
                 }
 
@@ -1529,7 +1570,7 @@ RPCHelpMan waitforlogs()
 RPCHelpMan searchlogs()
 {
     return RPCHelpMan{"searchlogs",
-                "\nSearch logs, requires -logevents to be enabled.\n",
+                "Search logs, requires -logevents to be enabled.\n",
                 {
                     {"fromblock", RPCArg::Type::NUM, RPCArg::Optional::NO, "The number of the earliest block (latest may be given to mean the most recent block)."},
                     {"toblock", RPCArg::Type::NUM, RPCArg::Optional::NO, "The number of the latest block (-1 may be given to mean the most recent block)."},
@@ -1612,7 +1653,7 @@ RPCHelpMan searchlogs()
 RPCHelpMan gettransactionreceipt()
 {
     return RPCHelpMan{"gettransactionreceipt",
-                "\nGet the transaction receipt.\n",
+                "Get the transaction receipt.\n",
                 {
                     {"hash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The transaction hash"},
                 },
@@ -1697,7 +1738,7 @@ RPCHelpMan gettransactionreceipt()
 RPCHelpMan getblocktransactionreceipts()
 {
     return RPCHelpMan{"getblocktransactionreceipts",
-                "\nGet block transaction receipts.\n",
+                "Get block transaction receipts.\n",
                 {
                     {"hash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The block hash"},
                 },
@@ -1766,7 +1807,7 @@ RPCHelpMan getblocktransactionreceipts()
     UniValue result(UniValue::VARR);
     for (const auto& tx : block.vtx) {
         if (tx->HasCreateOrCall()) {
-            const std::vector<TransactionReceiptInfo> transactionReceiptInfo = pstorageresult->getResult(uintToh256(tx->GetHash()));
+            const std::vector<TransactionReceiptInfo> transactionReceiptInfo = pstorageresult->getResult(uintToh256(tx->GetHash().ToUint256()));
             for (const TransactionReceiptInfo& t : transactionReceiptInfo) {
                 UniValue tri(UniValue::VOBJ);
                 transactionReceiptInfoToJSON(t, tri);
@@ -1783,7 +1824,7 @@ RPCHelpMan getblocktransactionreceipts()
 RPCHelpMan getdelegationinfoforaddress()
 {
     return RPCHelpMan{"getdelegationinfoforaddress",
-                "\nGet delegation information for an address.\n",
+                "Get delegation information for an address.\n",
                 {
                     {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The runebase address string"},
                 },
@@ -1962,7 +2003,7 @@ RPCHelpMan getdelegationsforstaker()
 RPCHelpMan listcontracts()
 {
     return RPCHelpMan{"listcontracts",
-                "\nGet the contracts list.\n",
+                "Get the contracts list.\n",
                 {
                     {"start", RPCArg::Type::NUM, RPCArg::Default{1}, "The starting account index"},
                     {"maxdisplay", RPCArg::Type::NUM, RPCArg::Default{20}, "Max accounts to list"},
@@ -2147,8 +2188,9 @@ static std::optional<kernel::CCoinsStats> GetUTXOStats(CCoinsView* view, node::B
 
 static RPCHelpMan gettxoutsetinfo()
 {
-    return RPCHelpMan{"gettxoutsetinfo",
-                "\nReturns statistics about the unspent transaction output set.\n"
+    return RPCHelpMan{
+        "gettxoutsetinfo",
+        "Returns statistics about the unspent transaction output set.\n"
                 "Note this call may take some time if you are not using coinstatsindex.\n",
                 {
                     {"hash_type", RPCArg::Type::STR, RPCArg::Default{"hash_serialized_3"}, "Which UTXO set hash should be calculated. Options: 'hash_serialized_3' (the legacy algorithm), 'muhash', 'none'."},
@@ -2266,8 +2308,6 @@ static RPCHelpMan gettxoutsetinfo()
             ret.pushKV("transactions", static_cast<int64_t>(stats.nTransactions));
             ret.pushKV("disk_size", stats.nDiskSize);
         } else {
-            ret.pushKV("total_unspendable_amount", ValueFromAmount(stats.total_unspendable_amount));
-
             CCoinsStats prev_stats{};
             if (pindex->nHeight > 0) {
                 const std::optional<CCoinsStats> maybe_prev_stats = GetUTXOStats(coins_view, *blockman, hash_type, node.rpc_interruption_point, pindex->pprev, index_requested);
@@ -2277,11 +2317,29 @@ static RPCHelpMan gettxoutsetinfo()
                 prev_stats = maybe_prev_stats.value();
             }
 
+            CAmount block_total_unspendable_amount = stats.total_unspendables_genesis_block +
+                                                     stats.total_unspendables_bip30 +
+                                                     stats.total_unspendables_scripts +
+                                                     stats.total_unspendables_unclaimed_rewards;
+            CAmount prev_block_total_unspendable_amount = prev_stats.total_unspendables_genesis_block +
+                                                          prev_stats.total_unspendables_bip30 +
+                                                          prev_stats.total_unspendables_scripts +
+                                                          prev_stats.total_unspendables_unclaimed_rewards;
+
+            ret.pushKV("total_unspendable_amount", ValueFromAmount(block_total_unspendable_amount));
+
             UniValue block_info(UniValue::VOBJ);
-            block_info.pushKV("prevout_spent", ValueFromAmount(stats.total_prevout_spent_amount - prev_stats.total_prevout_spent_amount));
-            block_info.pushKV("coinbase", ValueFromAmount(stats.total_coinbase_amount - prev_stats.total_coinbase_amount));
-            block_info.pushKV("new_outputs_ex_coinbase", ValueFromAmount(stats.total_new_outputs_ex_coinbase_amount - prev_stats.total_new_outputs_ex_coinbase_amount));
-            block_info.pushKV("unspendable", ValueFromAmount(stats.total_unspendable_amount - prev_stats.total_unspendable_amount));
+            // These per-block values should fit uint64 under normal circumstances
+            arith_uint256 diff_prevout = stats.total_prevout_spent_amount - prev_stats.total_prevout_spent_amount;
+            arith_uint256 diff_coinbase = stats.total_coinbase_amount - prev_stats.total_coinbase_amount;
+            arith_uint256 diff_outputs = stats.total_new_outputs_ex_coinbase_amount - prev_stats.total_new_outputs_ex_coinbase_amount;
+            CAmount prevout_amount = static_cast<CAmount>(diff_prevout.GetLow64());
+            CAmount coinbase_amount = static_cast<CAmount>(diff_coinbase.GetLow64());
+            CAmount outputs_amount = static_cast<CAmount>(diff_outputs.GetLow64());
+            block_info.pushKV("prevout_spent", ValueFromAmount(prevout_amount));
+            block_info.pushKV("coinbase", ValueFromAmount(coinbase_amount));
+            block_info.pushKV("new_outputs_ex_coinbase", ValueFromAmount(outputs_amount));
+            block_info.pushKV("unspendable", ValueFromAmount(block_total_unspendable_amount - prev_block_total_unspendable_amount));
 
             UniValue unspendables(UniValue::VOBJ);
             unspendables.pushKV("genesis_block", ValueFromAmount(stats.total_unspendables_genesis_block - prev_stats.total_unspendables_genesis_block));
@@ -2302,8 +2360,9 @@ static RPCHelpMan gettxoutsetinfo()
 
 static RPCHelpMan gettxout()
 {
-    return RPCHelpMan{"gettxout",
-        "\nReturns details about an unspent transaction output.\n",
+    return RPCHelpMan{
+        "gettxout",
+        "Returns details about an unspent transaction output.\n",
         {
             {"txid", RPCArg::Type::STR, RPCArg::Optional::NO, "The transaction id"},
             {"n", RPCArg::Type::NUM, RPCArg::Optional::NO, "vout number"},
@@ -2383,8 +2442,9 @@ static RPCHelpMan gettxout()
 
 static RPCHelpMan verifychain()
 {
-    return RPCHelpMan{"verifychain",
-                "\nVerifies blockchain database.\n",
+    return RPCHelpMan{
+        "verifychain",
+        "Verifies blockchain database.\n",
                 {
                     {"checklevel", RPCArg::Type::NUM, RPCArg::DefaultHint{strprintf("%d, range=0-4", DEFAULT_CHECKLEVEL)},
                         strprintf("How thorough the block verification is:\n%s", MakeUnorderedList(CHECKLEVEL_DOC))},
@@ -2429,58 +2489,41 @@ static void SoftForkDescPushBack(const CBlockIndex* blockindex, UniValue& softfo
 static void SoftForkDescPushBack(const CBlockIndex* blockindex, UniValue& softforks, const ChainstateManager& chainman, Consensus::DeploymentPos id)
 {
     // For BIP9 deployments.
-
     if (!DeploymentEnabled(chainman, id)) return;
     if (blockindex == nullptr) return;
 
-    auto get_state_name = [](const ThresholdState state) -> std::string {
-        switch (state) {
-        case ThresholdState::DEFINED: return "defined";
-        case ThresholdState::STARTED: return "started";
-        case ThresholdState::LOCKED_IN: return "locked_in";
-        case ThresholdState::ACTIVE: return "active";
-        case ThresholdState::FAILED: return "failed";
-        }
-        return "invalid";
-    };
-
     UniValue bip9(UniValue::VOBJ);
-
-    const ThresholdState next_state = chainman.m_versionbitscache.State(blockindex, chainman.GetConsensus(), id);
-    const ThresholdState current_state = chainman.m_versionbitscache.State(blockindex->pprev, chainman.GetConsensus(), id);
-
-    const bool has_signal = (ThresholdState::STARTED == current_state || ThresholdState::LOCKED_IN == current_state);
+    BIP9Info info{chainman.m_versionbitscache.Info(*blockindex, chainman.GetConsensus(), id)};
+    const auto& depparams{chainman.GetConsensus().vDeployments[id]};
 
     // BIP9 parameters
-    if (has_signal) {
-        bip9.pushKV("bit", chainman.GetConsensus().vDeployments[id].bit);
+    if (info.stats.has_value()) {
+        bip9.pushKV("bit", depparams.bit);
     }
-    bip9.pushKV("start_time", chainman.GetConsensus().vDeployments[id].nStartTime);
-    bip9.pushKV("timeout", chainman.GetConsensus().vDeployments[id].nTimeout);
-    bip9.pushKV("min_activation_height", chainman.GetConsensus().vDeployments[id].min_activation_height);
+    bip9.pushKV("start_time", depparams.nStartTime);
+    bip9.pushKV("timeout", depparams.nTimeout);
+    bip9.pushKV("min_activation_height", depparams.min_activation_height);
 
     // BIP9 status
-    bip9.pushKV("status", get_state_name(current_state));
-    bip9.pushKV("since", chainman.m_versionbitscache.StateSinceHeight(blockindex->pprev, chainman.GetConsensus(), id));
-    bip9.pushKV("status_next", get_state_name(next_state));
+    bip9.pushKV("status", info.current_state);
+    bip9.pushKV("since", info.since);
+    bip9.pushKV("status_next", info.next_state);
 
     // BIP9 signalling status, if applicable
-    if (has_signal) {
+    if (info.stats.has_value()) {
         UniValue statsUV(UniValue::VOBJ);
-        std::vector<bool> signals;
-        BIP9Stats statsStruct = chainman.m_versionbitscache.Statistics(blockindex, chainman.GetConsensus(), id, &signals);
-        statsUV.pushKV("period", statsStruct.period);
-        statsUV.pushKV("elapsed", statsStruct.elapsed);
-        statsUV.pushKV("count", statsStruct.count);
-        if (ThresholdState::LOCKED_IN != current_state) {
-            statsUV.pushKV("threshold", statsStruct.threshold);
-            statsUV.pushKV("possible", statsStruct.possible);
+        statsUV.pushKV("period", info.stats->period);
+        statsUV.pushKV("elapsed", info.stats->elapsed);
+        statsUV.pushKV("count", info.stats->count);
+        if (info.stats->threshold > 0 || info.stats->possible) {
+            statsUV.pushKV("threshold", info.stats->threshold);
+            statsUV.pushKV("possible", info.stats->possible);
         }
         bip9.pushKV("statistics", std::move(statsUV));
 
         std::string sig;
-        sig.reserve(signals.size());
-        for (const bool s : signals) {
+        sig.reserve(info.signalling_blocks.size());
+        for (const bool s : info.signalling_blocks) {
             sig.push_back(s ? '#' : '-');
         }
         bip9.pushKV("signalling", sig);
@@ -2488,12 +2531,13 @@ static void SoftForkDescPushBack(const CBlockIndex* blockindex, UniValue& softfo
 
     UniValue rv(UniValue::VOBJ);
     rv.pushKV("type", "bip9");
-    if (ThresholdState::ACTIVE == next_state) {
-        rv.pushKV("height", chainman.m_versionbitscache.StateSinceHeight(blockindex, chainman.GetConsensus(), id));
+    bool is_active = false;
+    if (info.active_since.has_value()) {
+        rv.pushKV("height", *info.active_since);
+        is_active = (*info.active_since <= blockindex->nHeight + 1);
     }
-    rv.pushKV("active", ThresholdState::ACTIVE == next_state);
-    rv.pushKV("bip9", std::move(bip9));
-
+    rv.pushKV("active", is_active);
+    rv.pushKV("bip9", bip9);
     softforks.pushKV(DeploymentName(id), std::move(rv));
 }
 
@@ -2783,8 +2827,9 @@ static RPCHelpMan getchaintips()
 
 static RPCHelpMan preciousblock()
 {
-    return RPCHelpMan{"preciousblock",
-                "\nTreats a block as if it were received before others with the same work.\n"
+    return RPCHelpMan{
+        "preciousblock",
+        "Treats a block as if it were received before others with the same work.\n"
                 "\nA later preciousblock call can override the effect of an earlier one.\n"
                 "\nThe effects of preciousblock are not retained across restarts.\n",
                 {
@@ -2844,8 +2889,9 @@ void InvalidateBlock(ChainstateManager& chainman, const uint256 block_hash) {
 
 static RPCHelpMan invalidateblock()
 {
-    return RPCHelpMan{"invalidateblock",
-                "\nPermanently marks a block as invalid, as if it violated a consensus rule.\n",
+    return RPCHelpMan{
+        "invalidateblock",
+        "Permanently marks a block as invalid, as if it violated a consensus rule.\n",
                 {
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "the hash of the block to mark as invalid"},
                 },
@@ -2888,8 +2934,9 @@ void ReconsiderBlock(ChainstateManager& chainman, uint256 block_hash) {
 
 static RPCHelpMan reconsiderblock()
 {
-    return RPCHelpMan{"reconsiderblock",
-                "\nRemoves invalidity status of a block, its ancestors and its descendants, reconsider them for activation.\n"
+    return RPCHelpMan{
+        "reconsiderblock",
+        "Removes invalidity status of a block, its ancestors and its descendants, reconsider them for activation.\n"
                 "This can be used to undo the effects of invalidateblock.\n",
                 {
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "the hash of the block to reconsider"},
@@ -2913,8 +2960,9 @@ static RPCHelpMan reconsiderblock()
 
 static RPCHelpMan getchaintxstats()
 {
-    return RPCHelpMan{"getchaintxstats",
-                "\nCompute statistics about the total number and rate of transactions in the chain.\n",
+    return RPCHelpMan{
+        "getchaintxstats",
+        "Compute statistics about the total number and rate of transactions in the chain.\n",
                 {
                     {"nblocks", RPCArg::Type::NUM, RPCArg::DefaultHint{"one month"}, "Size of the window in number of blocks"},
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::DefaultHint{"chain tip"}, "The hash of the block that ends the window."},
@@ -3060,8 +3108,9 @@ static constexpr size_t PER_UTXO_OVERHEAD = sizeof(COutPoint) + sizeof(uint32_t)
 
 static RPCHelpMan getblockstats()
 {
-    return RPCHelpMan{"getblockstats",
-                "\nCompute per block statistics for a given window. All amounts are in satoshis.\n"
+    return RPCHelpMan{
+        "getblockstats",
+        "Compute per block statistics for a given window. All amounts are in satoshis.\n"
                 "It won't work for some heights with pruning.\n",
                 {
                     {"hash_or_height", RPCArg::Type::NUM, RPCArg::Optional::NO, "The block hash or height of the target block",
@@ -3386,16 +3435,20 @@ static const auto scan_action_arg_desc = RPCArg{
         "\"status\" for progress report (in %) of the current scan"
 };
 
+static const auto output_descriptor_obj = RPCArg{
+    "", RPCArg::Type::OBJ, RPCArg::Optional::OMITTED, "An object with output descriptor and metadata",
+    {
+        {"desc", RPCArg::Type::STR, RPCArg::Optional::NO, "An output descriptor"},
+        {"range", RPCArg::Type::RANGE, RPCArg::Default{1000}, "The range of HD chain indexes to explore (either end or [begin,end])"},
+    }
+};
+
 static const auto scan_objects_arg_desc = RPCArg{
     "scanobjects", RPCArg::Type::ARR, RPCArg::Optional::OMITTED, "Array of scan objects. Required for \"start\" action\n"
         "Every scan object is either a string descriptor or an object:",
     {
         {"descriptor", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "An output descriptor"},
-        {"", RPCArg::Type::OBJ, RPCArg::Optional::OMITTED, "An object with output descriptor and metadata",
-            {
-                {"desc", RPCArg::Type::STR, RPCArg::Optional::NO, "An output descriptor"},
-                {"range", RPCArg::Type::RANGE, RPCArg::Default{1000}, "The range of HD chain indexes to explore (either end or [begin,end])"},
-            }},
+        output_descriptor_obj,
     },
     RPCArgOptions{.oneline_description="[scanobjects,...]"},
 };
@@ -3418,8 +3471,9 @@ static RPCHelpMan scantxoutset()
     // raw() descriptor corresponding to mainnet address 12cbQLTFMXRnSzktFkuoG3eHoMeFtpTu3S
     const std::string EXAMPLE_DESCRIPTOR_RAW = "raw(76a91411b366edfc0a8b66feebae5c2e25a7b6a5d1cf3188ac)#fm24fxxy";
 
-    return RPCHelpMan{"scantxoutset",
-        "\nScans the unspent transaction output set for entries that match certain output descriptors.\n"
+    return RPCHelpMan{
+        "scantxoutset",
+        "Scans the unspent transaction output set for entries that match certain output descriptors.\n"
         "Examples of output descriptors are:\n"
         "    addr(<address>)                      Outputs whose output script corresponds to the specified address (does not include P2PK)\n"
         "    raw(<hex script>)                    Outputs whose output script equals the specified hex-encoded bytes\n"
@@ -3629,8 +3683,9 @@ static bool CheckBlockFilterMatches(BlockManager& blockman, const CBlockIndex& b
 
 static RPCHelpMan scanblocks()
 {
-    return RPCHelpMan{"scanblocks",
-        "\nReturn relevant blockhashes for given descriptors (requires blockfilterindex).\n"
+    return RPCHelpMan{
+        "scanblocks",
+        "Return relevant blockhashes for given descriptors (requires blockfilterindex).\n"
         "This call may take several minutes. Make sure to use no RPC timeout (runebase-cli -rpcclienttimeout=0)",
         {
             scan_action_arg_desc,
@@ -3817,15 +3872,22 @@ static RPCHelpMan scanblocks()
 
 static RPCHelpMan getdescriptoractivity()
 {
-    return RPCHelpMan{"getdescriptoractivity",
-        "\nGet spend and receive activity associated with a set of descriptors for a set of blocks. "
+    return RPCHelpMan{
+        "getdescriptoractivity",
+        "Get spend and receive activity associated with a set of descriptors for a set of blocks. "
         "This command pairs well with the `relevant_blocks` output of `scanblocks()`.\n"
         "This call may take several minutes. If you encounter timeouts, try specifying no RPC timeout (runebase-cli -rpcclienttimeout=0)",
         {
-            RPCArg{"blockhashes", RPCArg::Type::ARR, RPCArg::Optional::OMITTED, "The list of blockhashes to examine for activity. Order doesn't matter. Must be along main chain or an error is thrown.\n", {
+            RPCArg{"blockhashes", RPCArg::Type::ARR, RPCArg::Optional::NO, "The list of blockhashes to examine for activity. Order doesn't matter. Must be along main chain or an error is thrown.\n", {
                 {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::OMITTED, "A valid blockhash"},
             }},
-            scan_objects_arg_desc,
+            RPCArg{"scanobjects", RPCArg::Type::ARR, RPCArg::Optional::NO, "The list of descriptors (scan objects) to examine for activity. Every scan object is either a string descriptor or an object:",
+                {
+                    {"descriptor", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "An output descriptor"},
+                    output_descriptor_obj,
+                },
+                RPCArgOptions{.oneline_description="[scanobjects,...]"},
+            },
             {"include_mempool", RPCArg::Type::BOOL, RPCArg::Default{true}, "Whether to include unconfirmed activity"},
         },
         RPCResult{
@@ -4046,8 +4108,9 @@ static RPCHelpMan getdescriptoractivity()
 
 static RPCHelpMan getblockfilter()
 {
-    return RPCHelpMan{"getblockfilter",
-                "\nRetrieve a BIP 157 content filter for a particular block.\n",
+    return RPCHelpMan{
+        "getblockfilter",
+        "Retrieve a BIP 157 content filter for a particular block.\n",
                 {
                     {"blockhash", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The hash of the block"},
                     {"filtertype", RPCArg::Type::STR, RPCArg::Default{BlockFilterTypeName(BlockFilterType::BASIC)}, "The type name of the filter"},
@@ -4304,7 +4367,14 @@ static RPCHelpMan dumptxoutset()
         }
     }
 
-    UniValue result = WriteUTXOSnapshot(*chainstate, cursor.get(), &stats, tip, afile, path, temppath, node.rpc_interruption_point);
+    UniValue result = WriteUTXOSnapshot(*chainstate,
+                                        cursor.get(),
+                                        &stats,
+                                        tip,
+                                        std::move(afile),
+                                        path,
+                                        temppath,
+                                        node.rpc_interruption_point);
     fs::rename(temppath, path);
 
     result.pushKV("path", path.utf8string());
@@ -4356,7 +4426,7 @@ UniValue WriteUTXOSnapshot(
     CCoinsViewCursor* pcursor,
     CCoinsStats* maybe_stats,
     const CBlockIndex* tip,
-    AutoFile& afile,
+    AutoFile&& afile,
     const fs::path& path,
     const fs::path& temppath,
     const std::function<void()>& interruption_point)
@@ -4415,7 +4485,10 @@ UniValue WriteUTXOSnapshot(
 
     CHECK_NONFATAL(written_coins_count == maybe_stats->coins_count);
 
-    afile.fclose();
+    if (afile.fclose() != 0) {
+        throw std::ios_base::failure(
+            strprintf("Error closing %s: %s", fs::PathToString(temppath), SysErrorString(errno)));
+    }
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("coins_written", written_coins_count);
@@ -4430,12 +4503,19 @@ UniValue WriteUTXOSnapshot(
 UniValue CreateUTXOSnapshot(
     node::NodeContext& node,
     Chainstate& chainstate,
-    AutoFile& afile,
+    AutoFile&& afile,
     const fs::path& path,
     const fs::path& tmppath)
 {
     auto [cursor, stats, tip]{WITH_LOCK(::cs_main, return PrepareUTXOSnapshot(chainstate, node.rpc_interruption_point))};
-    return WriteUTXOSnapshot(chainstate, cursor.get(), &stats, tip, afile, path, tmppath, node.rpc_interruption_point);
+    return WriteUTXOSnapshot(chainstate,
+                             cursor.get(),
+                             &stats,
+                             tip,
+                             std::move(afile),
+                             path,
+                             tmppath,
+                             node.rpc_interruption_point);
 }
 
 static RPCHelpMan loadtxoutset()
@@ -4536,7 +4616,7 @@ static RPCHelpMan getchainstates()
 {
 return RPCHelpMan{
         "getchainstates",
-        "\nReturn information about chainstates.\n",
+        "Return information about chainstates.\n",
         {},
         RPCResult{
             RPCResult::Type::OBJ, "", "", {
@@ -4595,7 +4675,7 @@ return RPCHelpMan{
 static RPCHelpMan qrc20name()
 {
     return RPCHelpMan{"qrc20name",
-                "\nReturns the name of the token\n",
+                "Returns the name of the token\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                 },
@@ -4625,7 +4705,7 @@ static RPCHelpMan qrc20name()
 static RPCHelpMan qrc20symbol()
 {
     return RPCHelpMan{"qrc20symbol",
-                "\nReturns the symbol of the token\n",
+                "Returns the symbol of the token\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                 },
@@ -4655,7 +4735,7 @@ static RPCHelpMan qrc20symbol()
 static RPCHelpMan qrc20totalsupply()
 {
     return RPCHelpMan{"qrc20totalsupply",
-                "\nReturns the total supply of the token\n",
+                "Returns the total supply of the token\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                 },
@@ -4695,7 +4775,7 @@ static RPCHelpMan qrc20totalsupply()
 static RPCHelpMan qrc20decimals()
 {
     return RPCHelpMan{"qrc20decimals",
-                "\nReturns the number of decimals of the token\n",
+                "Returns the number of decimals of the token\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                 },
@@ -4725,7 +4805,7 @@ static RPCHelpMan qrc20decimals()
 static RPCHelpMan qrc20balanceof()
 {
     return RPCHelpMan{"qrc20balanceof",
-                "\nReturns the token balance for address\n",
+                "Returns the token balance for address\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                     {"address", RPCArg::Type::STR, RPCArg::Optional::NO,  "The runebase address to check token balance"},
@@ -4768,7 +4848,7 @@ static RPCHelpMan qrc20balanceof()
 static RPCHelpMan qrc20allowance()
 {
     return RPCHelpMan{"qrc20allowance",
-                "\nReturns remaining tokens allowed to spend for an address\n",
+                "Returns remaining tokens allowed to spend for an address\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address"},
                     {"addressfrom", RPCArg::Type::STR, RPCArg::Optional::NO,  "The runebase address of the account owning tokens"},
@@ -4810,7 +4890,7 @@ static RPCHelpMan qrc20allowance()
 static RPCHelpMan qrc20listtransactions()
 {
     return RPCHelpMan{"qrc20listtransactions",
-                "\nReturns transactions history for a specific address.\n",
+                "Returns transactions history for a specific address.\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address."},
                     {"address", RPCArg::Type::STR, RPCArg::Optional::NO,  "The runebase address to get history for."},
@@ -4947,9 +5027,9 @@ void RegisterBlockchainRPCCommands(CRPCTable& t)
         {"blockchain", &getdelegationsforstaker},
         {"hidden", &invalidateblock},
         {"hidden", &reconsiderblock},
-        {"hidden", &waitfornewblock},
-        {"hidden", &waitforblock},
-        {"hidden", &waitforblockheight},
+        {"blockchain", &waitfornewblock},
+        {"blockchain", &waitforblock},
+        {"blockchain", &waitforblockheight},
         {"hidden", &syncwithvalidationinterfacequeue},
     };
     for (const auto& c : commands) {

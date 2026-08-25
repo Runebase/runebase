@@ -186,7 +186,7 @@ public:
 
     /**
      * @brief importMulti Import list of address descriptions
-     * @param desc Address descriptions
+     * @param descs Address descriptions
      * @return success of the operation
      */
     bool importMulti(const QStringList& descs);
@@ -266,7 +266,6 @@ private:
     bool endGetKeyPool(const QString& fingerprint, int type, QString& desc);
     bool execRPC(ExecRPCCommand* cmd, const QMap<QString, QString>& lstParams, QVariant& result, QString& resultJson);
     void addError(const QString& error);
-    bool isDescriptorWallet();
 
     RunebaseHwiToolPriv* d;
 };

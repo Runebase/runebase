@@ -19,8 +19,9 @@ class ABIParam : public QWidget
 public:
     /**
      * @brief ABIParam Constructor
-     * @param ID Id if the parameter
-     * @param name Name of the parameter
+     * @param platformStyle Pointer to platform style
+     * @param ID Parameter ID
+     * @param param Value of the parameter
      * @param parent Parent windows for the GUI control
      */
     explicit ABIParam(const PlatformStyle *platformStyle, int ID, const ParameterABI &param, QWidget *parent = 0);

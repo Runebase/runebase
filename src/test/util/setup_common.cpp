@@ -37,6 +37,7 @@
 #include <scheduler.h>
 #include <script/sigcache.h>
 #include <streams.h>
+#include <test/util/coverage.h>
 #include <test/util/net.h>
 #include <test/util/random.h>
 #include <test/util/transaction_utils.h>
@@ -49,6 +50,7 @@
 #include <util/rbf.h>
 #include <util/strencodings.h>
 #include <util/string.h>
+#include <util/task_runner.h>
 #include <util/thread.h>
 #include <util/threadnames.h>
 #include <util/time.h>
@@ -60,6 +62,7 @@
 #include <util/convert.h>
 
 #include <algorithm>
+#include <future>
 #include <functional>
 #include <stdexcept>
 
@@ -82,6 +85,7 @@ static const bool g_rng_temp_path_init{[] {
     Assert(!g_used_g_prng);
     (void)g_rng_temp_path.rand64();
     g_used_g_prng = false;
+    ResetCoverageCounters(); // The seed strengthen in SeedStartup is not deterministic, so exclude it from coverage counts
     return true;
 }()};
 
@@ -110,9 +114,17 @@ static void ExitFailure(std::string_view str_err)
 BasicTestingSetup::BasicTestingSetup(const ChainType chainType, TestOpts opts)
     : m_args{}
 {
-    if constexpr (!G_FUZZING) {
+    if (!EnableFuzzDeterminism()) {
         SeedRandomForTest(SeedRand::FIXED_SEED);
     }
+
+    // Reset globals
+    fDiscover = true;
+    fListen = true;
+    SetRPCWarmupStarting();
+    g_reachable_nets.Reset();
+    ClearLocal();
+
     m_node.shutdown_signal = &m_interrupt;
     m_node.shutdown_request = [this]{ return m_interrupt(); };
     m_node.args = &gArgs;
@@ -203,7 +215,7 @@ BasicTestingSetup::~BasicTestingSetup()
 {
     m_node.ecc_context.reset();
     m_node.kernel.reset();
-    if constexpr (!G_FUZZING) {
+    if (!EnableFuzzDeterminism()) {
         SetMockTime(0s); // Reset mocktime for following tests
     }
     LogInstance().DisconnectTestLogger();
@@ -214,7 +226,10 @@ BasicTestingSetup::~BasicTestingSetup()
     } else {
         fs::remove_all(m_path_root);
     }
+    // Clear all arguments except for -datadir, which GUI tests currently rely
+    // on to be set even after the testing setup is destroyed.
     gArgs.ClearArgs();
+    gArgs.ForceSetArg("-datadir", fs::PathToString(m_path_root));
 }
 
 ChainTestingSetup::ChainTestingSetup(const ChainType chainType, TestOpts opts)
@@ -222,12 +237,22 @@ ChainTestingSetup::ChainTestingSetup(const ChainType chainType, TestOpts opts)
 {
     const CChainParams& chainparams = Params();
 
-    // We have to run a scheduler thread to prevent ActivateBestChain
+    // A task runner is required to prevent ActivateBestChain
     // from blocking due to queue overrun.
     if (opts.setup_validation_interface) {
         m_node.scheduler = std::make_unique<CScheduler>();
         m_node.scheduler->m_service_thread = std::thread(util::TraceThread, "scheduler", [&] { m_node.scheduler->serviceQueue(); });
-        m_node.validation_signals = std::make_unique<ValidationSignals>(std::make_unique<SerialTaskRunner>(*m_node.scheduler));
+        m_node.validation_signals =
+            // Use synchronous task runner while fuzzing to avoid non-determinism
+            EnableFuzzDeterminism() ?
+                std::make_unique<ValidationSignals>(std::make_unique<util::ImmediateTaskRunner>()) :
+                std::make_unique<ValidationSignals>(std::make_unique<SerialTaskRunner>(*m_node.scheduler));
+        {
+            // Ensure deterministic coverage by waiting for m_service_thread to be running
+            std::promise<void> promise;
+            m_node.scheduler->scheduleFromNow([&promise] { promise.set_value(); }, 0ms);
+            promise.get_future().wait();
+        }
     }
 
 ////////////////////////////////////////////////////////////// runebase
@@ -265,7 +290,8 @@ ChainTestingSetup::ChainTestingSetup(const ChainType chainType, TestOpts opts)
             .check_block_index = 1,
             .notifications = *m_node.notifications,
             .signals = m_node.validation_signals.get(),
-            .worker_threads_num = 2,
+            // Use no worker threads while fuzzing to avoid non-determinism
+            .worker_threads_num = EnableFuzzDeterminism() ? 0 : 2,
         };
         if (opts.min_validation_cache) {
             chainman_opts.script_execution_cache_bytes = 0;
@@ -385,7 +411,7 @@ TestChain100Setup::TestChain100Setup(
         LOCK(::cs_main);
         assert(
             m_node.chainman->ActiveChain().Tip()->GetBlockHash().ToString() ==
-            "5ce9c22662191ba24b8d930e606446fce116a4c022e2660c846ae1a7d70708ec");
+            "6eb6bf73aaa7b11662980a184063780f5ffd0aff263ff0d921d5498875f8ee86");
     }
 }
 
@@ -646,4 +672,12 @@ std::ostream& operator<<(std::ostream& os, const uint160& num)
 std::ostream& operator<<(std::ostream& os, const uint256& num)
 {
     return os << num.ToString();
+}
+
+std::ostream& operator<<(std::ostream& os, const Txid& txid) {
+    return os << txid.ToString();
+}
+
+std::ostream& operator<<(std::ostream& os, const Wtxid& wtxid) {
+    return os << wtxid.ToString();
 }

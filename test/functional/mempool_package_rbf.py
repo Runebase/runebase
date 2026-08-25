@@ -33,7 +33,6 @@ class PackageRBFTest(BitcoinTestFramework):
         self.setup_clean_chain = True
         # Required for fill_mempool()
         self.extra_args = [[
-            "-datacarriersize=100000",
             "-maxmempool=5",
             "-minrelaytxfee=0.0000001"
         ]] * self.num_nodes
@@ -116,7 +115,7 @@ class PackageRBFTest(BitcoinTestFramework):
 
         # But accepted during normal submission
         submitres = node.submitpackage(package_hex2)
-        assert_equal(set(submitres["replaced-transactions"]), set([tx.rehash() for tx in package_txns1]))
+        assert_equal(set(submitres["replaced-transactions"]), set([tx.txid_hex for tx in package_txns1]))
         self.assert_mempool_contents(expected=package_txns2)
 
         # Make sure 2nd node gets a basic package RBF over p2p
@@ -137,7 +136,7 @@ class PackageRBFTest(BitcoinTestFramework):
         package_hex, package_txns = self.create_simple_package(singleton_coin, DEFAULT_FEE, singleton_tx["fee"] * 2)
 
         submitres = node.submitpackage(package_hex)
-        assert_equal(submitres["replaced-transactions"], [singleton_tx["tx"].rehash()])
+        assert_equal(submitres["replaced-transactions"], [singleton_tx["tx"].txid_hex])
         self.assert_mempool_contents(expected=package_txns)
 
         self.generate(node, 1)
@@ -158,7 +157,10 @@ class PackageRBFTest(BitcoinTestFramework):
         # Package 2 has a higher feerate but lower absolute fee
         package_hex2, package_txns2 = self.create_simple_package(coin, parent_fee=DEFAULT_FEE, child_fee=DEFAULT_CHILD_FEE - Decimal("0.00000001"))
         pkg_results2 = node.submitpackage(package_hex2)
-        assert_equal(f"package RBF failed: insufficient anti-DoS fees, rejecting replacement {package_txns2[1].rehash()}, less fees than conflicting txs; {float(PACKAGE_FEE_MINUS_ONE)} < {float(PACKAGE_FEE)}", pkg_results2["package_msg"])
+        # .normalize() is needed because PACKAGE_FEE=Decimal("0.0020") has a trailing
+        # zero, but C++ FormatMoney trims trailing zeros (FormatMoney(200000)="0.002").
+        # Bitcoin's DEFAULT_FEE=0.0001 produces PACKAGE_FEE=0.0005 (no trailing zero).
+        assert_equal(f"package RBF failed: insufficient anti-DoS fees, rejecting replacement {package_txns2[1].txid_hex}, less fees than conflicting txs; {PACKAGE_FEE_MINUS_ONE} < {PACKAGE_FEE.normalize()}", pkg_results2["package_msg"])
         self.assert_mempool_contents(expected=package_txns1)
 
         self.log.info("Check replacement pays for incremental bandwidth")
@@ -170,7 +172,7 @@ class PackageRBFTest(BitcoinTestFramework):
         failure_package_hex3, failure_package_txns3 = self.create_simple_package(coin, parent_fee=DEFAULT_FEE, child_fee=DEFAULT_CHILD_FEE + incremental_sats_short)
         assert_equal(package_3_size, sum([tx.get_vsize() for tx in failure_package_txns3]))
         pkg_results3 = node.submitpackage(failure_package_hex3)
-        assert_equal(f"package RBF failed: insufficient anti-DoS fees, rejecting replacement {failure_package_txns3[1].rehash()}, not enough additional fees to relay; {incremental_sats_short:.8f} < {incremental_sats_required:.7f}", pkg_results3["package_msg"])
+        assert_equal(f"package RBF failed: insufficient anti-DoS fees, rejecting replacement {failure_package_txns3[1].txid_hex}, not enough additional fees to relay; {incremental_sats_short:.8f} < {incremental_sats_required:.7f}", pkg_results3["package_msg"])
         self.assert_mempool_contents(expected=package_txns1)
 
         success_package_hex3, success_package_txns3 = self.create_simple_package(coin, parent_fee=DEFAULT_FEE, child_fee=DEFAULT_CHILD_FEE + incremental_sats_required)
@@ -220,7 +222,7 @@ class PackageRBFTest(BitcoinTestFramework):
         package_child = self.wallet.create_self_transfer(fee_rate=child_feerate, utxo_to_spend=package_parent["new_utxos"][0])
 
         pkg_results = node.submitpackage([package_parent["hex"], package_child["hex"]], maxfeerate=0)
-        assert_equal(f"package RBF failed: too many potential replacements, rejecting replacement {package_child['tx'].rehash()}; too many potential replacements (102 > 100)", pkg_results["package_msg"])
+        assert_equal(f"package RBF failed: too many potential replacements, rejecting replacement {package_child['tx'].txid_hex}; too many potential replacements (102 > 100)", pkg_results["package_msg"])
         self.assert_mempool_contents(expected=expected_txns)
 
         # Make singleton tx to conflict with in next batch
@@ -235,7 +237,7 @@ class PackageRBFTest(BitcoinTestFramework):
         package_parent = self.wallet.create_self_transfer_multi(utxos_to_spend=double_spending_coins, fee_per_output=parent_fee_per_conflict)
         package_child = self.wallet.create_self_transfer(fee_rate=child_feerate, utxo_to_spend=package_parent["new_utxos"][0])
         pkg_results = node.submitpackage([package_parent["hex"], package_child["hex"]], maxfeerate=0)
-        assert_equal(f"package RBF failed: too many potential replacements, rejecting replacement {package_child['tx'].rehash()}; too many potential replacements (101 > 100)", pkg_results["package_msg"])
+        assert_equal(f"package RBF failed: too many potential replacements, rejecting replacement {package_child['tx'].txid_hex}; too many potential replacements (101 > 100)", pkg_results["package_msg"])
         self.assert_mempool_contents(expected=expected_txns)
 
         # Finally, evict MAX_REPLACEMENT_CANDIDATES
@@ -329,18 +331,23 @@ class PackageRBFTest(BitcoinTestFramework):
             node.sendrawtransaction(tx.serialize().hex())
         self.assert_mempool_contents(expected=expected_txns)
 
-        # Now make conflicting packages for each coin
+        # Now make conflicting packages for each coin.
+        # CheckConflictTopology iterates over m_to_remove in hash order
+        # (CompareIteratorByHash in kernel/mempool_entry.h). Runebase transactions
+        # have different hashes than Bitcoin's due to the different serialization
+        # format (OP_SENDER, contract fields), so the iteration order differs.
+        # In Runebase, the child tx has the lowest hash in this cluster.
         package_hex1, _package_txns1 = self.create_simple_package(coin1, DEFAULT_FEE + Decimal('0.0008208'), DEFAULT_CHILD_FEE + Decimal('0.0008208'))
         package_result = node.submitpackage(package_hex1)
-        assert_equal(f"package RBF failed: {parent_result['tx'].rehash()} has 2 descendants, max 1 allowed", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {child_result['tx'].txid_hex} has both ancestor and descendant, exceeding cluster limit of 2", package_result["package_msg"])
 
         package_hex2, _package_txns2 = self.create_simple_package(coin2, DEFAULT_FEE + Decimal('0.0016'), DEFAULT_CHILD_FEE + Decimal('0.0016'))
         package_result = node.submitpackage(package_hex2)
-        assert_equal(f"package RBF failed: {child_result['tx'].rehash()} has both ancestor and descendant, exceeding cluster limit of 2", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {child_result['tx'].txid_hex} has both ancestor and descendant, exceeding cluster limit of 2", package_result["package_msg"])
 
         package_hex3, _package_txns3 = self.create_simple_package(coin3, DEFAULT_FEE, DEFAULT_CHILD_FEE)
         package_result = node.submitpackage(package_hex3)
-        assert_equal(f"package RBF failed: {grandchild_result['tx'].rehash()} has 2 ancestors, max 1 allowed", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {grandchild_result['tx'].txid_hex} has 2 ancestors, max 1 allowed", package_result["package_msg"])
 
         # Check that replacements were actually rejected
         self.assert_mempool_contents(expected=expected_txns)
@@ -381,18 +388,20 @@ class PackageRBFTest(BitcoinTestFramework):
             node.sendrawtransaction(tx.serialize().hex())
         self.assert_mempool_contents(expected=expected_txns)
 
-        # Now make conflicting packages for each coin
+        # Now make conflicting packages for each coin.
+        # In Runebase, parent1 and parent2 both have lower hashes than child,
+        # so CheckConflictTopology reports the parent error first.
         package_hex1, _package_txns1 = self.create_simple_package(coin1, DEFAULT_FEE + Decimal('0.0008208'), DEFAULT_CHILD_FEE + Decimal('0.0008208'))
         package_result = node.submitpackage(package_hex1)
-        assert_equal(f"package RBF failed: {child_result['tx'].rehash()} has 2 ancestors, max 1 allowed", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {parent1_result['tx'].txid_hex} is not the only parent of child {child_result['tx'].txid_hex}", package_result["package_msg"])
 
         package_hex2, _package_txns2 = self.create_simple_package(coin2, DEFAULT_FEE + Decimal('0.0016'), DEFAULT_CHILD_FEE + Decimal('0.0016'))
         package_result = node.submitpackage(package_hex2)
-        assert_equal(f"package RBF failed: {child_result['tx'].rehash()} has 2 ancestors, max 1 allowed", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {parent2_result['tx'].txid_hex} is not the only parent of child {child_result['tx'].txid_hex}", package_result["package_msg"])
 
         package_hex3, _package_txns3 = self.create_simple_package(coin3, DEFAULT_FEE, DEFAULT_CHILD_FEE)
         package_result = node.submitpackage(package_hex3)
-        assert_equal(f"package RBF failed: {child_result['tx'].rehash()} has 2 ancestors, max 1 allowed", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {child_result['tx'].txid_hex} has 2 ancestors, max 1 allowed", package_result["package_msg"])
 
         # Check that replacements were actually rejected
         self.assert_mempool_contents(expected=expected_txns)
@@ -435,17 +444,19 @@ class PackageRBFTest(BitcoinTestFramework):
             node.sendrawtransaction(tx.serialize().hex())
         self.assert_mempool_contents(expected=expected_txns)
 
+        # In Runebase, child2 has the lowest hash in the cluster, so
+        # CheckConflictTopology reports child2's error first.
         package_hex1, _package_txns1 = self.create_simple_package(coin1, DEFAULT_FEE + Decimal('0.0016208'), DEFAULT_CHILD_FEE + Decimal('0.0016208'))
         package_result = node.submitpackage(package_hex1)
-        assert_equal(f"package RBF failed: {child1_result['tx'].rehash()} is not the only child of parent {parent_result['tx'].rehash()}", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {child2_result['tx'].txid_hex} is not the only child of parent {parent_result['tx'].txid_hex}", package_result["package_msg"])
 
         package_hex2, _package_txns2 = self.create_simple_package(coin2, DEFAULT_FEE + Decimal('0.0008'), DEFAULT_CHILD_FEE + Decimal('0.0008'))
         package_result = node.submitpackage(package_hex2)
-        assert_equal(f"package RBF failed: {child1_result['tx'].rehash()} is not the only child of parent {parent_result['tx'].rehash()}", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {child1_result['tx'].txid_hex} is not the only child of parent {parent_result['tx'].txid_hex}", package_result["package_msg"])
 
         package_hex3, _package_txns3 = self.create_simple_package(coin3, DEFAULT_FEE, DEFAULT_CHILD_FEE)
         package_result = node.submitpackage(package_hex3)
-        assert_equal(f"package RBF failed: {child2_result['tx'].rehash()} is not the only child of parent {parent_result['tx'].rehash()}", package_result["package_msg"])
+        assert_equal(f"package RBF failed: {child2_result['tx'].txid_hex} is not the only child of parent {parent_result['tx'].txid_hex}", package_result["package_msg"])
 
         # Check that replacements were actually rejected
         self.assert_mempool_contents(expected=expected_txns)

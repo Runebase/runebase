@@ -8,9 +8,6 @@ from test_framework.address import *
 from test_framework.runebase import *
 
 class RunebaseDivergenceDosTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -32,8 +29,6 @@ class RunebaseDivergenceDosTest(BitcoinTestFramework):
                 txs[-1].vout[0].scriptPubKey = CScript([OP_DUP, OP_HASH160, haddress, OP_EQUALVERIFY, OP_CHECKSIG])
 
         block.vtx += txs
-        for tx in block.vtx:
-            tx.rehash()
         block.hashMerkleRoot = block.calc_merkle_root()
         block.solve()
         assert_equal(self.node.submitblock(bytes_to_hex_str(block.serialize())), 'incorrect-transactions-or-hashes-block')
@@ -45,7 +40,6 @@ class RunebaseDivergenceDosTest(BitcoinTestFramework):
         tx.vin = [make_vin(self.node, COIN)]
         tx.vout = [CTxOut(COIN-40000000, scriptPubKey=CScript([b"\x04", CScriptNum(100000), CScriptNum(RUNEBASE_MIN_GAS_PRICE), hex_str_to_bytes("00"), hex_str_to_bytes(self.contract_address), OP_CALL]))]
         tx = rpc_sign_transaction(self.node, tx)
-        tx.rehash()
         self.submit_block_with_txs([tx])
 
     def different_but_same_number_aal_txs_test(self):
@@ -54,13 +48,11 @@ class RunebaseDivergenceDosTest(BitcoinTestFramework):
         tx1.vin = [make_vin(self.node, COIN // 10)]
         tx1.vout = [CTxOut(1, scriptPubKey=CScript([b"\x04", CScriptNum(100000), CScriptNum(RUNEBASE_MIN_GAS_PRICE), hex_str_to_bytes("00"), hex_str_to_bytes(self.contract_address), OP_CALL]))]
         tx1 = rpc_sign_transaction(self.node, tx1)
-        tx1.rehash()
 
         tx2 = CTransaction()
         tx2.version = 2
-        tx2.vin = [CTxIn(COutPoint(tx1.sha256, 0), scriptSig=CScript([OP_SPEND]), nSequence=0xffffffff)]
+        tx2.vin = [CTxIn(COutPoint(tx1.txid_int, 0), scriptSig=CScript([OP_SPEND]), nSequence=0xffffffff)]
         tx2.vout = [CTxOut(0, scriptPubKey=CScript([OP_DUP, OP_HASH160, hex_str_to_bytes("00"*19)+b"\x01", OP_EQUALVERIFY, OP_CHECKSIG]))]
-        tx2.rehash()
         self.submit_block_with_txs([tx1, tx2])
 
 
@@ -70,19 +62,16 @@ class RunebaseDivergenceDosTest(BitcoinTestFramework):
         tx1.vin = [make_vin(self.node, COIN // 10)]
         tx1.vout = [CTxOut(1, scriptPubKey=CScript([b"\x04", CScriptNum(100000), CScriptNum(RUNEBASE_MIN_GAS_PRICE), hex_str_to_bytes("00"), hex_str_to_bytes(self.contract_address), OP_CALL]))]
         tx1 = rpc_sign_transaction(self.node, tx1)
-        tx1.rehash()
 
         tx2 = CTransaction()
         tx2.version = 2
-        tx2.vin = [CTxIn(COutPoint(tx1.sha256, 0), scriptSig=CScript([OP_SPEND]), nSequence=0xffffffff)]
+        tx2.vin = [CTxIn(COutPoint(tx1.txid_int, 0), scriptSig=CScript([OP_SPEND]), nSequence=0xffffffff)]
         tx2.vout = [CTxOut(0, scriptPubKey=CScript([b"\x00", CScriptNum(0), CScriptNum(0), hex_str_to_bytes("00"), hex_str_to_bytes(self.contract_address), OP_CALL]))]
-        tx2.rehash()
 
         tx3 = CTransaction()
         tx2.version = 2
-        tx3.vin = [CTxIn(COutPoint(tx2.sha256, 0), scriptSig=CScript([OP_SPEND]))]
+        tx3.vin = [CTxIn(COutPoint(tx2.txid_int, 0), scriptSig=CScript([OP_SPEND]))]
         tx3.vout = [CTxOut(0, scriptPubKey=CScript([OP_DUP, OP_HASH160, hex_str_to_bytes("00"*19)+b"\x00", OP_EQUALVERIFY, OP_CHECKSIG]))]
-        tx3.rehash()
         self.submit_block_with_txs([tx1, tx2, tx3])
 
     def run_test(self):

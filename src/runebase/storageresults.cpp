@@ -43,7 +43,7 @@ void StorageResults::wipeResults(){
 void StorageResults::deleteResults(std::vector<CTransactionRef> const& txs){
 
     for(CTransactionRef tx : txs){
-        dev::h256 hashTx = uintToh256(tx->GetHash());
+        dev::h256 hashTx = uintToh256(tx->GetHash().ToUint256());
         m_cache_result.erase(hashTx);
 
         std::string keyTemp = hashTx.hex();

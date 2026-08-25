@@ -515,18 +515,23 @@ void BitcoinGUI::createActions()
         connect(m_open_wallet_menu, &QMenu::aboutToShow, [this] {
             m_open_wallet_menu->clear();
             for (const auto& [path, info] : m_wallet_controller->listWalletDir()) {
-                const auto& [loaded, _] = info;
+                const auto& [loaded, format] = info;
                 QString name = GUIUtil::WalletDisplayName(path);
                 // An single ampersand in the menu item's text sets a shortcut for this item.
                 // Single & are shown when && is in the string. So replace & with &&.
                 name.replace(QChar('&'), QString("&&"));
+                bool is_legacy = format == "bdb";
+                if (is_legacy) {
+                    name += " (needs migration)";
+                }
                 QAction* action = m_open_wallet_menu->addAction(name);
 
-                if (loaded) {
-                    // This wallet is already loaded
+                if (loaded || is_legacy) {
+                    // This wallet is already loaded or it is a legacy wallet
                     action->setEnabled(false);
                     continue;
                 }
+
 
                 connect(action, &QAction::triggered, [this, path] {
                     auto activity = new OpenWalletActivity(m_wallet_controller, this);
@@ -826,8 +831,7 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel, interfaces::BlockAndH
         }
 #endif // ENABLE_WALLET
 
-        modalOverlay->setKnownBestHeight(clientModel->getHeaderTipHeight(), QDateTime::fromTime_t(clientModel->getHeaderTipTime()), /*presync=*/false);
-
+        modalOverlay->setKnownBestHeight(clientModel->getHeaderTipHeight(), QDateTime::fromSecsSinceEpoch(clientModel->getHeaderTipTime()), /*presync=*/false);
     } else {
         // Shutdown requested, disable menus
         if (trayIconMenu)
@@ -923,7 +927,7 @@ void BitcoinGUI::addWallet(WalletModel* walletModel)
     const QString display_name = walletModel->getDisplayName();
     m_wallet_selector->addItem(display_name, QVariant::fromValue(walletModel));
     appTitleBar->addWallet(walletModel);
-    if(!(clientModel->fBatchProcessingMode))
+    if(clientModel && !(clientModel->fBatchProcessingMode))
         QTimer::singleShot(MODEL_UPDATE_DELAY, clientModel, SLOT(updateTip()));
 
     m_wallet_selector->setCurrentIndex(m_wallet_selector->count()-1);
@@ -942,7 +946,6 @@ void BitcoinGUI::removeWallet(WalletModel* walletModel)
         setWalletActionsEnabled(false);
         overviewAction->setChecked(true);
     } else if (m_wallet_selector->count() == 1) {
-
         m_wallet_selector_label->setVisible(false);
         m_wallet_selector->setVisible(false);
     }
@@ -1291,6 +1294,9 @@ void BitcoinGUI::setNetworkActive(bool network_active)
 
 void BitcoinGUI::updateHeadersSyncProgressLabel()
 {
+    if(!clientModel)
+        return;
+
     int64_t headersTipTime = clientModel->getHeaderTipTime();
     int headersTipHeight = clientModel->getHeaderTipHeight();
     int estHeadersLeft = GUIUtil::estimateNumberHeadersLeft(GetTime() - headersTipTime, headersTipHeight);
@@ -1395,7 +1401,7 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
         progressBar->setVisible(false);
 
         // notify tip changed when the sync is finished
-        if(clientModel->fBatchProcessingMode)
+        if(clientModel && clientModel->fBatchProcessingMode)
         {
             clientModel->fBatchProcessingMode = false;
             QMetaObject::invokeMethod(clientModel, "tipChanged", Qt::QueuedConnection);
@@ -1446,11 +1452,6 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
 void BitcoinGUI::createWallet()
 {
 #ifdef ENABLE_WALLET
-#ifndef USE_SQLITE
-    // Compiled without sqlite support (required for descriptor wallets)
-    message(tr("Error creating wallet"), tr("Cannot create new wallet, the software was compiled without sqlite support (required for descriptor wallets)"), CClientUIInterface::MSG_ERROR);
-    return;
-#endif // USE_SQLITE
     auto activity = new CreateWalletActivity(getWalletController(), this);
     connect(activity, &CreateWalletActivity::created, this, &BitcoinGUI::setCurrentWallet);
     connect(activity, &CreateWalletActivity::created, rpcConsole, &RPCConsole::setCurrentWallet);
@@ -1520,7 +1521,6 @@ void BitcoinGUI::message(const QString& title, QString message, unsigned int sty
 
 void BitcoinGUI::changeEvent(QEvent *e)
 {
-
     QMainWindow::changeEvent(e);
 
 #ifndef Q_OS_MACOS // Ignored on Mac
@@ -1689,7 +1689,7 @@ void BitcoinGUI::setEncryptionStatus(WalletModel *walletModel)
         else
         {
             labelWalletEncryptionIcon->setPixmap(platformStyle->MultiStatesIcon(":/icons/lock_open").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-            labelWalletEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>"));
+        labelWalletEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>"));
         }
         encryptWalletAction->setChecked(true);
         changePassphraseAction->setEnabled(true);
@@ -1726,6 +1726,9 @@ void BitcoinGUI::updateWalletStatus()
 
 void BitcoinGUI::updateProxyIcon()
 {
+    if(!clientModel)
+        return;
+
     std::string ip_port;
     bool proxy_enabled = clientModel->getProxyInfo(ip_port);
 
@@ -2017,7 +2020,6 @@ void UnitDisplayStatusBarControl::mousePressEvent(QMouseEvent *)
 
 void UnitDisplayStatusBarControl::changeEvent(QEvent* e)
 {
-
     QLabel::changeEvent(e);
 }
 

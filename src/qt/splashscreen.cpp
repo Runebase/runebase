@@ -19,7 +19,6 @@
 #include "styleSheet.h"
 #include <qt/platformstyle.h>
 
-
 #include <functional>
 
 #include <QApplication>
@@ -61,7 +60,6 @@ SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
     pixmap.setDevicePixelRatio(devicePixelRatio);
 
     QPainter pixPaint(&pixmap);
-
     QColor foreground_color = GetStringStyleValue("splashscreen/foreground-color", "#ffffff");
     QColor foreground_color_statusbar = GetStringStyleValue("splashscreen/foreground-color-statusbar", "#ffffff");
     QColor logo_frame_color = GetStringStyleValue("splashscreen/logo-frame-color", "#ffffff");

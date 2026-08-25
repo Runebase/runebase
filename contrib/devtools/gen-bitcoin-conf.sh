@@ -46,7 +46,7 @@ cat > "${EXAMPLE_CONF_FILE}" << 'EOF'
 ### Options
 EOF
 
-# parse the output from bitcoind --help
+# parse the output from runebased --help
 # adding newlines is a bit funky to ensure portability for BSD
 # see here for more details: https://stackoverflow.com/a/24575385
 ${BITCOIND} --help \

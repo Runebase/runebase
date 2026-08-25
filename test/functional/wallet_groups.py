@@ -16,10 +16,8 @@ from test_framework.util import (
 from test_framework.runebaseconfig import MAX_BLOCK_SIGOPS
 from test_framework.runebase import generatesynchronized
 
-class WalletGroupTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
 
+class WalletGroupTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 5

@@ -68,7 +68,8 @@ bool ExecRPCCommand::exec(interfaces::Node &node, const WalletModel* wallet_mode
     {
         std::string strResult;
         std::string strCommand = commandLine.join(' ').toStdString();
-        if(RPCConsole::RPCExecuteCommandLine(node, strResult, strCommand, nullptr, wallet_model))
+        QString wallet_name = wallet_model ? wallet_model->getWalletName() : "";
+        if(RPCConsole::RPCExecuteCommandLine(node, strResult, strCommand, nullptr, wallet_name))
         {
             resultJson = strResult.c_str();
             QJsonDocument doc = QJsonDocument::fromJson(strResult.c_str());

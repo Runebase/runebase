@@ -17,6 +17,9 @@ Unpack the files into a directory and run:
 
 - `bin/runebase-qt` (GUI) or
 - `bin/runebased` (headless)
+- `bin/runebase` (wrapper command)
+
+The `runebase` command supports subcommands like `runebase gui`, `runebase node`, and `runebase rpc` exposing different functionality. Subcommands can be listed with `runebase help`.
 
 ### Windows
 
@@ -69,7 +72,7 @@ The Runebase repo's [root README](/README.md) contains relevant information on t
 
 ### Miscellaneous
 - [Assets Attribution](assets-attribution.md)
-- [runebase.conf Configuration File](runebase-conf.md)
+- [runebase.conf Configuration File](bitcoin-conf.md)
 - [CJDNS Support](cjdns.md)
 - [Files](files.md)
 - [Fuzz-testing](fuzzing.md)

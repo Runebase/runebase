@@ -27,7 +27,6 @@ OpenURIDialog::OpenURIDialog(const PlatformStyle* platformStyle, QWidget* parent
 
     SetObjectStyleSheet(ui->buttonBox->button(QDialogButtonBox::Cancel), StyleSheetNames::ButtonLight);
     SetObjectStyleSheet(ui->buttonBox->button(QDialogButtonBox::Ok), StyleSheetNames::ButtonGray);
-
 }
 
 OpenURIDialog::~OpenURIDialog()

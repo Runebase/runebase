@@ -84,8 +84,7 @@ void SuperStakerConfigDialog::setSuperStakerData(const QString &hash)
 {
     if(m_model && !hash.isEmpty())
     {
-        uint256 id;
-        id.SetHexDeprecated(hash.toStdString());
+        uint256 id = uint256::FromHex(hash.toStdString()).value_or(uint256::ZERO);
         if(id == d->staker.hash) return;
         d->staker = m_model->wallet().getSuperStaker(id);
     }

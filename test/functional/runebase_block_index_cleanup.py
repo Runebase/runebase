@@ -12,9 +12,6 @@ from test_framework.runebaseconfig import *
 import sys
 
 class RunebaseBlockIndexCleanupTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
@@ -25,7 +22,7 @@ class RunebaseBlockIndexCleanupTest(BitcoinTestFramework):
 
     def calculate_stake_modifier(self, parent_block_modifier, current_block):
         data = b""
-        data += ser_uint256(current_block.sha256 if current_block.prevoutStake.serialize() == COutPoint(0, 0xffffffff).serialize() else current_block.prevoutStake.hash)
+        data += ser_uint256(current_block.hash_int if current_block.prevoutStake.serialize() == COutPoint(0, 0xffffffff).serialize() else current_block.prevoutStake.hash)
         data += ser_uint256(parent_block_modifier)
         return uint256_from_str(hash256(data))
 
@@ -34,8 +31,7 @@ class RunebaseBlockIndexCleanupTest(BitcoinTestFramework):
         coinbase = create_coinbase(block_height)
         coinbase.vout[0].nValue = 0
         coinbase.vout[0].scriptPubKey = b""
-        coinbase.rehash()
-        block = create_block(parent_block.sha256, coinbase, (parent_block.nTime + 0x10+start_time_addition) & 0xfffffff0)
+        block = create_block(parent_block.hash_int, coinbase, (parent_block.nTime + 0x10+start_time_addition) & 0xfffffff0)
         if not block.solve_stake(parent_block_stake_modifier, staking_prevouts):
             return None
 
@@ -57,7 +53,6 @@ class RunebaseBlockIndexCleanupTest(BitcoinTestFramework):
         block.vtx.append(stake_tx_signed)
         block.hashMerkleRoot = block.calc_merkle_root()
         block.sign_block(block_sig_key)
-        block.rehash()
         return block
 
     def _remove_from_staking_prevouts(self, block, staking_prevouts):
@@ -78,7 +73,6 @@ class RunebaseBlockIndexCleanupTest(BitcoinTestFramework):
             block = CBlock()
             f = io.BytesIO(hex_str_to_bytes(self.node.getblock(tip['hash'], False)))
             block.deserialize(f)
-            block.rehash()
 
         for i in range(length):
             if is_pow:
@@ -91,13 +85,13 @@ class RunebaseBlockIndexCleanupTest(BitcoinTestFramework):
                 self._remove_from_staking_prevouts(block, prevouts)
 
             blocks.append(block)
-            prevhash = block.sha256
+            prevhash = block.hash_int
         return blocks
 
     def run_test(self):
         self.node = self.nodes[0]
         privkey = byte_to_base58(hash256(struct.pack('<I', 0)), 239)
-        self.node.importprivkey(privkey)
+        wallet_importprivkey(self.node, privkey, 0)
         mocktime = int(time.time())-100000
         for n in self.nodes:
             n.setmocktime(mocktime)

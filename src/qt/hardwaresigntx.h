@@ -18,7 +18,7 @@ class HardwareSignTx : public QObject
 public:
     /**
      * @brief HardwareSignTx Constructor
-     * @param parent Parent object
+     * @param widget Parent object
      */
     explicit HardwareSignTx(QWidget *widget);
 
@@ -61,7 +61,7 @@ public:
 
     /**
      * @brief send Send transaction
-     * @param result
+     * @param result Data variant map
      * @return success of the operation
      */
     bool send(QVariantMap& result);

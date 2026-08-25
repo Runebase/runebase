@@ -2,23 +2,26 @@
              ((gnu packages bash) #:select (bash-minimal))
              (gnu packages bison)
              ((gnu packages certs) #:select (nss-certs))
+             ((gnu packages check) #:select (libfaketime))
              ((gnu packages cmake) #:select (cmake-minimal))
              (gnu packages commencement)
              (gnu packages compression)
              (gnu packages cross-base)
-             (gnu packages file)
              (gnu packages gawk)
              (gnu packages gcc)
              ((gnu packages installers) #:select (nsis-x86_64))
              ((gnu packages linux) #:select (linux-libre-headers-6.1))
              (gnu packages llvm)
              (gnu packages mingw)
+             (gnu packages ninja)
              (gnu packages perl)
              (gnu packages pkg-config)
              (gnu packages m4)
              ((gnu packages python) #:select (python-minimal))
-             ((gnu packages python-build) #:select (python-tomli python-poetry-core))
+             ((gnu packages python-build) #:select (python-poetry-core))
              ((gnu packages python-crypto) #:select (python-asn1crypto))
+             ((gnu packages python-science) #:select (python-scikit-build-core))
+             ((gnu packages python-xyz) #:select (python-pydantic-2 python-pydantic-core))
              ((gnu packages tls) #:select (openssl))
              ((gnu packages version-control) #:select (git-minimal))
              (guix build-system cmake)
@@ -160,37 +163,35 @@ chain for " target " development."))
 (define-public python-lief
   (package
     (name "python-lief")
-    (version "0.13.2")
+    (version "0.16.6")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/lief-project/LIEF")
                     (commit version)))
               (file-name (git-file-name name version))
-              (modules '((guix build utils)))
-              (snippet
-               '(begin
-                  ;; Configure build for Python bindings.
-                  (substitute* "api/python/config-default.toml"
-                    (("(ninja         = )true" all m)
-                     (string-append m "false"))
-                    (("(parallel-jobs = )0" all m)
-                     (string-append m (number->string (parallel-job-count)))))))
               (sha256
                (base32
-                "0y48x358ppig5xp97ahcphfipx7cg9chldj2q5zrmn610fmi4zll"))))
-    (build-system python-build-system)
-    (native-inputs (list cmake-minimal python-tomli))
+                "1pq9nagrnkl1x943bqnpiyxmkd9vk99znfxiwqp6vf012b50bz2a"))
+              (patches (search-our-patches "lief-scikit-0-9.patch"))))
+    (build-system pyproject-build-system)
+    (native-inputs (list cmake-minimal
+                         ninja
+                         python-scikit-build-core
+                         python-pydantic-core
+                         python-pydantic-2))
     (arguments
      (list
       #:tests? #f                  ;needs network
       #:phases #~(modify-phases %standard-phases
-                   (add-before 'build 'change-directory
+                   (add-before 'build 'set-pythonpath
                      (lambda _
-                       (chdir "api/python")))
-                   (replace 'build
+                       (setenv "PYTHONPATH"
+                         (string-append (string-append (getcwd) "/api/python/backend")
+                                      ":" (or (getenv "PYTHONPATH") "")))))
+                  (add-after 'set-pythonpath 'change-directory
                      (lambda _
-                       (invoke "python" "setup.py" "build"))))))
+                       (chdir "api/python"))))))
     (home-page "https://github.com/lief-project/LIEF")
     (synopsis "Library to instrument executable formats")
     (description
@@ -211,13 +212,17 @@ and abstract ELF, PE and MachO formats.")
                (base32
                 "1j47vwq4caxfv0xw68kw5yh00qcpbd56d7rq6c483ma3y7s96yyz"))))
     (build-system cmake-build-system)
-    ;; The bundled test fixtures embed certificates that expired on
-    ;; 2024-12-31, so 24 of 50 tests fail purely on the current date and
-    ;; abort the build. osslsigncode is Windows codesigning tooling and is
-    ;; never linked into any released binary, so skipping its test suite
-    ;; cannot affect the shipped artifacts.
-    (arguments (list #:tests? #f))
-    (inputs (list openssl))
+    (arguments
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (replace 'check
+            (lambda* (#:key tests? #:allow-other-keys)
+              (if tests?
+                  (invoke "faketime" "-f" "@2025-01-01 00:00:00" ;; Tests fail after 2025.
+                          "ctest" "--output-on-failure" "--no-tests=error")
+                  (format #t "test suite not run~%")))))))
+    (inputs (list libfaketime openssl))
     (home-page "https://github.com/mtrojnar/osslsigncode")
     (synopsis "Authenticode signing and timestamping tool")
     (description "osslsigncode is a small tool that implements part of the
@@ -538,7 +543,6 @@ inspecting signatures in Mach-O binaries.")
         which
         coreutils-minimal
         ;; File(system) inspection
-        file
         grep
         diffutils
         findutils
@@ -555,6 +559,7 @@ inspecting signatures in Mach-O binaries.")
         gcc-toolchain-13
         cmake-minimal
         gnu-make
+        ninja
         ;; Scripting
         perl
         python-minimal ;; (3.10)

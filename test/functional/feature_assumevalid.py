@@ -60,7 +60,7 @@ class BaseNode(P2PInterface):
     def send_header_for_blocks(self, new_blocks):
         headers_message = msg_headers()
         headers_message.headers = [CBlockHeader(b) for b in new_blocks]
-        self.send_message(headers_message)
+        self.send_without_ping(headers_message)
 
 
 class AssumeValidTest(BitcoinTestFramework):
@@ -82,7 +82,7 @@ class AssumeValidTest(BitcoinTestFramework):
             if not p2p_conn.is_connected:
                 break
             try:
-                p2p_conn.send_message(msg_block(self.blocks[i]))
+                p2p_conn.send_without_ping(msg_block(self.blocks[i]))
             except IOError:
                 assert not p2p_conn.is_connected
                 break
@@ -134,7 +134,7 @@ class AssumeValidTest(BitcoinTestFramework):
         block.solve()
         # Save the coinbase for later
         self.block1 = block
-        self.tip = block.sha256
+        self.tip = block.hash_int
         height += 1
 
         # Bury the block 100 deep so the coinbase output is spendable
@@ -142,21 +142,20 @@ class AssumeValidTest(BitcoinTestFramework):
             block = create_block(self.tip, create_coinbase(height), self.block_time)
             block.solve()
             self.blocks.append(block)
-            self.tip = block.sha256
+            self.tip = block.hash_int
             self.block_time += 1
             height += 1
 
         # Create a transaction spending the coinbase output with an invalid (null) signature
         tx = CTransaction()
-        tx.vin.append(CTxIn(COutPoint(self.block1.vtx[0].sha256, 0), scriptSig=b""))
+        tx.vin.append(CTxIn(COutPoint(self.block1.vtx[0].txid_int, 0), scriptSig=b""))
         tx.vout.append(CTxOut(49 * 100000000, CScript([OP_TRUE])))
-        tx.calc_sha256()
 
         block102 = create_block(self.tip, create_coinbase(height), self.block_time, txlist=[tx])
         self.block_time += 1
         block102.solve()
         self.blocks.append(block102)
-        self.tip = block102.sha256
+        self.tip = block102.hash_int
         self.block_time += 1
         height += 1
 
@@ -165,13 +164,13 @@ class AssumeValidTest(BitcoinTestFramework):
             block = create_block(self.tip, create_coinbase(height), self.block_time)
             block.solve()
             self.blocks.append(block)
-            self.tip = block.sha256
+            self.tip = block.hash_int
             self.block_time += 1
             height += 1
 
         # Start node1 and node2 with assumevalid so they accept a block with a bad signature.
-        self.start_node(1, extra_args=["-assumevalid=" + hex(block102.sha256)[2:]])
-        self.start_node(2, extra_args=["-assumevalid=" + hex(block102.sha256)[2:]])
+        self.start_node(1, extra_args=["-assumevalid=" + block102.hash_hex])
+        self.start_node(2, extra_args=["-assumevalid=" + block102.hash_hex])
 
         p2p0 = self.nodes[0].add_p2p_connection(BaseNode())
         # Test P2P connection before sending headers
@@ -196,24 +195,14 @@ class AssumeValidTest(BitcoinTestFramework):
 
         # Send all blocks to node1. All blocks will be accepted.
         # Send only a subset to speed this up
-        p2p1_blocks = self.nodes[1].add_p2p_connection(BaseNode())
-        # Test P2P connection before sending blocks
-        self.test_p2p_connection(p2p1_blocks)
-        
-        # Send blocks in smaller batches with delays to avoid overwhelming the node
-        batch_size = 50
-        for i in range(0, min(1000, len(self.blocks)), batch_size):
-            for j in range(i, min(i+batch_size, 1000)):
-                p2p1_blocks.send_message(msg_block(self.blocks[j]))
-            # Give the node time to process
-            time.sleep(0.1)
-
+        p2p1 = self.nodes[1].add_p2p_connection(BaseNode())
+        for i in range(1000):
+            p2p1.send_without_ping(msg_block(self.blocks[i]))
         # Syncing 2200 blocks can take a while on slow systems. Give it plenty of time to sync.
         timeout = time.time() + 200
         while time.time() < timeout:
             if self.nodes[1].getblock(self.nodes[1].getbestblockhash())['height'] == 1000:
                 break
-            time.sleep(0.5)
         assert_equal(self.nodes[1].getblock(self.nodes[1].getbestblockhash())['height'], 1000)
 
         p2p2 = self.nodes[2].add_p2p_connection(BaseNode())

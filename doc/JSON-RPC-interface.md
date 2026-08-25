@@ -62,6 +62,8 @@ runebase-cli -named createwallet wallet_name=mywallet load_on_startup=true
 runebase-cli -named createwallet mywallet load_on_startup=true
 ```
 
+`runebase rpc` can also be substituted for `runebase-cli -named`, and is a newer alternative.
+
 ## Versioning
 
 The RPC interface might change from one major version of Runebase Core to the

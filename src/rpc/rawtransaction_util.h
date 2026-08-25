@@ -62,7 +62,7 @@ std::vector<std::pair<CTxDestination, CAmount>> ParseOutputs(const UniValue& out
 void AddOutputs(CMutableTransaction& rawTx, const UniValue& outputs_in, IRawContract* rawContract = nullptr);
 
 /** Create a transaction from univalue parameters */
-CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf, IRawContract* rawContract = nullptr);
+CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf, const uint32_t version, IRawContract* rawContract = nullptr);
 
 void SignTransactionOutput(CMutableTransaction& mtx, FlatSigningProvider *keystore, const UniValue& hashType, UniValue& result);
 void SignTransactionOutputResultToJSON(CMutableTransaction& mtx, bool complete, std::map<int, std::string>& output_errors, UniValue& result);

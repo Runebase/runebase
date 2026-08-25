@@ -214,7 +214,7 @@ public:
         EXCLUSIVE_LOCKS_REQUIRED(!m_cs_fee_estimator);
 
     /** Remove a transaction from the mempool tracking stats for non BLOCK removal reasons*/
-    bool removeTx(uint256 hash)
+    bool removeTx(Txid hash)
         EXCLUSIVE_LOCKS_REQUIRED(!m_cs_fee_estimator);
 
     /** DEPRECATED. Return a feerate estimate */
@@ -289,7 +289,7 @@ private:
     };
 
     // map of txids to information about that transaction
-    std::map<uint256, TxStatsInfo> mapMemPoolTxs GUARDED_BY(m_cs_fee_estimator);
+    std::map<Txid, TxStatsInfo> mapMemPoolTxs GUARDED_BY(m_cs_fee_estimator);
 
     /** Classes to track historical data on transaction confirmations */
     std::unique_ptr<TxConfirmStats> feeStats PT_GUARDED_BY(m_cs_fee_estimator);
@@ -317,7 +317,7 @@ private:
     unsigned int MaxUsableEstimate() const EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
 
     /** A non-thread-safe helper for the removeTx function */
-    bool _removeTx(const uint256& hash, bool inBlock)
+    bool _removeTx(const Txid& hash, bool inBlock)
         EXCLUSIVE_LOCKS_REQUIRED(m_cs_fee_estimator);
 };
 

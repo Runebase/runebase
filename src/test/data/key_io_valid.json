@@ -19,7 +19,7 @@
         "qcMT7Dtq6b1Ayg769nykCPCaeEnxkJw1Nf",
         "76a914ce28b26c57472737f5c3561a1761185bd8589a4388ac",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false
         }
     ],
@@ -27,7 +27,7 @@
         "maxpZN1F4xUxq2m3yH69LxUoDvUoPSP6uu",
         "a914ce0bba75891ff9ec60148d4bd4a09ee2dc5c933187",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false
         }
     ],
@@ -85,7 +85,7 @@
         "92ZdE5HoLafywnTBbzPxbvRmp75pSfzvdU3XaZGh1cToipgdHVh",
         "80c32d81e91bdea04cd7a3819b32275fc3298af4c7ec87eb0099527d041ced5c",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isCompressed": false,
             "isPrivkey": true
         }
@@ -94,7 +94,7 @@
         "cV83kKisF3RQSvXbUCm9ox3kaz5JjEUBWcx8tNydfGJcyeUxuH47",
         "e0fcd4ce4e3d0e3de091f21415bb7cd011fac288c42020a879f28c2a4387df9b",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isCompressed": true,
             "isPrivkey": true
         }
@@ -175,7 +175,7 @@
         "tq1qcrh3yqn4nlleplcez2yndq2ry8h9ncg3y58j76",
         "0014c0ef1202759fff90ff19128936814321ee59e111",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -184,7 +184,7 @@
         "tq1quyl9ujpgwr2chdzdnnalen48sup245vdfnh2jxhsuq3yx80rrwlq8l8vyu",
         "0020e13e5e482870d58bb44d9cfbfccea78702aad18d4ceea91af0e022431de31bbe",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -193,7 +193,7 @@
         "tq1p35n52jy6xkm4wd905tdy8qtagrn73kqdz73xe4zxpvq9t3fp50aq9ehl4t",
         "51208d2745489a35b75734afa2da43817d40e7e8d80d17a26cd4460b0055c521a3fa",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -202,7 +202,7 @@
         "tq1rgv5m6uvdk3kc7qsuz0c79v88yc9gdv3n",
         "53104329bd718db46d8f021c13f1e2b0e726",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -299,7 +299,7 @@
         "qgaoTXar2279DrhAMej9cicn98eqvknXan",
         "76a914fc8f9851f3c1e4719cd0b8e4816dd4e88c72e52888ac",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false
         }
     ],
@@ -307,7 +307,7 @@
         "mZaXpDxCvyPpZQejwdtuAxR5NqckAte8du",
         "a914bedc797342c03fd7a346c4c7857ca03d467013b687",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false
         }
     ],
@@ -365,7 +365,7 @@
         "921M1RNxghFcsVGqAJksQVbSgx36Yz4u6vebfz1wDujNvgNt93B",
         "3777b341c45e2a9b9bf6bfb71dc7d129f64f1b9406ed4f93ade8f56065f1b732",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isCompressed": false,
             "isPrivkey": true
         }
@@ -374,7 +374,7 @@
         "cNEnbfF2fcxmmCLWqMAaq6fxJvVkwMbyU3kCbpQznz4Z1j6TZDGb",
         "1397b0d4a03e1ab2c54dd9af99ce1ecbfb90c80a58886da95e1181a55703d96b",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isCompressed": true,
             "isPrivkey": true
         }
@@ -455,7 +455,7 @@
         "tq1ql4k5ayv7p7w0t0ge7tpntgpkgw53g2paq903gv",
         "0014fd6d4e919e0f9cf5bd19f2c335a03643a914283d",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -464,7 +464,7 @@
         "tq1q9jx3x2qqdpempxrcfgyrkjd5fzeacaqj4ua7cs7fe2sfd2wdaueq8x508d",
         "00202c8d1328006873b098784a083b49b448b3dc7412af3bec43c9caa096a9cdef32",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -473,7 +473,7 @@
         "tq1pdswckwd9ym5yf5eyzg8j4jjwnzla8y0tf9cp7aasfkek0u29sz9q6tg2eq",
         "51206c1d8b39a526e844d324120f2aca4e98bfd391eb49701f77b04db367f145808a",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -482,7 +482,7 @@
         "tq1r0ecpfxg2udhtc556gqrpwwhk4sgd2kfk",
         "53107e7014990ae36ebc529a4006173af6ac",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false,
             "tryCaseFlip": true
         }
@@ -579,7 +579,7 @@
         "qZirtG7C8bqSKA3CEZF1rSo1SAzr3g51hG",
         "76a914b14ce7070b53cb0e4b5b5f6e253e876990aeca2e88ac",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false
         }
     ],
@@ -587,7 +587,7 @@
         "mL7dAxmL2fnDvw7e6P8QCMCus2PDe9v12t",
         "a9142b2c149cde619eae3d7fe995243b76a3417541aa87",
         {
-            "chain": "test",
+            "chain": "testnet4",
             "isPrivkey": false
         }
     ],

@@ -266,8 +266,7 @@ void SuperStakerPage::editStakerName()
         QString stakerName = indexMenu.data(SuperStakerItemModel::StakerNameRole).toString();
         QString stakerAddress = indexMenu.data(SuperStakerItemModel::StakerAddressRole).toString();
         QString sHash = indexMenu.data(SuperStakerItemModel::HashRole).toString();
-        uint256 hash;
-        hash.SetHexDeprecated(sHash.toStdString());
+        uint256 hash = uint256::FromHex(sHash.toStdString()).value_or(uint256::ZERO);
 
         EditSuperStakerDialog dlg;
         dlg.setData(stakerName, stakerAddress);

@@ -140,59 +140,73 @@ Make sure to check out these resources as well for more information and to keep 
 
 ### Validate and Reproduce Binaries
 
-Runebase uses a tool called Gitian to make reproducible builds that can be verified by anyone. Instructions on setting up a Gitian VM and building Runebase are provided in [Gitan Building](https://github.com/runebase/runebase/blob/master/doc/gitian-building.md)
+Runebase uses a tool called Guix to make reproducible builds that can be verified by anyone. Instructions on setting up a Guix VM and building Runebase are provided in [Gitan Building](https://github.com/runebase/runebase/blob/master/contrib/guix/README.md)
 
 ### Build on Ubuntu
 
 This is a quick start script for compiling Runebase on Ubuntu
 
 ```bash
-    sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils git cmake libboost-all-dev libgmp3-dev bison libtool-bin
+    # Installing dependencies for Runebase
+    sudo apt-get install build-essential cmake pkgconf python3 libgmp3-dev libssl-dev libevent-dev libboost-all-dev libsqlite3-dev libcapnp-dev capnproto git
     sudo apt-get install software-properties-common
     
     # If you want to build the Qt GUI:
-    sudo apt-get install libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools libprotobuf-dev protobuf-compiler qrencode
+    sudo apt-get install qt6-base-dev qt6-tools-dev qt6-l10n-tools qt6-tools-dev-tools libgl-dev libqrencode-dev
     
+    # Clone Runebase source code
     git clone https://github.com/runebase/runebase
     cd runebase
     git submodule update --init --recursive
 
-    ./contrib/install_db4.sh `pwd`
-    export BDB_PREFIX='/path/to/runebase/db4'
-
-    cd depends
-    make
-
-    # replace x86_64-pc-linux-gnu with the appropriate folder name for your system
-    libtool --finish depends/x86_64-pc-linux-gnu/lib 
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/x86_64-pc-linux-gnu/lib
+    # Building Runebase
+    cmake -DBUILD_GUI=ON -B build
+    cmake --build build -j$(nproc)
+```
+Or, compiling Runebase on Ubuntu and its dependencies
+```bash
+    # Installing building tools for Runebase
+    sudo apt-get install build-essential cmake pkgconf python3 curl m4 bison git
+    sudo apt-get install software-properties-common
     
-    # Note: cmake will prompt to install some more dependencies if needed
-    ./contrib/install_db4.sh `pwd`
+    # Clone Runebase source code
+    git clone https://github.com/runebase/runebase
+    cd runebase
+    git submodule update --init --recursive
+
+    # Building dependencies
+    cd depends
+    make -j$(nproc)
+    cd ..
+
+    # Building Runebase
+    # Replace x86_64-pc-linux-gnu with the appropriate folder name for your system
     cmake -B build --toolchain `pwd`/depends/x86_64-pc-linux-gnu/toolchain.cmake
     cmake --build build -j$(nproc)
 ```
+
 
 ### Build on CentOS
 
 Here is a brief description for compiling Runebase on CentOS, for more details please refer to [the specific document](https://github.com/runebase/runebase/blob/master/doc/build-unix.md)
 
     # Compiling boost manually
-    sudo yum install python-devel bzip2-devel
+    sudo yum install gcc gcc-c++ bzip2 bzip2-devel python3 python3-devel git
     git clone https://github.com/boostorg/boost.git
     cd boost
-    git checkout boost-1.73.0
+    git checkout boost-1.82.0
     git submodule update --init --recursive
     ./bootstrap.sh --prefix=/usr --libdir=/usr/lib64
     ./b2 headers
     sudo ./b2 -j4 install
+    cd ..
     
     # Installing Dependencies for Runebase
     sudo yum install epel-release cmake
-    sudo yum install libtool libdb4-cxx-devel openssl-devel libevent-devel gmp-devel
+    sudo yum install libevent-devel sqlite-devel capnproto capnproto-devel openssl-devel gmp-devel
     
     # If you want to build the Qt GUI:
-    sudo yum install qt5-qttools-devel protobuf-devel qrencode-devel
+    sudo yum install qt6-qtbase-devel qt6-qttools-devel qrencode-devel
     
     # Building Runebase
     git clone --recursive https://github.com/runebase/runebase.git
@@ -217,11 +231,9 @@ Then install [Homebrew](https://brew.sh).
 
 #### Dependencies
 
-    brew install cmake automake berkeley-db@4 libtool boost miniupnpc openssl pkg-config protobuf qt@5 libevent imagemagick librsvg qrencode gmp
+    brew install cmake automake libtool boost miniupnpc openssl pkg-config qt@6 libevent imagemagick librsvg qrencode gmp
 
 NOTE: This will work for building on Intel Macs and Apple Silicon Macs
-
-NOTE: Building may fail if Qt 6 is installed (`qt` or `qt@6`). Building with Qt 5 is recommended.
 
 #### Build Runebase Core
 
@@ -282,8 +294,8 @@ in Python.
 These tests can be run (if the [test dependencies](/test) are installed) with: `build/test/functional/test_runner.py`
 (assuming `build` is your build directory).
 
-The CI (Continuous Integration) systems make sure that every pull request is built for Windows, Linux, and macOS,
-and that unit/sanity tests are run automatically.
+The CI (Continuous Integration) systems make sure that every pull request is tested on Windows, Linux, and macOS.
+The CI must pass on all commits before merge to avoid unrelated CI failures on new pull requests.
 
 ### Manual Quality Assurance (QA) Testing
 

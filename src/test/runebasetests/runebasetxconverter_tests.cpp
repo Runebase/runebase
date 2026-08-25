@@ -15,18 +15,18 @@ const dev::u256 gasLimit(655535);
 const std::vector<unsigned char> address(ParseHex("abababababababababababababababababababab"));
 const std::vector<unsigned char> data(ParseHex("6060604052346000575b60398060166000396000f30060606040525b600b5b5b565b0000a165627a7a72305820a5e02d6fa08a384e067a4c1f749729c502e7597980b427d287386aa006e49d6d0029"));
 
-CMutableTransaction createTX(std::vector<CTxOut> vout, uint256 hashprev = uint256()){
+CMutableTransaction createTX(std::vector<CTxOut> vout, Txid hashprev = Txid()){
     CMutableTransaction tx;
     tx.vin.resize(1);
     tx.vin[0].scriptSig = CScript() << OP_1;
-    tx.vin[0].prevout.hash = Txid::FromUint256(hashprev);
+    tx.vin[0].prevout.hash = hashprev;
     tx.vin[0].prevout.n = 0;
     tx.vout.resize(1);
     tx.vout = vout;
     return tx;
 }
 
-void checkResult(bool isCreation, std::vector<RunebaseTransaction> results, uint256 hash){
+void checkResult(bool isCreation, std::vector<RunebaseTransaction> results, Txid hash){
     for(size_t i = 0; i < results.size(); i++){
         if(isCreation){
             BOOST_CHECK(results[i].isCreation());
@@ -41,7 +41,7 @@ void checkResult(bool isCreation, std::vector<RunebaseTransaction> results, uint
         BOOST_CHECK(results[i].gas() == gasLimit);
         BOOST_CHECK(results[i].sender() == dev::Address(address));
         BOOST_CHECK(results[i].getNVout() == i);
-        BOOST_CHECK(results[i].getHashWith() == uintToh256(hash));
+        BOOST_CHECK(results[i].getHashWith() == uintToh256(hash.ToUint256()));
     }
 }
 
@@ -52,7 +52,7 @@ void runTest(Chainstate& chainstate, CTxMemPool& mempool, bool isCreation, size_
     CMutableTransaction tx1, tx2;
     std::vector<CTxOut> outs1 = {CTxOut(value, CScript() << OP_DUP << OP_HASH160 << address << OP_EQUALVERIFY << OP_CHECKSIG)};
     tx1 = createTX(outs1);
-    uint256 hashParentTx = tx1.GetHash(); // save this txid for later use
+    Txid hashParentTx = tx1.GetHash(); // save this txid for later use
     AddToMempool(mempool, entry.Fee(1000).Time(Now<NodeSeconds>()).SpendsCoinbase(true).FromTx(tx1));
     std::vector<CTxOut> outs2;
     for(size_t i = 0; i < n; i++){
@@ -87,7 +87,7 @@ void runFailingTest(Chainstate& chainstate, CTxMemPool& mempool, bool isCreation
     CMutableTransaction tx1, tx2;
     std::vector<CTxOut> outs1 = {CTxOut(value, CScript() << OP_DUP << OP_HASH160 << address << OP_EQUALVERIFY << OP_CHECKSIG)};
     tx1 = createTX(outs1);
-    uint256 hashParentTx = tx1.GetHash(); // save this txid for later use
+    Txid hashParentTx = tx1.GetHash(); // save this txid for later use
     AddToMempool(mempool, entry.Fee(1000).Time(Now<NodeSeconds>()).SpendsCoinbase(true).FromTx(tx1));
     std::vector<CTxOut> outs2;
     for(size_t i = 0; i < n; i++){

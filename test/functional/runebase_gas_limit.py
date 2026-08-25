@@ -12,9 +12,6 @@ import time
 NUM_OUTPUTS = 1000
 
 class RunebaseGasLimit(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -42,7 +39,6 @@ class RunebaseGasLimit(BitcoinTestFramework):
         tx = CTransaction()
         tx.vin = [make_vin(self.node, NUM_OUTPUTS*5*COIN)]
         tx.vout = [CTxOut(0, CScript([b"\x04", int(5*COIN), RUNEBASE_MIN_GAS_PRICE, b"\x00", bytes.fromhex(contract_address), OP_CALL])) for i in range(NUM_OUTPUTS)]
-        tx.rehash()
         signed_tx_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']
 
         # We may want to reject transactions which exceed the gas limit outright.

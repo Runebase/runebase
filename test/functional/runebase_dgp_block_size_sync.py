@@ -13,9 +13,6 @@ import io
 Note, these tests do not test the functionality of the DGP template contract itself, for tests for the DGP template, see runebase-dgp.py
 """
 class RunebaseDGPBlockSizeSyncTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 8
@@ -51,7 +48,6 @@ class RunebaseDGPBlockSizeSyncTest(BitcoinTestFramework):
         block.vtx[-1].deserialize(f)
 
         block.hashMerkleRoot = block.calc_merkle_root()
-        block.rehash()
         block.solve()
         print("block size", len(block.serialize()))
         return block

@@ -33,7 +33,7 @@ bool SetDefaultPayForContractAddress(const CWallet& wallet, CCoinControl & coinC
     for (const COutput& out : vecOutputs) {
         CTxDestination destAdress;
         const CScript& scriptPubKey = out.txout.scriptPubKey;
-        bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true)
+        bool fValidAddress = ExtractDestination(scriptPubKey, destAdress, nullptr, true)
                 && IsValidContractSenderAddress(destAdress);
 
         if (!fValidAddress)
@@ -57,7 +57,7 @@ bool SetDefaultSignSenderAddress(const CWallet& wallet, CTxDestination& destAdre
 
     for (const COutput& out : vecOutputs) {
         const CScript& scriptPubKey = out.txout.scriptPubKey;
-        bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true)
+        bool fValidAddress = ExtractDestination(scriptPubKey, destAdress, nullptr, true)
                 && IsValidContractSenderAddress(destAdress);
 
         if (!fValidAddress)
@@ -118,7 +118,7 @@ RPCHelpMan createcontract()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"createcontract",
-                "\nCreate a contract with bytcode." +
+                "Create a contract with bytcode." +
                 HELP_REQUIRING_PASSPHRASE,
                 {
                     {"bytecode", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "contract bytcode."},
@@ -225,7 +225,6 @@ RPCHelpMan createcontract()
     if(fPsbt) fBroadcast=false;
 
     CCoinControl coinControl;
-    if(fPsbt) coinControl.fAllowWatchOnly = true;
 
     CTxDestination signSenderAddress = CNoDestination();
     if(fHasSender){
@@ -238,7 +237,7 @@ RPCHelpMan createcontract()
         for (const COutput& out : vecOutputs) {
             CTxDestination destAdress;
             const CScript& scriptPubKey = out.txout.scriptPubKey;
-            bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true);
+            bool fValidAddress = ExtractDestination(scriptPubKey, destAdress, nullptr, true);
 
             if (!fValidAddress || senderAddress != destAdress)
                 continue;
@@ -283,7 +282,6 @@ RPCHelpMan createcontract()
 
     const auto bal = GetBalance(*pwallet);
     CAmount curBalance = bal.m_mine_trusted;
-    if(fPsbt) curBalance += bal.m_watchonly_trusted;
 
     // Check amount
     if (nGasFee <= 0)
@@ -302,7 +300,7 @@ RPCHelpMan createcontract()
     {
         if(IsValidDestination(signSenderAddress))
         {
-            if (!pwallet->HasPrivateKey(signSenderAddress, coinControl.fAllowWatchOnly)) {
+            if (!pwallet->HasPrivateKey(signSenderAddress)) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
             }
             CKeyID key_id = pwallet->GetKeyForDestination(signSenderAddress);
@@ -486,7 +484,6 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
     if(fPsbt) fBroadcast=false;
 
     CCoinControl coinControl;
-    if(fPsbt) coinControl.fAllowWatchOnly = true;
 
     CTxDestination signSenderAddress = CNoDestination();
     if(fHasSender){
@@ -499,7 +496,7 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
 
             CTxDestination destAdress;
             const CScript& scriptPubKey = out.txout.scriptPubKey;
-            bool fValidAddress = out.spendable && ExtractDestination(scriptPubKey, destAdress, nullptr, true);
+            bool fValidAddress = ExtractDestination(scriptPubKey, destAdress, nullptr, true);
 
             if (!fValidAddress || senderAddress != destAdress)
                 continue;
@@ -545,7 +542,6 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
 
     const auto bal = GetBalance(wallet);
     CAmount curBalance = bal.m_mine_trusted;
-    if(fPsbt) curBalance += bal.m_watchonly_trusted;
 
     // Check amount
     if (nGasFee <= 0)
@@ -564,7 +560,7 @@ UniValue SendToContract(CWallet& wallet, const UniValue& params, ChainstateManag
     {
         if(IsValidDestination(signSenderAddress))
         {
-            if (!wallet.HasPrivateKey(signSenderAddress, coinControl.fAllowWatchOnly)) {
+            if (!wallet.HasPrivateKey(signSenderAddress)) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available");
             }
             CKeyID key_id = wallet.GetKeyForDestination(signSenderAddress);
@@ -807,7 +803,7 @@ RPCHelpMan sendtocontract()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"sendtocontract",
-                    "\nSend funds and data to a contract." +
+                    "Send funds and data to a contract." +
                     HELP_REQUIRING_PASSPHRASE,
                     {
                         {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address that will receive the funds and data."},
@@ -869,7 +865,7 @@ RPCHelpMan removedelegationforaddress()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"removedelegationforaddress",
-                    "\nRemove delegation for address." +
+                    "Remove delegation for address." +
                     HELP_REQUIRING_PASSPHRASE,
                     {
                         {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The runebase address to remove delegation, the address will be used as sender too."},
@@ -928,7 +924,7 @@ RPCHelpMan setdelegateforaddress()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"setdelegateforaddress",
-                    "\nSet delegate for address." +
+                    "Set delegate for address." +
                     HELP_REQUIRING_PASSPHRASE,
                     {
                         {"staker", RPCArg::Type::STR, RPCArg::Optional::NO, "The runebase address for the staker."},
@@ -988,7 +984,7 @@ RPCHelpMan setdelegateforaddress()
     PKHash pkhSender = std::get<PKHash>(destSender);
 
     // Get the private key for the sender address
-    if (!pwallet->HasPrivateKey(destSender, fPsbt)) {
+    if (!pwallet->HasPrivateKey(destSender)) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key not available for the sender address");
     }
 
@@ -1045,7 +1041,7 @@ RPCHelpMan qrc20approve()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"qrc20approve",
-                "\nOwner approves an address to spend some amount of tokens.\n",
+                "Owner approves an address to spend some amount of tokens.\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address."},
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
@@ -1152,7 +1148,7 @@ RPCHelpMan qrc20transfer()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"qrc20transfer",
-                "\nSend token amount to a given address.\n",
+                "Send token amount to a given address.\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address."},
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
@@ -1269,7 +1265,7 @@ RPCHelpMan qrc20transferfrom()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"qrc20transferfrom",
-                "\nSend token amount from selected address to a given address.\n",
+                "Send token amount from selected address to a given address.\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address."},
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
@@ -1388,7 +1384,7 @@ RPCHelpMan qrc20burn()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"qrc20burn",
-                "\nBurns token amount from owner address.\n",
+                "Burns token amount from owner address.\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address."},
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
@@ -1503,7 +1499,7 @@ RPCHelpMan qrc20burnfrom()
     getDgpData(blockGasLimit, minGasPrice, nGasPrice);
 
     return RPCHelpMan{"qrc20burnfrom",
-                "\nBurns token amount from a given address.\n",
+                "Burns token amount from a given address.\n",
                 {
                     {"contractaddress", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The contract address."},
                     {"owneraddress", RPCArg::Type::STR, RPCArg::Optional::NO, "The token owner runebase address."},
@@ -1613,7 +1609,7 @@ RPCHelpMan qrc20burnfrom()
     };
 }
 
-Span<const CRPCCommand> GetContractRPCCommands()
+std::span<const CRPCCommand> GetContractRPCCommands()
 {
 // clang-format off
 static const CRPCCommand commands[] =

@@ -10,7 +10,7 @@ For cross-compiling options, please see [`build-windows.md`](./build-windows.md)
 
 This guide relies on using CMake and vcpkg package manager provided with the Visual Studio installation.
 Here are requirements for the Visual Studio installation:
-1. Minimum required version: Visual Studio 2022 version 17.6.
+1. Minimum required version: Visual Studio 2022 version 17.13.
 2. Installed components:
 - The "Desktop development with C++" workload.
 
@@ -19,7 +19,7 @@ The former is assumed hereinafter.
 
 ### 2. Git
 
-Download and install [Git for Windows](https://git-scm.com/download/win). Once installed, Git is available from PowerShell or the Command Prompt.
+Download and install [Git for Windows](https://git-scm.com/downloads/win). Once installed, Git is available from PowerShell or the Command Prompt.
 
 ### 3. Clone Bitcoin Repository
 
@@ -55,7 +55,7 @@ In the following instructions, the "Debug" configuration can be specified instea
 ```
 cmake -B build --preset vs2022-static          # It might take a while if the vcpkg binary cache is unpopulated or invalidated.
 cmake --build build --config Release           # Append "-j N" for N parallel jobs.
-ctest --test-dir build --build-config Release  # Append "-j N" for N parallel tests. Some tests are disabled if Python 3 is not available.
+ctest --test-dir build --build-config Release  # Append "-j N" for N parallel tests.
 cmake --install build --config Release         # Optional.
 ```
 
@@ -64,7 +64,7 @@ cmake --install build --config Release         # Optional.
 ```
 cmake -B build --preset vs2022 -DBUILD_GUI=OFF # It might take a while if the vcpkg binary cache is unpopulated or invalidated.
 cmake --build build --config Release           # Append "-j N" for N parallel jobs.
-ctest --test-dir build --build-config Release  # Append "-j N" for N parallel tests. Some tests are disabled if Python 3 is not available.
+ctest --test-dir build --build-config Release  # Append "-j N" for N parallel tests.
 ```
 
 ### 6. vcpkg-specific Issues and Workarounds

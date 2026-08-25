@@ -24,7 +24,7 @@ public:
     TokenItemEntry(const interfaces::TokenInfo &tokenInfo)
     {
         hash = tokenInfo.hash;
-        createTime.setTime_t(tokenInfo.time);
+        createTime.setSecsSinceEpoch(tokenInfo.time);
         contractAddress = QString::fromStdString(tokenInfo.contract_address);
         tokenName = QString::fromStdString(tokenInfo.token_name);
         tokenSymbol = QString::fromStdString(tokenInfo.token_symbol);
@@ -138,7 +138,7 @@ private Q_SLOTS:
                 tokenTx.tx_hash = event.transactionHash;
                 tokenTx.block_hash = event.blockHash;
                 tokenTx.block_number = event.blockNumber;
-                walletModel->wallet().addTokenTxEntry(tokenTx, false);
+                walletModel->wallet().addTokenTxEntry(tokenTx);
             }
 
             walletModel->wallet().addTokenEntry(tokenInfo);
@@ -270,8 +270,7 @@ public:
 
     int updateBalance(QString hash, QString balance)
     {
-        uint256 updated;
-        updated.SetHexDeprecated(hash.toStdString());
+        uint256 updated = uint256::FromHex(hash.toStdString()).value_or(uint256::ZERO);
         dev::s256 val(balance.toStdString());
 
         for(int i = 0; i < cachedTokenItem.size(); i++)
@@ -425,8 +424,7 @@ QVariant TokenItemModel::data(const QModelIndex &index, int role) const
 void TokenItemModel::updateToken(const QString &hash, int status, bool showToken)
 {
     // Find token in wallet
-    uint256 updated;
-    updated.SetHexDeprecated(hash.toStdString());
+    uint256 updated = uint256::FromHex(hash.toStdString()).value_or(uint256::ZERO);
     interfaces::TokenInfo token =walletModel->wallet().getToken(updated);
     showToken &= token.hash == updated;
 

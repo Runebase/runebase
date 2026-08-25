@@ -44,7 +44,6 @@ public:
         QStringList optionalRescan = QStringList() << PARAM_START_HEIGHT << PARAM_STOP_HEIGHT;
         cmdRescan = new ExecRPCCommand("rescanblockchain", QStringList(), optionalRescan,  QMap<QString, QString>(), parent);
         QStringList mandatoryImport = QStringList() << PARAM_REQUESTS;
-        cmdImport = new ExecRPCCommand("importmulti", mandatoryImport, QStringList(),  QMap<QString, QString>(), parent);
         cmdImportDesc = new ExecRPCCommand("importdescriptors", mandatoryImport, QStringList(),  QMap<QString, QString>(), parent);
         QStringList mandatoryFinalize = QStringList() << PARAM_PSBT;
         cmdFinalize = new ExecRPCCommand("finalizepsbt", mandatoryFinalize, QStringList(),  QMap<QString, QString>(), parent);
@@ -160,7 +159,7 @@ bool RunebaseHwiTool::getKeyPool(const QString &fingerprint, int type, const QSt
     {
         strPath += internal ? "/1/*" : "/0/*";
     }
-    bool ret = RunebaseLedger::instance().getKeyPool(strFingerprint, type, strPath, internal, d->from, d->to, isDescriptorWallet(), strDesc);
+    bool ret = RunebaseLedger::instance().getKeyPool(strFingerprint, type, strPath, internal, d->from, d->to, strDesc);
     desc = QString::fromStdString(strDesc);
     if(ret)
     {
@@ -357,7 +356,7 @@ bool RunebaseHwiTool::importAddresses(const QString &desc)
     ExecRPCCommand::appendParam(lstParams, PARAM_REQUESTS, desc);
 
     // Exec RPC
-    ExecRPCCommand* cmd = isDescriptorWallet() ? d->cmdImportDesc : d->cmdImport;
+    ExecRPCCommand* cmd = d->cmdImportDesc;
     if(!execRPC(cmd, lstParams, result, resultJson))
         return false;
 
@@ -499,12 +498,6 @@ void RunebaseHwiTool::addError(const QString &error)
     if(d->strError != "")
         d->strError += "\n";
     d->strError += error;
-}
-
-bool RunebaseHwiTool::isDescriptorWallet()
-{
-    if(!d->model) return false;
-    return d->model->wallet().hasDescriptors();
 }
 
 QString RunebaseHwiTool::derivationPathPKH()

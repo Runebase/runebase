@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -76,7 +76,7 @@ std::vector<uint32_t> GetDust(const CTransaction& tx, CFeeRate dust_relay_rate)
     return dust_outputs;
 }
 
-bool IsStandard(const CScript& scriptPubKey, const std::optional<unsigned>& max_datacarrier_bytes, TxoutType& whichType)
+bool IsStandard(const CScript& scriptPubKey, TxoutType& whichType)
 {
     std::vector<std::vector<unsigned char> > vSolutions;
     whichType = Solver(scriptPubKey, vSolutions);
@@ -91,10 +91,6 @@ bool IsStandard(const CScript& scriptPubKey, const std::optional<unsigned>& max_
             return false;
         if (m < 1 || m > n)
             return false;
-    } else if (whichType == TxoutType::NULL_DATA) {
-        if (!max_datacarrier_bytes || scriptPubKey.size() > *max_datacarrier_bytes) {
-            return false;
-        }
     }
 
     return true;
@@ -102,7 +98,7 @@ bool IsStandard(const CScript& scriptPubKey, const std::optional<unsigned>& max_
 
 bool IsStandardTx(const CTransaction& tx, const std::optional<unsigned>& max_datacarrier_bytes, bool permit_bare_multisig, const CFeeRate& dust_relay_fee, std::string& reason)
 {
-    if (tx.version > TX_MAX_STANDARD_VERSION || tx.version < 1) {
+    if (tx.version > TX_MAX_STANDARD_VERSION || tx.version < TX_MIN_STANDARD_VERSION) {
         reason = "version";
         return false;
     }
@@ -137,17 +133,22 @@ bool IsStandardTx(const CTransaction& tx, const std::optional<unsigned>& max_dat
         }
     }
 
-    unsigned int nDataOut = 0;
+    unsigned int datacarrier_bytes_left = max_datacarrier_bytes.value_or(0);
     TxoutType whichType;
     for (const CTxOut& txout : tx.vout) {
-        if (!::IsStandard(txout.scriptPubKey, max_datacarrier_bytes, whichType)) {
+        if (!::IsStandard(txout.scriptPubKey, whichType)) {
             reason = "scriptpubkey";
             return false;
         }
 
-        if (whichType == TxoutType::NULL_DATA)
-            nDataOut++;
-        else if ((whichType == TxoutType::MULTISIG) && (!permit_bare_multisig)) {
+        if (whichType == TxoutType::NULL_DATA) {
+            unsigned int size = txout.scriptPubKey.size();
+            if (size > datacarrier_bytes_left) {
+                reason = "datacarrier";
+                return false;
+            }
+            datacarrier_bytes_left -= size;
+        } else if ((whichType == TxoutType::MULTISIG) && (!permit_bare_multisig)) {
             reason = "bare-multisig";
             return false;
         }
@@ -156,12 +157,6 @@ bool IsStandardTx(const CTransaction& tx, const std::optional<unsigned>& max_dat
     // Only MAX_DUST_OUTPUTS_PER_TX dust is permitted(on otherwise valid ephemeral dust)
     if (GetDust(tx, dust_relay_fee).size() > MAX_DUST_OUTPUTS_PER_TX) {
         reason = "dust";
-        return false;
-    }
-
-    // only one OP_RETURN txout is permitted
-    if (nDataOut > 1) {
-        reason = "multi-op-return";
         return false;
     }
 
@@ -198,20 +193,18 @@ static bool CheckSigopsBIP54(const CTransaction& tx, const CCoinsViewCache& inpu
 }
 
 /**
- * Check transaction inputs to mitigate two
- * potential denial-of-service attacks:
+ * Check transaction inputs.
  *
- * 1. scriptSigs with extra data stuffed into them,
- *    not consumed by scriptPubKey (or P2SH script)
- * 2. P2SH scripts with a crazy number of expensive
- *    CHECKSIG/CHECKMULTISIG operations
- *
- * Why bother? To avoid denial-of-service attacks; an attacker
- * can submit a standard HASH... OP_EQUAL transaction,
- * which will get accepted into blocks. The redemption
- * script can be anything; an attacker could use a very
- * expensive-to-check-upon-redemption script like:
- *   DUP CHECKSIG DROP ... repeated 100 times... OP_1
+ * This does three things:
+ *  * Prevents mempool acceptance of spends of future
+ *    segwit versions we don't know how to validate
+ *  * Mitigates a potential denial-of-service attack with
+ *    P2SH scripts with a crazy number of expensive
+ *    CHECKSIG/CHECKMULTISIG operations.
+ *  * Prevents spends of unknown/irregular scriptPubKeys,
+ *    which mitigates potential denial-of-service attacks
+ *    involving expensive scripts and helps reserve them
+ *    as potential new upgrade hooks.
  *
  * Note that only the non-witness portion of the transaction is checked here.
  *
@@ -316,7 +309,7 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
         // - No annexes
         if (witnessversion == 1 && witnessprogram.size() == WITNESS_V1_TAPROOT_SIZE && !p2sh) {
             // Taproot spend (non-P2SH-wrapped, version 1, witness program size 32; see BIP 341)
-            Span stack{tx.vin[i].scriptWitness.stack};
+            std::span stack{tx.vin[i].scriptWitness.stack};
             if (stack.size() >= 2 && !stack.back().empty() && stack.back()[0] == ANNEX_TAG) {
                 // Annexes are nonstandard as long as no semantics are defined for them.
                 return false;
@@ -342,6 +335,42 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
         }
     }
     return true;
+}
+
+bool SpendsNonAnchorWitnessProg(const CTransaction& tx, const CCoinsViewCache& prevouts)
+{
+    if (tx.IsCoinBase()) {
+        return false;
+    }
+
+    int version;
+    std::vector<uint8_t> program;
+    for (const auto& txin: tx.vin) {
+        const auto& prev_spk{prevouts.AccessCoin(txin.prevout).out.scriptPubKey};
+
+        // Note this includes not-yet-defined witness programs.
+        if (prev_spk.IsWitnessProgram(version, program) && !prev_spk.IsPayToAnchor(version, program)) {
+            return true;
+        }
+
+        // For P2SH extract the redeem script and check if it spends a non-Taproot witness program. Note
+        // this is fine to call EvalScript (as done in AreInputsStandard/IsWitnessStandard) because this
+        // function is only ever called after IsStandardTx, which checks the scriptsig is pushonly.
+        if (prev_spk.IsPayToScriptHash()) {
+            // If EvalScript fails or results in an empty stack, the transaction is invalid by consensus.
+            std::vector <std::vector<uint8_t>> stack;
+            if (!EvalScript(stack, txin.scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker{}, SigVersion::BASE)
+                || stack.empty()) {
+                continue;
+            }
+            const CScript redeem_script{stack.back().begin(), stack.back().end()};
+            if (redeem_script.IsWitnessProgram(version, program)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 int64_t GetVirtualTransactionSize(int64_t nWeight, int64_t nSigOpCost, unsigned int bytes_per_sigop)

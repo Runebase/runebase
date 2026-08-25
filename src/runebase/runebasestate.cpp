@@ -342,9 +342,9 @@ std::unordered_map<dev::Address, Vin> CondensingTX::createVin(const CTransaction
             continue;
 
         if(b.second > 0){
-            vins[b.first] = Vin{uintToh256(tx.GetHash()), nVouts[b.first], b.second, 1};
+            vins[b.first] = Vin{uintToh256(tx.GetHash().ToUint256()), nVouts[b.first], b.second, 1};
         } else {
-            vins[b.first] = Vin{uintToh256(tx.GetHash()), 0, 0, 0};
+            vins[b.first] = Vin{uintToh256(tx.GetHash().ToUint256()), 0, 0, 0};
         }
     }
     return vins;

@@ -175,7 +175,7 @@ void QValidatedTextEdit::setEmptyIsValid(bool value)
 
 QStringList QValidatedTextEdit::getLines() const
 {
-    return GUIUtil::SplitSkipEmptyParts(toPlainText(), '\n');
+    return toPlainText().split("\n", Qt::SkipEmptyParts);
 }
 
 void QValidatedTextEdit::setLines(const QStringList &lines)

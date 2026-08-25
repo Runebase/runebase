@@ -13,6 +13,7 @@
 #include <chainparams.h>
 #include <common/args.h>
 #include <chainparamsbase.h>
+#include <policy/feerate.h>
 
 #include <univalue.h>
 
@@ -27,8 +28,9 @@ UniValue GetReqNetworkHashPS(const JSONRPCRequest& request, ChainstateManager& c
 
 RPCHelpMan getmininginfo()
 {
-    return RPCHelpMan{"getmininginfo",
-                "\nReturns a json object containing mining-related information.",
+    return RPCHelpMan{
+        "getmininginfo",
+        "Returns a json object containing mining-related information.",
                 {},
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
@@ -46,6 +48,7 @@ RPCHelpMan getmininginfo()
                         {RPCResult::Type::STR_HEX, "target", "The current target"},
                         {RPCResult::Type::NUM, "networkhashps", "The network hashes per second"},
                         {RPCResult::Type::NUM, "pooledtx", "The size of the mempool"},
+                        {RPCResult::Type::STR_AMOUNT, "blockmintxfee", "Minimum feerate of packages selected for block inclusion in " + CURRENCY_UNIT + "/kvB"},
                         {RPCResult::Type::STR, "chain", "current network name (" LIST_CHAIN_NAMES ")"},
                         {RPCResult::Type::STR_HEX, "signet_challenge", /*optional=*/true, "The block challenge (aka. block script), in hexadecimal (only present if the current network is a signet)"},
                         {RPCResult::Type::OBJ, "next", "The next block",
@@ -123,6 +126,10 @@ RPCHelpMan getmininginfo()
     obj.pushKV("target", GetTarget(tip, chainman.GetConsensus().powLimit).GetHex());
     obj.pushKV("networkhashps",    GetReqNetworkHashPS(request, chainman));
     obj.pushKV("pooledtx",         (uint64_t)mempool.size());
+    BlockAssembler::Options assembler_options;
+    ApplyArgsManOptions(*node.args, assembler_options);
+    obj.pushKV("blockmintxfee", ValueFromAmount(assembler_options.blockMinFeeRate.GetFeePerK()));
+
 
     weight.pushKV("minimum",       (uint64_t)nWeight);
     weight.pushKV("maximum",       (uint64_t)0);
@@ -154,8 +161,9 @@ RPCHelpMan getmininginfo()
 
 RPCHelpMan getstakinginfo()
 {
-    return RPCHelpMan{"getstakinginfo",
-                "\nReturns an object containing staking-related information.",
+    return RPCHelpMan{
+        "getstakinginfo",
+        "Returns an object containing staking-related information.",
                 {},
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
@@ -227,7 +235,7 @@ RPCHelpMan getstakinginfo()
     };
 }
 
-Span<const CRPCCommand> GetMiningRPCCommands()
+std::span<const CRPCCommand> GetMiningRPCCommands()
 {
 // clang-format off
 static const CRPCCommand commands[] =

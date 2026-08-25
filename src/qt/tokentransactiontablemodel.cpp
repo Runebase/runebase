@@ -83,7 +83,7 @@ public:
                 if(time && time != wtokenTx.time)
                 {
                     wtokenTx.time = time;
-                    wallet.addTokenTxEntry(wtokenTx, false);
+                    wallet.addTokenTxEntry(wtokenTx);
                 }
 
                 // Add token tx to the cache
@@ -247,7 +247,7 @@ public:
 
     QString getTxHex(interfaces::Wallet& wallet, TokenTransactionRecord *rec)
     {
-        auto tx = wallet.getTx(rec->hash);
+        auto tx = wallet.getTx(Txid::FromUint256(rec->hash));
         if (tx) {
             std::string strHex = EncodeHexTx(*tx);
             return QString::fromStdString(strHex);
@@ -282,8 +282,7 @@ TokenTransactionTableModel::~TokenTransactionTableModel()
 
 void TokenTransactionTableModel::updateTransaction(const QString &hash, int status, bool showTransaction)
 {
-    uint256 updated;
-    updated.SetHexDeprecated(hash.toStdString());
+    uint256 updated = uint256::FromHex(hash.toStdString()).value_or(uint256::ZERO);
 
     priv->updateWallet(walletModel->wallet(), updated, status, showTransaction);
 }
@@ -568,7 +567,7 @@ QVariant TokenTransactionTableModel::data(const QModelIndex &index, int role) co
     case TypeRole:
         return rec->type;
     case DateRole:
-        return QDateTime::fromTime_t(static_cast<uint>(rec->time));
+        return QDateTime::fromSecsSinceEpoch(static_cast<uint>(rec->time));
     case LongDescriptionRole:
         return priv->describe(walletModel->wallet(), rec);
     case NameRole:
@@ -586,7 +585,7 @@ QVariant TokenTransactionTableModel::data(const QModelIndex &index, int role) co
     case TxPlainTextRole:
         {
             QString details;
-            QDateTime date = QDateTime::fromTime_t(static_cast<uint>(rec->time));
+            QDateTime date = QDateTime::fromSecsSinceEpoch(static_cast<uint>(rec->time));
             QString txLabel = walletModel->getAddressTableModel()->labelForAddress(QString::fromStdString(rec->address));
             QString symbol = QString::fromStdString(rec->tokenSymbol);
 

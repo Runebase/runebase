@@ -13,6 +13,10 @@
 #define strtok_r(str, val, saveptr) strtok((str), (val))
 #endif
 
+#if defined(__clang__) && !defined(_POSIX_C_SOURCE)
+extern char *strtok_r(char *str, const char *delim, char **saveptr);
+#endif
+
 int libscrypt_check(char *mcf, const char *password)
 {
 	/* Return values:

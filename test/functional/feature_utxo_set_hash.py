@@ -57,7 +57,7 @@ class UTXOSetHashTest(BitcoinTestFramework):
                     if (coinbase and n > 0):
                         continue
 
-                    data = COutPoint(int(tx.rehash(), 16), n).serialize()
+                    data = COutPoint(tx.txid_int, n).serialize()
                     data += ((height << 2) + (1 if coinbase else 0) + (2 if coinstake else 0)).to_bytes(4, "little")
                     data += tx_out.serialize()
 
@@ -69,8 +69,8 @@ class UTXOSetHashTest(BitcoinTestFramework):
         assert_equal(finalized[::-1].hex(), node_muhash)
 
         self.log.info("Test deterministic UTXO set hash results")
-        assert_equal(node.gettxoutsetinfo()['hash_serialized_3'], "57ee83d6bcbb8991f07475b91a622ea6b6ad6982e51b7d66bceadd5af4b92a61")
-        assert_equal(node.gettxoutsetinfo("muhash")['muhash'], "10cc4181950ea01d90c7e13e80bb7e6a8c9b4baf0cde12f356f4af1d56594306")
+        assert_equal(node.gettxoutsetinfo()['hash_serialized_3'], "1e74eb40ec5d6efe1336430efc53350e927568857d0b5c541639006c4ec68184")
+        assert_equal(node.gettxoutsetinfo("muhash")['muhash'], "a5a0d1001f5a98dd1f534cd6e66536fcf040fb7f99330b77dabbd1de1f0c9d32")
 
     def run_test(self):
         self.test_muhash_implementation()

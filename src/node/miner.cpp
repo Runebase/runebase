@@ -17,12 +17,15 @@
 #include <consensus/validation.h>
 #include <deploymentstatus.h>
 #include <logging.h>
+#include <node/context.h>
+#include <node/kernel_notifications.h>
 #include <policy/feerate.h>
 #include <policy/policy.h>
 #include <pow.h>
 #include <pos.h>
 #include <primitives/transaction.h>
 #include <util/moneystr.h>
+#include <util/signalinterrupt.h>
 #include <util/time.h>
 #include <validation.h>
 #include <util/threadnames.h>
@@ -37,6 +40,7 @@
 
 #include <algorithm>
 #include <utility>
+#include <numeric>
 
 namespace node {
 unsigned int nMaxStakeLookahead = MAX_STAKE_LOOKAHEAD;
@@ -116,9 +120,8 @@ void RegenerateCommitments(CBlock& block, ChainstateManager& chainman)
 
 static BlockAssembler::Options ClampOptions(BlockAssembler::Options options)
 {
-    Assert(options.block_reserved_weight <= (dgpMaxBlockWeight - 4000));
-    Assert(options.block_reserved_weight >= MINIMUM_BLOCK_RESERVED_WEIGHT);
-    Assert(options.coinbase_output_max_additional_sigops <= dgpMaxTxSigOps);
+    options.block_reserved_weight = std::clamp<size_t>(options.block_reserved_weight, MINIMUM_BLOCK_RESERVED_WEIGHT, dgpMaxBlockWeight - 4000);
+    options.coinbase_output_max_additional_sigops = std::clamp<size_t>(options.coinbase_output_max_additional_sigops, 0, dgpMaxTxSigOps);
     // Limit weight to between block_reserved_weight and dgpMaxBlockWeight-4K for sanity:
     // block_reserved_weight can safely exceed -blockmaxweight, but the rest of the block template will be empty.
     options.nBlockMaxWeight = std::clamp<size_t>(options.nBlockMaxWeight, options.block_reserved_weight, dgpMaxBlockWeight - 4000);
@@ -190,7 +193,7 @@ void BlockAssembler::RebuildRefundTransaction(CBlock* pblock){
     pblock->vtx[refundtx] = MakeTransactionRef(std::move(contrTx));
 }
 
-std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(bool fProofOfStake, int64_t* pTotalFees, int32_t txProofTime, int32_t nTimeLimit)
+std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock()
 {
     const auto time_start{SteadyClock::now()};
 
@@ -199,15 +202,12 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(bool fProofOfStak
     pblocktemplate.reset(new CBlockTemplate());
     CBlock* const pblock = &pblocktemplate->block; // pointer for convenience
 
-    this->nTimeLimit = nTimeLimit;
-
-    // Add dummy coinbase tx as first transaction
+    // Add dummy coinbase tx as first transaction. It is skipped by the
+    // getblocktemplate RPC and mining interface consumers must not use it.
     pblock->vtx.emplace_back();
     // Add dummy coinstake tx as second transaction
-    if(fProofOfStake)
+    if(m_options.is_coinstake)
         pblock->vtx.emplace_back();
-    pblocktemplate->vTxFees.push_back(-1); // updated at end
-    pblocktemplate->vTxSigOpsCost.push_back(-1); // updated at end
 
 #ifdef ENABLE_WALLET
     if(pwallet && pwallet->IsStakeClosing())
@@ -225,15 +225,16 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(bool fProofOfStak
         pblock->nVersion = gArgs.GetIntArg("-blockversion", pblock->nVersion);
     }
 
+    int64_t txProofTime = m_options.proof_time;
     if(txProofTime == 0) {
         txProofTime = TicksSinceEpoch<std::chrono::seconds>(NodeClock::now());
     }
-    if(fProofOfStake)
+    if(m_options.is_coinstake)
         txProofTime &= ~chainparams.GetConsensus().StakeTimestampMask(nHeight);
     pblock->nTime = txProofTime;
-    if (!fProofOfStake)
+    if (!m_options.is_coinstake)
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-    pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus(),fProofOfStake);
+    pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus(),m_options.is_coinstake);
 
     m_lock_time_cutoff = pindexPrev->GetMedianTimePast();
 
@@ -246,8 +247,9 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(bool fProofOfStak
     CMutableTransaction coinbaseTx;
     coinbaseTx.vin.resize(1);
     coinbaseTx.vin[0].prevout.SetNull();
+    coinbaseTx.vin[0].nSequence = CTxIn::MAX_SEQUENCE_NONFINAL; // Make sure timelock is enforced.
     coinbaseTx.vout.resize(1);
-    if (fProofOfStake)
+    if (m_options.is_coinstake)
     {
         // Make the coinbase tx empty in case of proof of stake
         coinbaseTx.vout[0].SetEmpty();
@@ -258,11 +260,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(bool fProofOfStak
         coinbaseTx.vout[0].nValue = nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
     }
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+    Assert(nHeight > 0);
+    coinbaseTx.nLockTime = static_cast<uint32_t>(nHeight - 1);
     originalRewardTx = coinbaseTx;
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
 
     // Create coinstake transaction.
-    if(fProofOfStake)
+    if(m_options.is_coinstake)
     {
         CMutableTransaction coinstakeTx;
         coinstakeTx.vout.resize(2);
@@ -316,24 +320,21 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(bool fProofOfStak
     RebuildRefundTransaction(pblock);
     ////////////////////////////////////////////////////////
 
-    pblocktemplate->vchCoinbaseCommitment = m_chainstate.m_chainman.GenerateCoinbaseCommitment(*pblock, pindexPrev, fProofOfStake);
-    pblocktemplate->vTxFees[0] = -nFees;
+    pblocktemplate->vchCoinbaseCommitment = m_chainstate.m_chainman.GenerateCoinbaseCommitment(*pblock, pindexPrev, m_options.is_coinstake);
 
     LogPrintf("CreateNewBlock(): block weight: %u txs: %u fees: %ld sigops %d\n", GetBlockWeight(*pblock), nBlockTx, nFees, nBlockSigOpsCost);
 
     // The total fee is the Fees minus the Refund
-    if (pTotalFees)
-        *pTotalFees = nFees - bceResult.refundSender;
+    pblocktemplate->nTotalFees = nFees - bceResult.refundSender;
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
     pblock->nNonce         = 0;
-    pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
-    BlockValidationState state;
-    if (!fProofOfStake && m_options.test_block_validity && !TestBlockValidity(state, chainparams, m_chainstate, *pblock, pindexPrev,
-                                                            /*fCheckPOW=*/false, /*fCheckMerkleRoot=*/false)) {
-        throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, state.ToString()));
+    if (!m_options.is_coinstake && m_options.test_block_validity) {
+        if (BlockValidationState state{TestBlockValidity(m_chainstate, *pblock, /*check_pow=*/false, /*check_merkle_root=*/false)}; !state.IsValid()) {
+            throw std::runtime_error(strprintf("TestBlockValidity failed: %s", state.ToString()));
+        }
     }
     const auto time_2{SteadyClock::now()};
 
@@ -345,7 +346,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(bool fProofOfStak
     return std::move(pblocktemplate);
 }
 
-std::unique_ptr<CBlockTemplate> BlockAssembler::CreateEmptyBlock(bool fProofOfStake, int64_t* pTotalFees, int32_t nTime)
+std::unique_ptr<CBlockTemplate> BlockAssembler::CreateEmptyBlock()
 {
     resetBlock();
 
@@ -358,10 +359,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateEmptyBlock(bool fProofOfSt
     // Add dummy coinbase tx as first transaction
     pblock->vtx.emplace_back();
     // Add dummy coinstake tx as second transaction
-    if(fProofOfStake)
+    if(m_options.is_coinstake)
         pblock->vtx.emplace_back();
-    pblocktemplate->vTxFees.push_back(-1); // updated at end
-    pblocktemplate->vTxSigOpsCost.push_back(-1); // updated at end
 
 #ifdef ENABLE_WALLET
     if(pwallet && pwallet->IsStakeClosing())
@@ -378,8 +377,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateEmptyBlock(bool fProofOfSt
     if (chainparams.MineBlocksOnDemand())
         pblock->nVersion = gArgs.GetIntArg("-blockversion", pblock->nVersion);
 
-    uint32_t txProofTime = nTime == 0 ? TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) : nTime;
-    if(fProofOfStake)
+    int64_t txProofTime = m_options.proof_time == 0 ? TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) : m_options.proof_time;
+    if(m_options.is_coinstake)
         txProofTime &= ~chainparams.GetConsensus().StakeTimestampMask(nHeight);
     pblock->nTime = txProofTime;
 
@@ -393,7 +392,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateEmptyBlock(bool fProofOfSt
     coinbaseTx.vin.resize(1);
     coinbaseTx.vin[0].prevout.SetNull();
     coinbaseTx.vout.resize(1);
-    if (fProofOfStake)
+    if (m_options.is_coinstake)
     {
         // Make the coinbase tx empty in case of proof of stake
         coinbaseTx.vout[0].SetEmpty();
@@ -408,7 +407,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateEmptyBlock(bool fProofOfSt
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
 
     // Create coinstake transaction.
-    if(fProofOfStake)
+    if(m_options.is_coinstake)
     {
         CMutableTransaction coinstakeTx;
         coinstakeTx.vout.resize(2);
@@ -430,24 +429,22 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateEmptyBlock(bool fProofOfSt
     RebuildRefundTransaction(pblock);
     ////////////////////////////////////////////////////////
 
-    pblocktemplate->vchCoinbaseCommitment = m_chainstate.m_chainman.GenerateCoinbaseCommitment(*pblock, pindexPrev, fProofOfStake);
-    pblocktemplate->vTxFees[0] = -nFees;
+    pblocktemplate->vchCoinbaseCommitment = m_chainstate.m_chainman.GenerateCoinbaseCommitment(*pblock, pindexPrev, m_options.is_coinstake);
 
     // The total fee is the Fees minus the Refund
-    if (pTotalFees)
-        *pTotalFees = nFees - bceResult.refundSender;
+    pblocktemplate->nTotalFees = nFees - bceResult.refundSender;
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-    if (!fProofOfStake)
+    if (!m_options.is_coinstake)
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-    pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus(),fProofOfStake);
+    pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus(),m_options.is_coinstake);
     pblock->nNonce         = 0;
-    pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * GetLegacySigOpCount(*pblock->vtx[0]);
 
-    BlockValidationState state;
-    if (!fProofOfStake && m_options.test_block_validity && !TestBlockValidity(state, chainparams, m_chainstate, *pblock, pindexPrev, false, false)) {
-        throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, state.ToString()));
+    if (!m_options.is_coinstake && m_options.test_block_validity) {
+        if (BlockValidationState state{TestBlockValidity(m_chainstate, *pblock, /*check_pow=*/false, /*check_merkle_root=*/false)}; !state.IsValid()) {
+            throw std::runtime_error(strprintf("TestBlockValidity failed: %s", state.ToString()));
+        }
     }
 
     return std::move(pblocktemplate);
@@ -490,7 +487,7 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries& packa
 }
 
 bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64_t minGasPrice, CBlock* pblock) {
-    if (nTimeLimit != 0 && TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) >= nTimeLimit - nBytecodeTimeBuffer) {
+    if (m_options.time_limit != 0 && TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) >= m_options.time_limit - nBytecodeTimeBuffer) {
         return false;
     }
     if (gArgs.GetBoolArg("-disablecontractstaking", false))
@@ -723,10 +720,11 @@ void BlockAssembler::addPackageTxs(int& nPackagesSelected, int& nDescendantsUpda
     // close to full; this is just a simple heuristic to finish quickly if the
     // mempool has a lot of entries.
     const int64_t MAX_CONSECUTIVE_FAILURES = 1000;
+    constexpr int32_t BLOCK_FULL_ENOUGH_WEIGHT_DELTA = 4000;
     int64_t nConsecutiveFailed = 0;
 
     while (mi != mempool.mapTx.get<ancestor_score_or_gas_price>().end() || !mapModifiedTx.empty()) {
-        if(nTimeLimit != 0 && TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) >= nTimeLimit){
+        if(m_options.time_limit != 0 && TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) >= m_options.time_limit){
             //no more time to add transactions, just exit
             return;
         }
@@ -807,8 +805,8 @@ void BlockAssembler::addPackageTxs(int& nPackagesSelected, int& nDescendantsUpda
 
             ++nConsecutiveFailed;
 
-            if (nConsecutiveFailed > MAX_CONSECUTIVE_FAILURES && nBlockWeight >
-                    m_options.nBlockMaxWeight - m_options.block_reserved_weight) {
+            if (nConsecutiveFailed > MAX_CONSECUTIVE_FAILURES && nBlockWeight +
+                    BLOCK_FULL_ENOUGH_WEIGHT_DELTA > m_options.nBlockMaxWeight) {
                 // Give up if we're close to full and haven't succeeded in a while
                 break;
             }
@@ -838,7 +836,7 @@ void BlockAssembler::addPackageTxs(int& nPackagesSelected, int& nDescendantsUpda
 
         bool wasAdded=true;
         for (size_t i = 0; i < sortedEntries.size(); ++i) {
-            if(!wasAdded || (nTimeLimit != 0 && TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) >= nTimeLimit))
+            if(!wasAdded || (m_options.time_limit != 0 && TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()) >= m_options.time_limit))
             {
                 //if out of time, or earlier ancestor failed, then skip the rest of the transactions
                 mapModifiedTx.erase(sortedEntries[i]);
@@ -875,6 +873,152 @@ void BlockAssembler::addPackageTxs(int& nPackagesSelected, int& nDescendantsUpda
         // Update transactions that depend on each of these
         nDescendantsUpdated += UpdatePackagesForAdded(mempool, ancestors, mapModifiedTx);
     }
+}
+
+void AddMerkleRootAndCoinbase(CBlock& block, CTransactionRef coinbase, uint32_t version, uint32_t timestamp, uint32_t nonce)
+{
+    if (block.vtx.size() == 0) {
+        block.vtx.emplace_back(coinbase);
+    } else {
+        block.vtx[0] = coinbase;
+    }
+    block.nVersion = version;
+    block.nTime = timestamp;
+    block.nNonce = nonce;
+    block.hashMerkleRoot = BlockMerkleRoot(block);
+}
+
+void InterruptWait(KernelNotifications& kernel_notifications, bool& interrupt_wait)
+{
+    LOCK(kernel_notifications.m_tip_block_mutex);
+    interrupt_wait = true;
+    kernel_notifications.m_tip_block_cv.notify_all();
+}
+
+std::unique_ptr<CBlockTemplate> WaitAndCreateNewBlock(ChainstateManager& chainman,
+                                                      KernelNotifications& kernel_notifications,
+                                                      CTxMemPool* mempool,
+                                                      const std::unique_ptr<CBlockTemplate>& block_template,
+                                                      const BlockWaitOptions& options,
+                                                      const BlockAssembler::Options& assemble_options,
+                                                      bool& interrupt_wait)
+{
+    // Delay calculating the current template fees, just in case a new block
+    // comes in before the next tick.
+    CAmount current_fees = -1;
+
+    // Alternate waiting for a new tip and checking if fees have risen.
+    // The latter check is expensive so we only run it once per second.
+    auto now{NodeClock::now()};
+    const auto deadline = now + options.timeout;
+    const MillisecondsDouble tick{1000};
+    const bool allow_min_difficulty{chainman.GetParams().GetConsensus().fPowAllowMinDifficultyBlocks};
+
+    do {
+        bool tip_changed{false};
+        {
+            WAIT_LOCK(kernel_notifications.m_tip_block_mutex, lock);
+            // Note that wait_until() checks the predicate before waiting
+            kernel_notifications.m_tip_block_cv.wait_until(lock, std::min(now + tick, deadline), [&]() EXCLUSIVE_LOCKS_REQUIRED(kernel_notifications.m_tip_block_mutex) {
+                AssertLockHeld(kernel_notifications.m_tip_block_mutex);
+                const auto tip_block{kernel_notifications.TipBlock()};
+                // We assume tip_block is set, because this is an instance
+                // method on BlockTemplate and no template could have been
+                // generated before a tip exists.
+                tip_changed = Assume(tip_block) && tip_block != block_template->block.hashPrevBlock;
+                return tip_changed || chainman.m_interrupt || interrupt_wait;
+            });
+            if (interrupt_wait) {
+                interrupt_wait = false;
+                return nullptr;
+            }
+        }
+
+        if (chainman.m_interrupt) return nullptr;
+        // At this point the tip changed, a full tick went by or we reached
+        // the deadline.
+
+        // Must release m_tip_block_mutex before locking cs_main, to avoid deadlocks.
+        LOCK(::cs_main);
+
+        // On test networks return a minimum difficulty block after 20 minutes
+        if (!tip_changed && allow_min_difficulty) {
+            const NodeClock::time_point tip_time{std::chrono::seconds{chainman.ActiveChain().Tip()->GetBlockTime()}};
+            if (now > tip_time + 20min) {
+                tip_changed = true;
+            }
+        }
+
+        /**
+         * We determine if fees increased compared to the previous template by generating
+         * a fresh template. There may be more efficient ways to determine how much
+         * (approximate) fees for the next block increased, perhaps more so after
+         * Cluster Mempool.
+         *
+         * We'll also create a new template if the tip changed during this iteration.
+         */
+        if (options.fee_threshold < MAX_MONEY || tip_changed) {
+            auto new_tmpl{BlockAssembler{
+                chainman.ActiveChainstate(),
+                mempool,
+                assemble_options}
+                              .CreateNewBlock()};
+
+            // If the tip changed, return the new template regardless of its fees.
+            if (tip_changed) return new_tmpl;
+
+            // Calculate the original template total fees if we haven't already
+            if (current_fees == -1) {
+                current_fees = std::accumulate(block_template->vTxFees.begin(), block_template->vTxFees.end(), CAmount{0});
+            }
+
+            // Check if fees increased enough to return the new template
+            const CAmount new_fees = std::accumulate(new_tmpl->vTxFees.begin(), new_tmpl->vTxFees.end(), CAmount{0});
+            Assume(options.fee_threshold != MAX_MONEY);
+            if (new_fees >= current_fees + options.fee_threshold) return new_tmpl;
+        }
+
+        now = NodeClock::now();
+    } while (now < deadline);
+
+    return nullptr;
+}
+
+std::optional<BlockRef> GetTip(ChainstateManager& chainman)
+{
+    LOCK(::cs_main);
+    CBlockIndex* tip{chainman.ActiveChain().Tip()};
+    if (!tip) return {};
+    return BlockRef{tip->GetBlockHash(), tip->nHeight};
+}
+
+std::optional<BlockRef> WaitTipChanged(ChainstateManager& chainman, KernelNotifications& kernel_notifications, const uint256& current_tip, MillisecondsDouble& timeout)
+{
+    Assume(timeout >= 0ms); // No internal callers should use a negative timeout
+    if (timeout < 0ms) timeout = 0ms;
+    if (timeout > std::chrono::years{100}) timeout = std::chrono::years{100}; // Upper bound to avoid UB in std::chrono
+    auto deadline{std::chrono::steady_clock::now() + timeout};
+    {
+        WAIT_LOCK(kernel_notifications.m_tip_block_mutex, lock);
+        // For callers convenience, wait longer than the provided timeout
+        // during startup for the tip to be non-null. That way this function
+        // always returns valid tip information when possible and only
+        // returns null when shutting down, not when timing out.
+        kernel_notifications.m_tip_block_cv.wait(lock, [&]() EXCLUSIVE_LOCKS_REQUIRED(kernel_notifications.m_tip_block_mutex) {
+            return kernel_notifications.TipBlock() || chainman.m_interrupt;
+        });
+        if (chainman.m_interrupt) return {};
+        // At this point TipBlock is set, so continue to wait until it is
+        // different then `current_tip` provided by caller.
+        kernel_notifications.m_tip_block_cv.wait_until(lock, deadline, [&]() EXCLUSIVE_LOCKS_REQUIRED(kernel_notifications.m_tip_block_mutex) {
+            return Assume(kernel_notifications.TipBlock()) != current_tip || chainman.m_interrupt;
+        });
+    }
+    if (chainman.m_interrupt) return {};
+
+    // Must release m_tip_block_mutex before getTip() locks cs_main, to
+    // avoid deadlocks.
+    return GetTip(chainman);
 }
 
 bool CanStake()
@@ -933,11 +1077,8 @@ public:
     DelegationsStaker(wallet::CWallet *_pwallet):
         pwallet(_pwallet),
         cacheHeight(0),
-        type(StakerType::STAKER_NORMAL),
-        fAllowWatchOnly(false)
+        type(StakerType::STAKER_NORMAL)
     {
-        fAllowWatchOnly = _pwallet->IsWalletFlagSet(wallet::WALLET_FLAG_DISABLE_PRIVATE_KEYS);
-
         // Get allow list
         for (const std::string& strAddress : gArgs.GetArgs("-stakingallowlist"))
         {
@@ -981,7 +1122,7 @@ public:
 
     bool Match(const DelegationEvent& event) const override
     {
-        bool mine = pwallet->HasPrivateKey(PKHash(event.item.staker), fAllowWatchOnly);
+        bool mine = pwallet->HasPrivateKey(PKHash(event.item.staker));
         if(!mine)
             return false;
 
@@ -1058,7 +1199,6 @@ private:
     std::vector<uint160> allowList;
     std::vector<uint160> excludeList;
     int type;
-    bool fAllowWatchOnly;
 };
 
 class MyDelegations : public DelegationFilterBase
@@ -1067,15 +1207,12 @@ public:
     MyDelegations(wallet::CWallet *_pwallet):
         pwallet(_pwallet),
         cacheHeight(0),
-        cacheAddressHeight(0),
-        fAllowWatchOnly(false)
-    {
-        fAllowWatchOnly = _pwallet->IsWalletFlagSet(wallet::WALLET_FLAG_DISABLE_PRIVATE_KEYS);
-    }
+        cacheAddressHeight(0)
+    {}
 
     bool Match(const DelegationEvent& event) const override
     {
-        return pwallet->HasPrivateKey(PKHash(event.item.delegate), fAllowWatchOnly);
+        return pwallet->HasPrivateKey(PKHash(event.item.delegate));
     }
 
     void Update(int32_t nHeight)
@@ -1127,7 +1264,7 @@ public:
                 for(auto item : pwallet->mapDelegation)
                 {
                     uint160 address = item.second.delegateAddress;
-                    if(pwallet->HasPrivateKey(PKHash(address), fAllowWatchOnly))
+                    if(pwallet->HasPrivateKey(PKHash(address)))
                     {
                         if (mapAddress.find(address) == mapAddress.end())
                         {
@@ -1177,7 +1314,6 @@ private:
     int32_t cacheHeight;
     int32_t cacheAddressHeight;
     std::map<uint160, Delegation> cacheMyDelegations;
-    bool fAllowWatchOnly;
 };
 
 bool CheckStake(const std::shared_ptr<const CBlock> pblock, wallet::CWallet& wallet)
@@ -1473,7 +1609,7 @@ public:
     int numThreads = 1;
     boost::thread_group threads;
     mutable RecursiveMutex cs_worker;
-    bool privateKeysDisabled = false;;
+    bool privateKeysDisabled = false;
 
 public:
     DelegationsStaker delegationsStaker;
@@ -1772,7 +1908,6 @@ protected:
         d->clearCache();
         const auto bal = wallet::GetBalance(*d->pwallet);
         CAmount nBalance = bal.m_mine_trusted;
-        if(d->privateKeysDisabled) nBalance += bal.m_watchonly_trusted;
         d->nTargetValue = nBalance - d->pwallet->m_reserve_balance;
         CAmount nValueIn = 0;
         int32_t nHeightTip = 0;
@@ -1806,11 +1941,13 @@ protected:
             d->nTotalFees = 0;
             BlockAssembler::Options options = ConfiguredOptions();
             options.coinbase_output_script = CScript();
-            d->pblocktemplate = std::unique_ptr<CBlockTemplate>(BlockAssembler(d->pwallet->chain().chainman().ActiveChainstate(), &(d->pwallet->chain().mempool()), d->pwallet, options).CreateEmptyBlock(true, &d->nTotalFees));
+            options.is_coinstake = true;
+            d->pblocktemplate = std::unique_ptr<CBlockTemplate>(BlockAssembler(d->pwallet->chain().chainman().ActiveChainstate(), &(d->pwallet->chain().mempool()), d->pwallet, options).CreateEmptyBlock());
             if (!d->pblocktemplate.get()) {
                 d->fError = true;
                 return false;
             }
+            d->nTotalFees = d->pblocktemplate->nTotalFees;
             d->pblock = std::make_shared<CBlock>(d->pblocktemplate->block);
 
             d->prevouts.insert(d->prevouts.end(), d->setDelegateCoins.begin(), d->setDelegateCoins.end());
@@ -1946,13 +2083,16 @@ protected:
         // Create a block that's properly populated with transactions
         BlockAssembler::Options options = ConfiguredOptions();
         options.coinbase_output_script = d->pblock->vtx[1]->vout[1].scriptPubKey;
+        options.is_coinstake = true;
+        options.proof_time = blockTime;
+        options.time_limit = FutureDrift(TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()), d->nHeight, d->consensusParams) - nStakeTimeBuffer;
         d->pblocktemplatefilled = std::unique_ptr<CBlockTemplate>(
-                BlockAssembler(d->pwallet->chain().chainman().ActiveChainstate(), &(d->pwallet->chain().mempool()), d->pwallet, options).CreateNewBlock(true, &(d->nTotalFees),
-                                                        blockTime, FutureDrift(TicksSinceEpoch<std::chrono::seconds>(NodeClock::now()), d->nHeight, d->consensusParams) - nStakeTimeBuffer));
+                BlockAssembler(d->pwallet->chain().chainman().ActiveChainstate(), &(d->pwallet->chain().mempool()), d->pwallet, options).CreateNewBlock());
         if (!d->pblocktemplatefilled.get()) {
             d->fError = true;
             return false;
         }
+        d->nTotalFees = d->pblocktemplatefilled->nTotalFees;
 
         if (IsStale(d->pblock)) {
             //another block was received while building ours, scrap progress

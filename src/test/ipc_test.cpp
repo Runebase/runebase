@@ -53,19 +53,18 @@ static std::string TempPath(std::string_view pattern)
 //! on the object through FooInterface (defined in ipc_test.capnp).
 void IpcPipeTest()
 {
-    // Setup: create FooImplemention object and listen for FooInterface requests
+    // Setup: create FooImplementation object and listen for FooInterface requests
     std::promise<std::unique_ptr<mp::ProxyClient<gen::FooInterface>>> foo_promise;
-    std::function<void()> disconnect_client;
     std::thread thread([&]() {
-        mp::EventLoop loop("IpcPipeTest", [](bool raise, const std::string& log) { LogPrintf("LOG%i: %s\n", raise, log); });
+        mp::EventLoop loop("IpcPipeTest", [](bool raise, const std::string& log) { LogInfo("LOG%i: %s", raise, log); });
         auto pipe = loop.m_io_context.provider->newTwoWayPipe();
 
         auto connection_client = std::make_unique<mp::Connection>(loop, kj::mv(pipe.ends[0]));
         auto foo_client = std::make_unique<mp::ProxyClient<gen::FooInterface>>(
             connection_client->m_rpc_system->bootstrap(mp::ServerVatId().vat_id).castAs<gen::FooInterface>(),
-            connection_client.get(), /* destroy_connection= */ false);
+            connection_client.get(), /* destroy_connection= */ true);
+        connection_client.release();
         foo_promise.set_value(std::move(foo_client));
-        disconnect_client = [&] { loop.sync([&] { connection_client.reset(); }); };
 
         auto connection_server = std::make_unique<mp::Connection>(loop, kj::mv(pipe.ends[1]), [&](mp::Connection& connection) {
             auto foo_server = kj::heap<mp::ProxyServer<gen::FooInterface>>(std::make_shared<FooImplementation>(), connection);
@@ -102,31 +101,12 @@ void IpcPipeTest()
     std::vector<char> vec2{foo->passVectorChar(vec1)};
     BOOST_CHECK_EQUAL(std::string_view(vec1.begin(), vec1.end()), std::string_view(vec2.begin(), vec2.end()));
 
-    BlockValidationState bs1;
-    bs1.Invalid(BlockValidationResult::BLOCK_CHECKPOINT, "reject reason", "debug message");
-    BlockValidationState bs2{foo->passBlockState(bs1)};
-    BOOST_CHECK_EQUAL(bs1.IsValid(), bs2.IsValid());
-    BOOST_CHECK_EQUAL(bs1.IsError(), bs2.IsError());
-    BOOST_CHECK_EQUAL(bs1.IsInvalid(), bs2.IsInvalid());
-    BOOST_CHECK_EQUAL(static_cast<int>(bs1.GetResult()), static_cast<int>(bs2.GetResult()));
-    BOOST_CHECK_EQUAL(bs1.GetRejectReason(), bs2.GetRejectReason());
-    BOOST_CHECK_EQUAL(bs1.GetDebugMessage(), bs2.GetDebugMessage());
-
-    BlockValidationState bs3;
-    BlockValidationState bs4{foo->passBlockState(bs3)};
-    BOOST_CHECK_EQUAL(bs3.IsValid(), bs4.IsValid());
-    BOOST_CHECK_EQUAL(bs3.IsError(), bs4.IsError());
-    BOOST_CHECK_EQUAL(bs3.IsInvalid(), bs4.IsInvalid());
-    BOOST_CHECK_EQUAL(static_cast<int>(bs3.GetResult()), static_cast<int>(bs4.GetResult()));
-    BOOST_CHECK_EQUAL(bs3.GetRejectReason(), bs4.GetRejectReason());
-    BOOST_CHECK_EQUAL(bs3.GetDebugMessage(), bs4.GetDebugMessage());
-
     auto script1{CScript() << OP_11};
     auto script2{foo->passScript(script1)};
     BOOST_CHECK_EQUAL(HexStr(script1), HexStr(script2));
 
-    // Test cleanup: disconnect pipe and join thread
-    disconnect_client();
+    // Test cleanup: disconnect and join thread
+    foo.reset();
     thread.join();
 }
 
@@ -158,12 +138,12 @@ void IpcSocketTest(const fs::path& datadir)
     std::unique_ptr<ipc::Process> process{ipc::MakeProcess()};
 
     std::string invalid_bind{"invalid:"};
-    BOOST_CHECK_THROW(process->bind(datadir, "test_bitcoin", invalid_bind), std::invalid_argument);
-    BOOST_CHECK_THROW(process->connect(datadir, "test_bitcoin", invalid_bind), std::invalid_argument);
+    BOOST_CHECK_THROW(process->bind(datadir, "test_runebase", invalid_bind), std::invalid_argument);
+    BOOST_CHECK_THROW(process->connect(datadir, "test_runebase", invalid_bind), std::invalid_argument);
 
     auto bind_and_listen{[&](const std::string& bind_address) {
         std::string address{bind_address};
-        int serve_fd = process->bind(datadir, "test_bitcoin", address);
+        int serve_fd = process->bind(datadir, "test_runebase", address);
         BOOST_CHECK_GE(serve_fd, 0);
         BOOST_CHECK_EQUAL(address, bind_address);
         protocol->listen(serve_fd, "test-serve", *init);
@@ -171,7 +151,7 @@ void IpcSocketTest(const fs::path& datadir)
 
     auto connect_and_test{[&](const std::string& connect_address) {
         std::string address{connect_address};
-        int connect_fd{process->connect(datadir, "test_bitcoin", address)};
+        int connect_fd{process->connect(datadir, "test_runebase", address)};
         BOOST_CHECK_EQUAL(address, connect_address);
         std::unique_ptr<interfaces::Init> remote_init{protocol->connect(connect_fd, "test-connect")};
         std::unique_ptr<interfaces::Echo> remote_echo{remote_init->makeEcho()};

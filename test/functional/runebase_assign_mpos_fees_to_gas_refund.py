@@ -13,9 +13,6 @@ import time
 import io
 
 class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -27,7 +24,7 @@ class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
     def run_test(self):
         self.node = self.nodes[0]
         privkey = byte_to_base58(hash256(struct.pack('<I', 0)), 239)
-        self.node.importprivkey(privkey)
+        wallet_importprivkey(self.node, privkey, 0)
 
         self.node.setmocktime(int(time.time()) - 1000000)
         self.generatetoaddress(self.node, 200 + COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
@@ -53,7 +50,6 @@ class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
         tx_all_fees.vin = [CTxIn(COutPoint(int(unspent['txid'], 16), unspent['vout']))]
         tx_all_fees.vout = [CTxOut(0, scriptPubKey=CScript([OP_DUP, OP_HASH160, bytes.fromhex(p2pkh_to_hex_hash(unspent['address'])), OP_EQUALVERIFY, OP_CHECKSIG]))]
         tx_all_fees = rpc_sign_transaction(self.node, tx_all_fees)
-        tx_all_fees.rehash()
         block.vtx.append(tx_all_fees)
 
         # Generate a dummy contract call that will steal the mpos participants' fee rewards.
@@ -63,12 +59,10 @@ class RunebaseAssignMPoSFeesToGasRefundTest(BitcoinTestFramework):
         tx.vin = [CTxIn(COutPoint(int(unspent['txid'], 16), unspent['vout']))]
         tx.vout = [CTxOut(0, scriptPubKey=CScript([b"\x04", CScriptNum(40000000), CScriptNum(100000), b"\x00", bytes.fromhex(address), OP_CALL]))]
         tx = rpc_sign_transaction(self.node, tx)
-        tx.rehash()
         block.vtx.append(tx)
 
         # We must also add the refund output to the coinstake
         block.vtx[1].vout.append(CTxOut(3997897800000, scriptPubKey=CScript([OP_DUP, OP_HASH160, bytes.fromhex(p2pkh_to_hex_hash(unspent['address'])), OP_EQUALVERIFY, OP_CHECKSIG])))
-        block.vtx[1].rehash()
 
         block.vtx[1] = rpc_sign_transaction(self.node, block.vtx[1])
         block.hashMerkleRoot = block.calc_merkle_root()

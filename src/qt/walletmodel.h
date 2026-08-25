@@ -11,6 +11,7 @@
 #include <qt/runebasehwitool.h> 
 
 #include <interfaces/wallet.h>
+#include <primitives/transaction_identifier.h>
 #include <support/allocators/secure.h>
 
 #include <vector>
@@ -149,7 +150,7 @@ public:
 
     UnlockContext requestUnlock();
 
-    bool bumpFee(uint256 hash, uint256& new_hash);
+    bool bumpFee(Txid hash, Txid& new_hash);
     void displayAddress(std::string sAddress) const;
 
     static bool isWalletEnabled();
@@ -180,9 +181,6 @@ public:
     // Otherwise, uses the wallet's cached available balance.
     CAmount getAvailableBalance(const wallet::CCoinControl* control);
 
-    // Retrieve the cached wallet balance
-    CAmount getCachedBalance(const wallet::CCoinControl* control) const;
-
     // Get or set selected hardware device fingerprint (only for hardware wallet applicable)
     QString getFingerprint(bool stake = false) const;
     void setFingerprint(const QString &value, bool stake = false);
@@ -205,13 +203,11 @@ private:
     std::unique_ptr<interfaces::Handler> m_handler_transaction_changed;
     std::unique_ptr<interfaces::Handler> m_handler_token_changed;
     std::unique_ptr<interfaces::Handler> m_handler_show_progress;
-    std::unique_ptr<interfaces::Handler> m_handler_watch_only_changed;
     std::unique_ptr<interfaces::Handler> m_handler_can_get_addrs_changed;
     std::unique_ptr<interfaces::Handler> m_handler_contract_book_changed;
     ClientModel* m_client_model;
     interfaces::Node& m_node;
 
-    bool fHaveWatchOnly;
     bool fForceCheckBalanceChanged{false};
 
     // Wallet has an options model for wallet-specific options
@@ -286,9 +282,6 @@ Q_SIGNALS:
     // Show progress dialog e.g. for rescan
     void showProgress(const QString &title, int nProgress);
 
-    // Watch-only address added
-    void notifyWatchonlyChanged(bool fHaveWatchonly);
-
     // Signal that wallet is about to be removed
     void unload();
 
@@ -310,8 +303,6 @@ public Q_SLOTS:
     void updateTransaction();
     /* New, updated or removed address book entry */
     void updateAddressBook(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status);
-    /* Watch-only added */
-    void updateWatchOnlyFlag(bool fHaveWatchonly);
     /* Current, immature or unconfirmed balance might have changed - emit 'balanceChanged' if so */
     void pollBalanceChanged();
     /* New, updated or removed contract book entry */

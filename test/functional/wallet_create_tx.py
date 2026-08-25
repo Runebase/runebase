@@ -18,12 +18,10 @@ from test_framework.runebaseconfig import COINBASE_MATURITY
 
 
 class CreateTxWalletTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
+        self.extra_args = [["-deprecatedrpc=settxfee"]]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -72,7 +70,7 @@ class CreateTxWalletTest(BitcoinTestFramework):
             )
 
         self.log.info('Check maxtxfee in combination with settxfee')
-        self.restart_node(0, extra_args=['-maxtxfee=0.01'])
+        self.restart_node(0, extra_args=['-maxtxfee=0.01', '-deprecatedrpc=settxfee'], expected_stderr='Warning: -paytxfee is deprecated and will be fully removed in v31.0.')
         self.nodes[0].settxfee(0.01)
         assert_raises_rpc_error(
             -6,

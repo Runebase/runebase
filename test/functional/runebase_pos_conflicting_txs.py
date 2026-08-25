@@ -11,9 +11,6 @@ from test_framework.runebase import *
  This test specifically tests that inputs to transactions in the mempool are not used in staking.
 """
 class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = True
@@ -30,7 +27,7 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
 
     def run_test(self):
         privkey = byte_to_base58(hash256(struct.pack('<I', 0)), 239)
-        self.nodes[0].importprivkey(privkey)
+        wallet_importprivkey(self.nodes[0], privkey, 0)
         self.disconnect_nodes(0, 1)
         for n in self.nodes: n.setmocktime(int(time.time())-10000)
         # First generate some blocks so we have 20 valid staking txs for the node we run the test on (node#0)
@@ -62,7 +59,6 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
         nTime = int(time.time()) & (~TIMESTAMP_MASK)
         block, key = create_unsigned_pos_block(self.nodes[0], staking_prevouts, nTime=nTime)
         block.sign_block(key)
-        block.rehash()
 
         for tx in txs:
             self.nodes[0].sendrawtransaction(bytes_to_hex_str(tx.serialize()))
@@ -96,7 +92,7 @@ class RunebasePOSConflictingStakingMempoolTxTest(BitcoinTestFramework):
 
         print('node#0 %d; blockcount=%d' % (0, self.nodes[0].getblockcount()))
         print('node#1 %d; blockcount=%d' % (0, self.nodes[1].getblockcount()))
-        # Now we should have a balance equal to 
+        # Now we should have a balance equal to
         assert_equal(int(self.nodes[0].getbalance()*COIN), int((19*(INITIAL_BLOCK_REWARD-0.1)+INITIAL_BLOCK_REWARD)*COIN))
         assert_equal(self.nodes[0].getbestblockhash(), self.nodes[1].getbestblockhash())
 if __name__ == '__main__':

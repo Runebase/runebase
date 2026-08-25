@@ -12,7 +12,7 @@ Install the required dependencies the usual way you [install software on NetBSD]
 The example commands below use `pkgin`.
 
 ```bash
-pkgin install git cmake pkg-config boost-headers libevent gmp
+pkgin install git cmake pkg-config boost libevent gmp
 ```
 
 NetBSD currently ships with an older version of `gcc` than is needed to build. You should upgrade your `gcc` and then pass this new version to the configure script.
@@ -31,6 +31,22 @@ cmake -B build
     ...
 ```
 
+SQLite is required for the wallet:
+
+```bash
+pkgin install sqlite3
+```
+
+To build Runebase Core without the wallet, use `-DENABLE_WALLET=OFF`.
+
+Cap'n Proto is needed for IPC functionality (see [multiprocess.md](multiprocess.md)):
+
+```bash
+pkgin install capnproto
+```
+
+Compile with `-DENABLE_IPC=OFF` if you do not need IPC functionality.
+
 See [dependencies.md](dependencies.md) for a complete overview.
 
 ### 2. Clone Runebase Repo
@@ -43,34 +59,14 @@ git clone https://github.com/runebase/runebase --recursive
 
 ### 3. Install Optional Dependencies
 
-#### Wallet Dependencies
-
-It is not necessary to build wallet functionality to run runebased or the GUI.
-
-###### Descriptor Wallet Support
-
-`sqlite3` is required to enable support for [descriptor wallets](https://github.com/runebase/runebase/blob/master/doc/descriptors.md).
-
-```bash
-pkgin install sqlite3
-```
-
-###### Legacy Wallet Support
-
-`db4` is required to enable support for legacy wallets.
-
-```bash
-pkgin install db4
-```
-
 #### GUI Dependencies
-###### Qt5
+###### Qt6
 
 Runebase Core includes a GUI built with the cross-platform Qt Framework. To compile the GUI, we need to install
 the necessary parts of Qt, the libqrencode and pass `-DBUILD_GUI=ON`. Skip if you don't intend to use the GUI.
 
 ```bash
-pkgin install qt5-qtbase qt5-qttools
+pkgin install qt6-qtbase qt6-qttools
 ```
 
 ###### libqrencode
@@ -88,7 +84,7 @@ Otherwise, if you don't need QR encoding support, use the `-DWITH_QRENCODE=OFF` 
 
 Runebase Core can provide notifications via ZeroMQ. If the package is installed, support will be compiled in.
 ```bash
-pkgin zeromq
+pkgin install zeromq
 ```
 
 #### Test Suite Dependencies
@@ -119,5 +115,5 @@ Build and run the tests:
 
 ```bash
 cmake --build build     # Append "-j N" for N parallel jobs.
-ctest --test-dir build  # Append "-j N" for N parallel tests. Some tests are disabled if Python 3 is not available.
+ctest --test-dir build  # Append "-j N" for N parallel tests.
 ```

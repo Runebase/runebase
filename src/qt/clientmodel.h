@@ -36,7 +36,7 @@ QT_END_NAMESPACE
 enum class BlockSource {
     NONE,
     DISK,
-    NETWORK
+    NETWORK,
 };
 
 enum class SyncType {

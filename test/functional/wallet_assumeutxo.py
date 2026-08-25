@@ -31,9 +31,6 @@ class AssumeutxoTest(BitcoinTestFramework):
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
-    def add_options(self, parser):
-        self.add_wallet_options(parser, legacy=False)
-
     def set_test_params(self):
         """Use the pregenerated, deterministic chain up to height 199."""
         self.num_nodes = 3
@@ -122,7 +119,7 @@ class AssumeutxoTest(BitcoinTestFramework):
 
         assert_equal(
             dump_output['txoutset_hash'],
-            "73200c9ce4eb500fb90dc57599ed084a1351eb0bf5de133c8a8ed4662e7e8162")
+            "24ee075167a68593d4fa2d2715d206826362f85565f9b53632811e3d4ed8b4b8")
         assert_equal(dump_output["nchaintx"], 4767)
         assert_equal(n0.getblockchaininfo()["blocks"], SNAPSHOT_BASE_HEIGHT)
 
@@ -191,7 +188,7 @@ class AssumeutxoTest(BitcoinTestFramework):
         #
         # Set `wait_for_connect=False` to avoid a race between performing connection
         # assertions and the -stopatheight tripping.
-        
+
         #Runebase sync to a block within rolling checkpoint
         for i in range(1200):
             n1.submitblock(blocks[i])

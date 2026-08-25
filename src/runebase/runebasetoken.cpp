@@ -385,8 +385,16 @@ bool RunebaseToken::decimals(uint32_t &result)
 {
     std::string str;
     bool ret = decimals(str);
-    if(ret) ret &= ParseUInt32(str, &result);
-    if(ret) ret &= result <= 77;
+    if (ret) {
+       const auto numDecimals{ToIntegral<uint32_t>(str)};
+       if (numDecimals) {
+           result = *numDecimals;
+       }
+       else {
+           ret = false;
+       }
+    }
+    if (ret) ret &= result <= 77;
     return ret;
 }
 

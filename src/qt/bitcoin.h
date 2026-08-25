@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,7 +10,7 @@
 #include <interfaces/node.h>
 #include <qt/initexecutor.h>
 
-#include <assert.h>
+#include <cassert>
 #include <memory>
 #include <optional>
 
@@ -72,7 +72,6 @@ public:
     /// Parse parameters
     void parseParameters(int argc, const char* const argv[]);
 
-
     interfaces::Node& node() const { assert(m_node); return *m_node; }
 
 public Q_SLOTS:
@@ -120,7 +119,6 @@ private:
     QString restoreName;
     bool restartApp{false};
     QStringList parameters;
-
 };
 
 int GuiMain(int argc, char* argv[]);

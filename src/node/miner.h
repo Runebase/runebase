@@ -1,11 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOIN_NODE_MINER_H
 #define BITCOIN_NODE_MINER_H
 
+#include <interfaces/types.h>
 #include <node/types.h>
 #include <policy/policy.h>
 #include <primitives/block.h>
@@ -13,9 +14,9 @@
 #include <util/feefrac.h>
 #include <validation.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
-#include <stdint.h>
 
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/indexed_by.hpp>
@@ -35,7 +36,11 @@ namespace wallet { class CWallet; };
 
 namespace Consensus { struct Params; };
 
+using interfaces::BlockRef;
+
 namespace node {
+class KernelNotifications;
+
 static const bool DEFAULT_PRINT_MODIFIED_FEE = false;
 
 static const bool DEFAULT_STAKE = true;
@@ -80,12 +85,16 @@ static const int32_t POW_MINER_MAX_TIME = 60;
 struct CBlockTemplate
 {
     CBlock block;
+    // Fees per transaction, not including coinbase transaction (unlike CBlock::vtx).
     std::vector<CAmount> vTxFees;
+    // Sigops per transaction, not including coinbase transaction (unlike CBlock::vtx).
     std::vector<int64_t> vTxSigOpsCost;
     std::vector<unsigned char> vchCoinbaseCommitment;
     /* A vector of package fee rates, ordered by the sequence in which
      * packages are selected for inclusion in the block template.*/
     std::vector<FeeFrac> m_package_feerates;
+    // The total fee is the Fees minus the Refund
+    int64_t nTotalFees = 0;
 };
 
 // Container for tracking updates to ancestor feerate as we include (parent)
@@ -292,12 +301,9 @@ public:
     // The original constructed reward tx (either coinbase or coinstake) without gas refund adjustments
     CMutableTransaction originalRewardTx; // runebase
 
-    //When GetAdjustedTime() exceeds this, no more transactions will attempt to be added
-    int32_t nTimeLimit;
-
     /** Construct a new block template */
-    std::unique_ptr<CBlockTemplate> CreateNewBlock(bool fProofOfStake=false, int64_t* pTotalFees = 0, int32_t nTime=0, int32_t nTimeLimit=0);
-    std::unique_ptr<CBlockTemplate> CreateEmptyBlock(bool fProofOfStake=false, int64_t* pTotalFees = 0, int32_t nTime=0);
+    std::unique_ptr<CBlockTemplate> CreateNewBlock();
+    std::unique_ptr<CBlockTemplate> CreateEmptyBlock();
 
     /** The number of transactions in the last assembled block (excluding coinbase transaction) */
     inline static std::optional<int64_t> m_last_block_num_txs{};
@@ -360,6 +366,31 @@ void RegenerateCommitments(CBlock& block, ChainstateManager& chainman);
 
 /** Apply -blockmintxfee and -blockmaxweight options from ArgsManager to BlockAssembler options. */
 void ApplyArgsManOptions(const ArgsManager& gArgs, BlockAssembler::Options& options);
+
+/* Compute the block's merkle root, insert or replace the coinbase transaction and the merkle root into the block */
+void AddMerkleRootAndCoinbase(CBlock& block, CTransactionRef coinbase, uint32_t version, uint32_t timestamp, uint32_t nonce);
+
+
+/* Interrupt the current wait for the next block template. */
+void InterruptWait(KernelNotifications& kernel_notifications, bool& interrupt_wait);
+/**
+ * Return a new block template when fees rise to a certain threshold or after a
+ * new tip; return nullopt if timeout is reached.
+ */
+std::unique_ptr<CBlockTemplate> WaitAndCreateNewBlock(ChainstateManager& chainman,
+                                                      KernelNotifications& kernel_notifications,
+                                                      CTxMemPool* mempool,
+                                                      const std::unique_ptr<CBlockTemplate>& block_template,
+                                                      const BlockWaitOptions& options,
+                                                      const BlockAssembler::Options& assemble_options,
+                                                      bool& interrupt_wait);
+
+/* Locks cs_main and returns the block hash and block height of the active chain if it exists; otherwise, returns nullopt.*/
+std::optional<BlockRef> GetTip(ChainstateManager& chainman);
+
+/* Waits for the connected tip to change until timeout has elapsed. During node initialization, this will wait until the tip is connected (regardless of `timeout`).
+ * Returns the current tip, or nullopt if the node is shutting down. */
+std::optional<BlockRef> WaitTipChanged(ChainstateManager& chainman, KernelNotifications& kernel_notifications, const uint256& current_tip, MillisecondsDouble& timeout);
 
 /** Check if staking is enabled */
 bool CanStake();

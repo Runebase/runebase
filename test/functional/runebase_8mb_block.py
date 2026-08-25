@@ -6,11 +6,9 @@ from test_framework.script import *
 from test_framework.p2p import *
 from test_framework.blocktools import *
 from test_framework.runebase import *
+from test_framework.messages import uint256_from_str
 
 class Runebase8MBBlock(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
@@ -31,7 +29,6 @@ class Runebase8MBBlock(BitcoinTestFramework):
         tx = CTransaction()
         tx.vin = [make_vin(self.node, 2*COIN)]
         tx.vout = [CTxOut(2*COIN - 10000000, CScript([OP_TRUE]))]
-        tx.rehash()
         tx_hex = self.node.signrawtransactionwithwallet(bytes_to_hex_str(tx.serialize()))['hex']
         txid = self.node.sendrawtransaction(tx_hex)
         self.generate(self.node, 1)
@@ -47,7 +44,7 @@ class Runebase8MBBlock(BitcoinTestFramework):
         scriptPubKey = CScript([OP_0, ser_uint256(witness_hash)])
 
         prevout = COutPoint(int(txid, 16), 0)
-        value = 2*COIN - 10000000
+        value = 2*COIN - 1000000000
 
         parent_tx = CTransaction()
         parent_tx.vin.append(CTxIn(prevout, b""))
@@ -56,23 +53,20 @@ class Runebase8MBBlock(BitcoinTestFramework):
             parent_tx.vout.append(CTxOut(child_value, scriptPubKey))
         parent_tx.vout[0].nValue -= 50000
         assert(parent_tx.vout[0].nValue > 0)
-        parent_tx.rehash()
 
         child_tx = CTransaction()
         for i in range(NUM_OUTPUTS):
-            child_tx.vin.append(CTxIn(COutPoint(parent_tx.sha256, i), b""))
-        child_tx.vout = [CTxOut(value - 10000000, CScript([OP_TRUE]))]
+            child_tx.vin.append(CTxIn(COutPoint(parent_tx.txid_int, i), b""))
+        child_tx.vout = [CTxOut(value - 100000, CScript([OP_TRUE]))]
         for i in range(NUM_OUTPUTS):
             child_tx.wit.vtxinwit.append(CTxInWitness())
             child_tx.wit.vtxinwit[-1].scriptWitness.stack = [b'a'*195]*(2*NUM_DROPS) + [witness_program]
-        child_tx.rehash()
 
         tip = self.nodes[0].getbestblockhash()
         height = self.nodes[0].getblockcount() + 1
         block_time = self.nodes[0].getblockheader(tip)["time"] + 1
         block = create_block(int(tip, 16), create_coinbase(height), block_time)
         block.nVersion = 4
-        block.rehash()
         block.vtx.extend([parent_tx, child_tx])
         add_witness_commitment(block, 0)
         block.solve()

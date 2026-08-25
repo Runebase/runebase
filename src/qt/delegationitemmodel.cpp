@@ -25,7 +25,7 @@ public:
     DelegationItemEntry(const interfaces::DelegationInfo &delegationInfo)
     {
         hash = delegationInfo.hash;
-        createTime.setTime_t(delegationInfo.time);
+        createTime.setSecsSinceEpoch(delegationInfo.time);
         delegateAddress = QString::fromStdString(delegationInfo.delegate_address);
         stakerName = QString::fromStdString(delegationInfo.staker_name);
         stakerAddress = QString::fromStdString(delegationInfo.staker_address);
@@ -450,8 +450,7 @@ QVariant DelegationItemModel::data(const QModelIndex &index, int role) const
 void DelegationItemModel::updateDelegationData(const QString &hash, int status, bool showDelegation)
 {
     // Find delegation in wallet
-    uint256 updated;
-    updated.SetHexDeprecated(hash.toStdString());
+    uint256 updated = uint256::FromHex(hash.toStdString()).value_or(uint256::ZERO);
     interfaces::DelegationInfo delegation =walletModel->wallet().getDelegation(updated);
     showDelegation &= delegation.hash == updated;
 
@@ -548,8 +547,7 @@ void DelegationItemModel::itemChanged(QString hash, qint64 balance, qint64 stake
     if(!priv)
         return;
 
-    uint256 updated;
-    updated.SetHexDeprecated(hash.toStdString());
+    uint256 updated = uint256::FromHex(hash.toStdString()).value_or(uint256::ZERO);
 
     // Update delegation
     for(int i = 0; i < priv->cachedDelegationItem.size(); i++)

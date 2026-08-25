@@ -13,7 +13,6 @@
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
 
-
 #ifdef ENABLE_WALLET
 #include <qt/hardwaresigntx.h>
 #endif
@@ -24,7 +23,6 @@
 #include <node/caches.h>
 #include <node/chainstatemanager_args.h>
 #include <util/strencodings.h>
-
 
 #include <qt/styleSheet.h>
 #include <chainparams.h>
@@ -108,7 +106,6 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
     SetObjectStyleSheet(ui->okButton, StyleSheetNames::ButtonGray);
     SetObjectStyleSheet(ui->cancelButton, StyleSheetNames::ButtonGray);
 
-
     /* Main elements init */
     ui->databaseCache->setRange(MIN_DB_CACHE >> 20, std::numeric_limits<int>::max());
     ui->threadsScriptVerif->setMinimum(-GetNumCores());
@@ -161,7 +158,6 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
         ui->tabWidget->removeTab(ui->tabWidget->indexOf(ui->tabWallet));
         ui->thirdPartyTxUrlsLabel->setVisible(false);
         ui->thirdPartyTxUrls->setVisible(false);
-
         ui->reserveBalanceLabel->setVisible(false);
         ui->reserveBalance->setVisible(false);
         ui->superStaking->setVisible(false);
@@ -182,7 +178,6 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
         ui->txtStakeLedgerId->setVisible(fHasHardwareStakeSupport);
         ui->toolStakeLedgerId->setVisible(fHasHardwareStakeSupport);
         ui->stakeLedgerIdlabel->setVisible(fHasHardwareStakeSupport);
-
     }
 
 #ifdef ENABLE_EXTERNAL_SIGNER
@@ -211,11 +206,7 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
         {
             /** display language strings as "native language - native country/territory (locale name)", e.g. "Deutsch - Deutschland (de)" */
             ui->lang->addItem(locale.nativeLanguageName() + QString(" - ") +
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 2, 0))
                               locale.nativeTerritoryName() +
-#else
-                              locale.nativeCountryName() +
-#endif
                               QString(" (") + langStr + QString(")"), QVariant(langStr));
 
         }
@@ -242,7 +233,6 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
         ui->theme->addItem(tr(themeName.toStdString().c_str()), QVariant(themeStr));
     }
 
-
     /* Widget-to-option mapper */
     mapper = new QDataWidgetMapper(this);
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
@@ -268,7 +258,6 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
     }
 
     setupFontOptions(ui->moneyFont, ui->moneyFont_preview);
-
 
     if(enableWallet)
     {
@@ -326,19 +315,16 @@ void OptionsDialog::setModel(OptionsModel *_model)
     connect(ui->pruneSize, qOverload<int>(&QSpinBox::valueChanged), this, &OptionsDialog::showRestartWarning);
     connect(ui->databaseCache, qOverload<int>(&QSpinBox::valueChanged), this, &OptionsDialog::showRestartWarning);
     connect(ui->externalSignerPath, &QLineEdit::textChanged, [this]{ showRestartWarning(); });
-
     connect(ui->logEvents, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
     connect(ui->superStaking, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
 
     connect(ui->threadsScriptVerif, qOverload<int>(&QSpinBox::valueChanged), this, &OptionsDialog::showRestartWarning);
-
     connect(ui->reserveBalance, SIGNAL(valueChanged()), this, SLOT(showRestartWarning()));
     connect(ui->txtHWIToolPath, SIGNAL(textChanged(const QString &)), this, SLOT(showRestartWarning()));
     connect(ui->txtStakeLedgerId, SIGNAL(textChanged(const QString &)), this, SLOT(showRestartWarning()));
 
     /* Wallet */
     connect(ui->spendZeroConfChange, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
-
     connect(ui->useChangeAddress, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
     connect(ui->signPSBTHWITool, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
 
@@ -371,7 +357,6 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->databaseCache, OptionsModel::DatabaseCache);
     mapper->addMapping(ui->prune, OptionsModel::Prune);
     mapper->addMapping(ui->pruneSize, OptionsModel::PruneSize);
-
 
     mapper->addMapping(ui->logEvents, OptionsModel::LogEvents);
     mapper->addMapping(ui->superStaking, OptionsModel::SuperStaking);
@@ -426,7 +411,7 @@ void OptionsDialog::setOkButtonState(bool fState)
 
 void OptionsDialog::on_resetButton_clicked()
 {
-    if (model) {
+    if (model && m_client_model) {
         // confirmation dialog
         /*: Text explaining that the settings changed will not come into effect
             until the client is restarted. */
@@ -481,7 +466,6 @@ void OptionsDialog::on_okButton_clicked()
     model->setData(model->index(OptionsModel::FontForMoney, 0), ui->moneyFont->itemData(ui->moneyFont->currentIndex()));
 
     mapper->submit();
-
     updateDefaultProxyNets();
 
     if (model && model->isRestartRequired()) {
@@ -498,7 +482,6 @@ void OptionsDialog::on_okButton_clicked()
     }
 
     accept();
-
 }
 
 void OptionsDialog::on_cancelButton_clicked()
@@ -625,7 +608,7 @@ QValidator::State ProxyAddressValidator::validate(QString &input, int &pos) cons
     if (!SplitHostPort(input.toStdString(), port, hostname) || port != 0) return QValidator::Invalid;
 
     CService serv(LookupNumeric(input.toStdString(), DEFAULT_GUI_PROXY_PORT));
-    Proxy addrProxy = Proxy(serv, true);
+    Proxy addrProxy = Proxy(serv, /*tor_stream_isolation=*/true);
     if (addrProxy.IsValid())
         return QValidator::Acceptable;
 

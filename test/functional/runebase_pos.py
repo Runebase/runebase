@@ -15,9 +15,6 @@ import io
 import struct
 
 class RunebasePOSTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True
@@ -68,7 +65,7 @@ class RunebasePOSTest(BitcoinTestFramework):
     def run_test(self):
         self.node = self.nodes[0]
         privkey = byte_to_base58(hash256(struct.pack('<I', 0)), 239)
-        self.node.importprivkey(privkey)
+        wallet_importprivkey(self.node, privkey, 0)
         self.bootstrap_p2p()
         # returns a test case that asserts that the current tip was accepted
         # First generate some blocks so we have some spendable coins
@@ -123,7 +120,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         t = int(time.time()) | 1
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, nTime=t)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, force_send=True, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -131,7 +127,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         # 2 A block that with a too high reward
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, rewardFactor=1.5)  # 1.5x the valid reward, must be rejected
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -141,7 +136,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         bad_key.set(hash256(b'horse staple battery'), False)
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts)
         self.tip.sign_block(bad_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True, force_send=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -149,7 +143,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         # 4 A block that stakes with txs with too few confirmations
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.unconfirmed_staking_prevouts)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True, force_send=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -159,7 +152,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx[0].vout[0].nValue = 1
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -169,7 +161,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx[0].vout = []
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -178,7 +169,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         t = (int(time.time())+100) & 0xfffffff0
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, nTime=t)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, force_send=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -188,7 +178,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx[1].vout = []
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -196,7 +185,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         # 9 Unsigned coinstake.
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, signStakeTx=False)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
         
@@ -206,7 +194,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx.pop(-1)
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -216,7 +203,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx.pop(0)
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -226,7 +212,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx[0].vout = []
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -241,7 +226,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx[1].deserialize(f)
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -250,7 +234,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts)
         self.tip.hashStateRoot = 0xe
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -259,7 +242,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts)
         self.tip.hashUTXORoot = 0xe
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -268,7 +250,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts)
         self.tip.sign_block(block_sig_key)
         self.tip.nNonce = 0xfffe
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True, force_send=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -284,7 +265,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         self.tip.vtx[1].deserialize(f)
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -292,7 +272,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         t = (int(time.time())-700) & 0xfffffff0
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, nTime=t)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, force_send=True, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -300,10 +279,8 @@ class RunebasePOSTest(BitcoinTestFramework):
         # 19. A block with too many coinbase vouts
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts)
         self.tip.vtx[0].vout.append(CTxOut(0, CScript([OP_TRUE])))
-        self.tip.vtx[0].rehash()
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -311,7 +288,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         # 20. A block where the coinstake's vin is not the prevout specified in the block
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts, coinStakePrevout=self.staking_prevouts[-1][0])
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -319,7 +295,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         # 21. A block that stakes with valid txs but invalid vouts
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.bad_vout_staking_prevouts)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True, force_send=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -327,7 +302,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         # 22. A block that stakes with txs that do not exist
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.bad_txid_staking_prevouts)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=False, reconnect=True, force_send=True)
         self._remove_from_staking_prevouts(self.tip)
 
@@ -338,7 +312,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         # And at last, make sure that a valid pos block is accepted
         (self.tip, block_sig_key) = self.create_unsigned_pos_block(self.staking_prevouts)
         self.tip.sign_block(block_sig_key)
-        self.tip.rehash()
         self.sync_all_blocks([self.tip], success=True)
         assert_equal(self.node.getblockcount(), block_count+1)
 
@@ -364,7 +337,6 @@ class RunebasePOSTest(BitcoinTestFramework):
         coinbase = create_coinbase(block_height+1)
         coinbase.vout[0].nValue = 0
         coinbase.vout[0].scriptPubKey = b""
-        coinbase.rehash()
         block = create_block(int(bestBlockHash, 16), coinbase, nTime)
         block.hashPrevBlock = int(bestBlockHash, 16)
         if not block.solve_stake(parent_block_stake_modifier, staking_prevouts):

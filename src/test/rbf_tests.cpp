@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_CASE(rbf_helper_functions, TestChain100Setup)
                                        entry5_low, entry6_low_prioritised, entry7_high, entry8_high};
     CTxMemPool::setEntries empty_set;
 
-    const auto unused_txid{GetRandHash()};
+    const auto unused_txid = Txid::FromUint256(GetRandHash());
 
     // Tests for PaysMoreThanConflicts
     // These tests use feerate, not absolute fee.
@@ -293,7 +293,7 @@ BOOST_FIXTURE_TEST_CASE(rbf_helper_functions, TestChain100Setup)
     const auto spends_unconfirmed = make_tx({tx1}, {36 * CENT});
     for (const auto& input : spends_unconfirmed->vin) {
         // Spends unconfirmed inputs.
-        BOOST_CHECK(pool.exists(GenTxid::Txid(input.prevout.hash)));
+        BOOST_CHECK(pool.exists(input.prevout.hash));
     }
     BOOST_CHECK(HasNoNewUnconfirmed(/*tx=*/ *spends_unconfirmed.get(),
                                     /*pool=*/ pool,
@@ -364,7 +364,7 @@ BOOST_FIXTURE_TEST_CASE(improves_feerate, TestChain100Setup)
     // low feerate parent with normal feerate child
     const auto tx1 = make_tx(/*inputs=*/ {m_coinbase_txns[0], m_coinbase_txns[1]}, /*output_values=*/ {10 * COIN});
     AddToMempool(pool, entry.Fee(low_fee).FromTx(tx1));
-    const auto tx2 = make_tx(/*inputs=*/ {tx1}, /*output_values=*/ {985 * CENT});
+    const auto tx2 = make_tx(/*inputs=*/ {tx1}, /*output_values=*/ {995 * CENT});
     AddToMempool(pool, entry.Fee(normal_fee).FromTx(tx2));
 
     const auto entry1 = pool.GetIter(tx1->GetHash()).value();
@@ -374,7 +374,7 @@ BOOST_FIXTURE_TEST_CASE(improves_feerate, TestChain100Setup)
 
     // conflicting transactions
     const auto tx1_conflict = make_tx(/*inputs=*/ {m_coinbase_txns[0], m_coinbase_txns[2]}, /*output_values=*/ {10 * COIN});
-    const auto tx3 = make_tx(/*inputs=*/ {tx1_conflict}, /*output_values=*/ {985 * CENT});
+    const auto tx3 = make_tx(/*inputs=*/ {tx1_conflict}, /*output_values=*/ {995 * CENT});
     auto entry3 = entry.FromTx(tx3);
 
     // Now test ImprovesFeerateDiagram with various levels of "package rbf" feerates
@@ -428,7 +428,7 @@ BOOST_FIXTURE_TEST_CASE(improves_feerate, TestChain100Setup)
     changeset.reset();
 
     // Adding a grandchild makes the cluster size 3, which is uncalculable
-    const auto tx5 = make_tx(/*inputs=*/ {tx2}, /*output_values=*/ {985 * CENT});
+    const auto tx5 = make_tx(/*inputs=*/ {tx2}, /*output_values=*/ {995 * CENT});
     AddToMempool(pool, entry.Fee(normal_fee).FromTx(tx5));
     const auto entry5 = pool.GetIter(tx5->GetHash()).value();
 
@@ -441,7 +441,7 @@ BOOST_FIXTURE_TEST_CASE(improves_feerate, TestChain100Setup)
     const auto res3 = ImprovesFeerateDiagram(*changeset);
     BOOST_CHECK(res3.has_value());
     BOOST_CHECK(res3.value().first == DiagramCheckError::UNCALCULABLE);
-    BOOST_CHECK(res3.value().second == strprintf("%s has 2 ancestors, max 1 allowed", tx5->GetHash().GetHex()));
+    BOOST_CHECK_MESSAGE(res3.value().second == strprintf("%s has both ancestor and descendant, exceeding cluster limit of 2", tx2->GetHash().GetHex()), res3.value().second);
 }
 
 BOOST_FIXTURE_TEST_CASE(calc_feerate_diagram_rbf, TestChain100Setup)
@@ -536,7 +536,7 @@ BOOST_FIXTURE_TEST_CASE(calc_feerate_diagram_rbf, TestChain100Setup)
         changeset->StageAddition(replacement_tx, high_fee, 0, 1, 0, false, 4, LockPoints());
         const auto replace_too_large{changeset->CalculateChunksForRBF()};
         BOOST_CHECK(!replace_too_large.has_value());
-        BOOST_CHECK_EQUAL(util::ErrorString(replace_too_large).original, strprintf("%s has 2 ancestors, max 1 allowed", normal_tx->GetHash().GetHex()));
+        BOOST_CHECK_EQUAL(util::ErrorString(replace_too_large).original, strprintf("%s has 2 descendants, max 1 allowed", low_tx->GetHash().GetHex()));
     }
 
     // Make a size 2 cluster that is itself two chunks; evict both txns
@@ -563,7 +563,7 @@ BOOST_FIXTURE_TEST_CASE(calc_feerate_diagram_rbf, TestChain100Setup)
         BOOST_CHECK(replace_two_chunks_single_cluster->second == expected_new_chunks);
     }
 
-    // You can have more than two direct conflicts if the there are multiple affected clusters, all of size 2 or less
+    // You can have more than two direct conflicts if there are multiple affected clusters, all of size 2 or less
     const auto conflict_1 = make_tx(/*inputs=*/ {m_coinbase_txns[2]}, /*output_values=*/ {10 * COIN});
     AddToMempool(pool, entry.Fee(low_fee).FromTx(conflict_1));
     const auto conflict_1_entry = pool.GetIter(conflict_1->GetHash()).value();
@@ -624,7 +624,6 @@ BOOST_FIXTURE_TEST_CASE(calc_feerate_diagram_rbf, TestChain100Setup)
 
         BOOST_CHECK(!replace_cluster_size_3.has_value());
         BOOST_CHECK_EQUAL(util::ErrorString(replace_cluster_size_3).original, strprintf("%s has 2 descendants, max 1 allowed", conflict_1->GetHash().GetHex()));
-        // CheckConflictTopology generated the error message from the first conflict in direct_conflicts list ordered by hash
     }
 }
 

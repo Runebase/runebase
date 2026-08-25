@@ -13,6 +13,8 @@
  */
 class ExecRPCCommand : public QObject
 {
+    Q_OBJECT
+
 public:
     /**
      * @brief ExecRPCCommand Constructor
@@ -27,7 +29,7 @@ public:
     /**
      * @brief exec Execute the RPC command
      * @param node Select node for execution of the command
-     * @param wallet Select wallet for execution of the command
+     * @param wallet_model Select wallet model for execution of the command
      * @param params Map of the parameter name and the parameter value
      * @param result Returned data from the PRC call execution
      * @param resultJson Raw JSON string from the PRC call execution

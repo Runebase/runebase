@@ -80,7 +80,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     {
         // Special difficulty rule for testnet:
         // If the new block's timestamp is more than 2* 10 minutes
-        // then allow mining of a min-difficulty block.
+        // then it MUST be a min-difficulty block.
         int nHeight = pindexLast->nHeight + 1;
         if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.TargetSpacing(nHeight)*2)
             return nTargetLimit;
@@ -214,7 +214,7 @@ bool PermittedDifficultyTransition(const Consensus::Params& params, int64_t heig
 // the most significant bit of the last byte of the hash is set.
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    if constexpr (G_FUZZING) return (hash.data()[31] & 0x80) == 0;
+    if (EnableFuzzDeterminism()) return (hash.data()[31] & 0x80) == 0;
     return CheckProofOfWorkImpl(hash, nBits, params);
 }
 

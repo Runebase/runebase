@@ -11,9 +11,6 @@ import random
 import time
 
 class RunebasePrematureCoinstakeSpendTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -51,7 +48,6 @@ class RunebasePrematureCoinstakeSpendTest(BitcoinTestFramework):
         block, sig_key = create_unsigned_mpos_block(self.node, self.staking_prevouts, next_block_time, 10000000)
         block.vtx.append(tx)
         block.hashMerkleRoot = block.calc_merkle_root()
-        block.rehash()
         block.sign_block(sig_key)
         blockcount = self.node.getblockcount()
         self.node.submitblock(bytes_to_hex_str(block.serialize()))
@@ -62,7 +58,7 @@ class RunebasePrematureCoinstakeSpendTest(BitcoinTestFramework):
     def run_test(self):
         privkey = byte_to_base58(hash256(struct.pack('<I', 0)), 239)
         for n in self.nodes:
-            n.importprivkey(privkey)
+            wallet_importprivkey(n, privkey, 0)
 
         self.node = self.nodes[0]
         self.node.setmocktime(int(time.time()) - 1000000)
@@ -71,7 +67,7 @@ class RunebasePrematureCoinstakeSpendTest(BitcoinTestFramework):
         # These are used by default by create_pos_block
         for i in range(0xff+1):
             privkey = byte_to_base58(hash256(struct.pack('<I', i)), 239)
-            self.node.importprivkey(privkey)
+            wallet_importprivkey(self.node, privkey, 0)
 
         activate_mpos(self.node)
 

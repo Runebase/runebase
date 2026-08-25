@@ -11,9 +11,6 @@ import random
 import time
 
 class RunebasePrioritizeCreateOverCallTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -60,7 +57,7 @@ class RunebasePrioritizeCreateOverCallTest(BitcoinTestFramework):
             block = create_block(int(alternate_tip_block_hash, 16), create_coinbase(self.node.getblockcount()+i-1), int(fork_tip['time']+1+i))
             block.solve()
             self.node.submitblock(bytes_to_hex_str(block.serialize()))
-            alternate_tip_block_hash = block.hash
+            alternate_tip_block_hash = block.hash_hex
 
         # The contract should not exist in the fork's state
         assert(self.contract_address not in self.node.listcontracts())

@@ -185,7 +185,7 @@ public:
         if (isList())
         {
             ret.reserve(itemCount());
-            for (auto const& i: *this)
+            for (auto const i: *this)
                 ret.push_back(i.convert<T>(_flags));
         }
         else if (_flags & ThrowOnFail)
@@ -198,7 +198,7 @@ public:
     {
         std::set<T> ret;
         if (isList())
-            for (auto const& i: *this)
+            for (auto const i: *this)
                 ret.insert(i.convert<T>(_flags));
         else if (_flags & ThrowOnFail)
             BOOST_THROW_EXCEPTION(BadCast());
@@ -210,7 +210,7 @@ public:
     {
         std::unordered_set<T> ret;
         if (isList())
-            for (auto const& i: *this)
+            for (auto const i: *this)
                 ret.insert(i.convert<T>(_flags));
         else if (_flags & ThrowOnFail)
             BOOST_THROW_EXCEPTION(BadCast());

@@ -178,11 +178,11 @@ BOOST_AUTO_TEST_CASE(test_assumeutxo)
     }
 
     const auto out110 = *params->AssumeutxoForHeight(2010);
-    BOOST_CHECK_EQUAL(out110.hash_serialized.ToString(), "62528c92991cbedf47bdf3f0f5a0ad1e07bce4b2a35500beabe3f87fa5cca44f");
+    BOOST_CHECK_EQUAL(out110.hash_serialized.ToString(), "4d67bbf7a819e332db3f1b4d733121871c145e58278e84accbeafc8aadc0bbea");
     BOOST_CHECK_EQUAL(out110.m_chain_tx_count, 2011U);
 
-    const auto out110_2 = *params->AssumeutxoForBlockhash(uint256{"292911929ab59409569a86bae416da0ba697fd7086b107ddd0a8eeaddba91b4d"});
-    BOOST_CHECK_EQUAL(out110_2.hash_serialized.ToString(), "62528c92991cbedf47bdf3f0f5a0ad1e07bce4b2a35500beabe3f87fa5cca44f");
+    const auto out110_2 = *params->AssumeutxoForBlockhash(uint256{"432400d38d5818c38939546cf44f5303044b162e7f250e108a5d616897ec6e20"});
+    BOOST_CHECK_EQUAL(out110_2.hash_serialized.ToString(), "4d67bbf7a819e332db3f1b4d733121871c145e58278e84accbeafc8aadc0bbea");
     BOOST_CHECK_EQUAL(out110_2.m_chain_tx_count, 2011U);
 }
 
@@ -250,9 +250,9 @@ BOOST_AUTO_TEST_CASE(block_malleation)
         // Block with a single coinbase tx is mutated if the merkle root is not
         // equal to the coinbase tx's hash.
         block.vtx.push_back(create_coinbase_tx());
-        BOOST_CHECK(block.vtx[0]->GetHash() != block.hashMerkleRoot);
+        BOOST_CHECK(block.vtx[0]->GetHash().ToUint256() != block.hashMerkleRoot);
         BOOST_CHECK(is_mutated(block, /*check_witness_root=*/false));
-        block.hashMerkleRoot = block.vtx[0]->GetHash();
+        block.hashMerkleRoot = block.vtx[0]->GetHash().ToUint256();
         BOOST_CHECK(is_not_mutated(block, /*check_witness_root=*/false));
 
         // Block with two transactions is mutated if the merkle root does not
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(block_malleation)
             mtx.vout.resize(1);
             mtx.vout[0].scriptPubKey.resize(4);
             block.vtx.push_back(MakeTransactionRef(mtx));
-            block.hashMerkleRoot = block.vtx.back()->GetHash();
+            block.hashMerkleRoot = block.vtx.back()->GetHash().ToUint256();
             assert(block.vtx.back()->IsCoinBase());
             assert(GetSerializeSize(TX_NO_WITNESS(block.vtx.back())) == 64);
         }
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(block_malleation)
             HashWriter hasher;
             hasher.write(tx1.GetHash());
             hasher.write(tx2.GetHash());
-            assert(hasher.GetHash() == tx3.GetHash());
+            assert(hasher.GetHash() == tx3.GetHash().ToUint256());
             // Verify that tx3 is 64 bytes in size (without witness).
             assert(GetSerializeSize(TX_NO_WITNESS(tx3)) == 64);
         }

@@ -75,6 +75,13 @@ void generateFakeBlock(const CChainParams& params,
     coinbase_tx.vin[0].scriptSig = CScript() << ++tip.tip_height << OP_0;
     coinbase_tx.vout[1].scriptPubKey = coinbase_out_script; // extra output
     coinbase_tx.vout[1].nValue = 1 * COIN;
+
+    // Fill the coinbase with outputs that don't belong to the wallet in order to benchmark
+    // AvailableCoins' behavior with unnecessary TXOs
+    for (int i = 0; i < 50; ++i) {
+        coinbase_tx.vout.emplace_back(1 * COIN / 50, CScript(OP_TRUE));
+    }
+
     block.vtx = {MakeTransactionRef(std::move(coinbase_tx))};
 
     block.nVersion = VERSIONBITS_LAST_OLD_BLOCK_VERSION;
@@ -137,7 +144,7 @@ static void WalletCreateTx(benchmark::Bench& bench, const OutputType output_type
 
     CAmount target = 0;
     if (preset_inputs) {
-        // Select inputs, each has 49 BTC
+        // Select inputs, each has 48 BTC
         wallet::CoinFilterParams filter_coins;
         filter_coins.max_count = preset_inputs->num_of_internal_inputs;
         const auto& res = WITH_LOCK(wallet.cs_wallet,
@@ -153,7 +160,7 @@ static void WalletCreateTx(benchmark::Bench& bench, const OutputType output_type
     if (coin_control.m_allow_other_inputs) target += 20000 * COIN;
     std::vector<wallet::CRecipient> recipients = {{dest, target, true}};
 
-    bench.epochIterations(5).run([&] {
+    bench.run([&] {
         LOCK(wallet.cs_wallet);
         const auto& tx_res = CreateTransaction(wallet, recipients, /*change_pos=*/std::nullopt, coin_control);
         assert(tx_res);
@@ -193,7 +200,7 @@ static void AvailableCoins(benchmark::Bench& bench, const std::vector<OutputType
     constexpr size_t coinbaseMaturity = 2000;
     assert(bal == (int64_t) (20000 * COIN * (chain_size - coinbaseMaturity)));
 
-    bench.epochIterations(2).run([&] {
+    bench.run([&] {
         LOCK(wallet.cs_wallet);
         const auto& res = wallet::AvailableCoins(wallet);
         assert(res.All().size() == (chain_size - coinbaseMaturity) * 2);

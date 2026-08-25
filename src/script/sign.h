@@ -114,8 +114,8 @@ struct SignatureData {
 /** Produce a script signature using a generic signature creator. */
 bool ProduceSignature(const SigningProvider& provider, const BaseSignatureCreator& creator, const CScript& scriptPubKey, SignatureData& sigdata);
 
-bool VerifySignature(const Coin& coin, uint256 txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags);
-bool VerifySignature(const CScript& fromPubKey, uint256 txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags);
+bool VerifySignature(const Coin& coin, Txid txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags);
+bool VerifySignature(const CScript& fromPubKey, Txid txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags);
 
 /** Extract signature data from a transaction input, and insert it. */
 SignatureData DataFromTransaction(const CMutableTransaction& tx, unsigned int nIn, const CTxOut& txout);

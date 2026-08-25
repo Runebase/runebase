@@ -11,15 +11,22 @@
 // For details see https://github.com/bitcoin/bitcoin/pull/22348.
 #define __kernel_entry
 #endif
-#include <boost/process.hpp>
+#include <boost/process/v2/process.hpp>
+#include <boost/process/v2/stdio.hpp>
+#ifdef WIN32
+#include <boost/process/v2/windows/creation_flags.hpp>
+#include <windows.h>
+#endif
 #include <boost/asio.hpp>
+#include <boost/system/error_code.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
-#ifdef WIN32
-#include <boost/process/windows.hpp>
-#endif
 #include <univalue.h>
 #include <common/args.h>
+
+#include <cstdlib>
+#include <string>
+#include <filesystem>
 
 RecursiveMutex cs_ledger;
 
@@ -109,7 +116,6 @@ std::vector<std::string>& operator<<(std::vector<std::string>& os, const std::st
     return os;
 }
 
-#ifdef WIN32
 // Check suffix
 bool endsWith(const std::string& str, const std::string& suffix)
 {
@@ -122,7 +128,6 @@ bool isPyPath(const std::string& str)
     std::size_t found = str.find("python");
     return found!=std::string::npos;
 }
-#endif
 
 // Start process from runebased
 class CProcess
@@ -146,24 +151,39 @@ public:
     {
         try
         {
-            boost::asio::io_service svc;
-            boost::asio::streambuf out, err;
-    #ifdef WIN32
-            boost::process::child child(m_program, ::boost::process::windows::create_no_window, boost::process::args(m_arguments),
-                                        boost::process::std_out > out, boost::process::std_err > err, svc);
-    #else
-            boost::process::child child(m_program, boost::process::args(m_arguments),
-                                        boost::process::std_out > out, boost::process::std_err > err, svc);
-    #endif
+            boost::asio::io_context svc;
 
-            svc.run();
+            // streambufs to hold captured output
+            boost::asio::streambuf out, err;
+
+            // create readable pipes bound to the io_context
+            boost::asio::readable_pipe out_pipe(svc);
+            boost::asio::readable_pipe err_pipe(svc);
+
+            namespace bp = boost::process::v2;
+
+            bp::process child(
+                svc, m_program, m_arguments, bp::process_stdio{ nullptr, out_pipe, err_pipe }
+#ifdef WIN32
+                , bp::windows::process_creation_flags<CREATE_NO_WINDOW>{}
+#endif
+            );
+
+            // Wait for the child to exit
             child.wait();
-            m_std_out = toString(&out);
-            m_std_err = toString(&err);
+
+            // Synchronously read all remaining data from the pipes into the streambufs
+            boost::system::error_code ec_out, ec_err;
+            boost::asio::read(out_pipe, out, boost::asio::transfer_all(), ec_out);
+            boost::asio::read(err_pipe, err, boost::asio::transfer_all(), ec_err);
+
+            // Convert streambuf -> std::string
+            m_std_out = toString(out);
+            m_std_err = toString(err);
         }
-        catch(...)
+        catch (...)
         {
-            m_std_err = "Fail to create process for: " + m_program;
+            m_std_err = std::string("Fail to create process for: ") + m_program;
         }
     }
 
@@ -189,12 +209,12 @@ public:
 
 
 private:
-    std::string toString(boost::asio::streambuf* stream)
+    std::string toString(boost::asio::streambuf& stream)
     {
-        std::istream is(stream);
-        std::ostringstream os;
-        is >> os.rdbuf();
-        return os.str();
+        std::istream is(&stream);
+        std::ostringstream ss;
+        ss << is.rdbuf();
+        return ss.str();
     }
 
 private:
@@ -228,14 +248,45 @@ public:
         }
     }
 
-#ifdef WIN32
+    std::string search_path(const std::string& exe) {
+        const char* path_env = std::getenv("PATH");
+        if (!path_env) return {};
+
+        std::string path(path_env);
+        std::filesystem::path exe_name(exe);
+
+        size_t start = 0;
+        while (start < path.size()) {
+            size_t end = path.find(';', start); // Windows uses ';'
+            if (end == std::string::npos) end = path.size();
+
+            std::filesystem::path dir = path.substr(start, end - start);
+            std::filesystem::path candidate = dir / exe_name;
+
+            // Check with .exe suffix if not already present
+            if (std::filesystem::exists(candidate)) {
+                return candidate.string();
+            }
+            if (candidate.extension() != ".exe") {
+                auto candidate_exe = candidate;
+                candidate_exe += ".exe";
+                if (std::filesystem::exists(candidate_exe)) {
+                    return candidate_exe.string();
+                }
+            }
+
+            start = end + 1;
+        }
+        return {};
+    }
+
     bool getToolPath(std::string pythonProgram)
     {
-        toolPath = boost::process::search_path(pythonProgram).string();
+        toolPath = search_path(pythonProgram);
         toolExists &= isPyPath(toolPath);
         if(!toolExists)
         {
-            std::string prog = boost::process::search_path("cmd").string();
+            std::string prog = search_path("cmd");
             std::vector<std::string> arg;
             arg << "/c" << pythonProgram << "-c" << "import sys; print(sys.executable)";
             process.start(prog, arg);
@@ -248,21 +299,25 @@ public:
         }
         return toolExists;
     }
-#endif
 
     void initToolPath()
     {
+        bool needInit = false;
 #ifdef WIN32
-        if(endsWith(toolPath, ".py") ||
-                endsWith(toolPath, ".PY") ||
-                endsWith(toolPath, ".Py") ||
-                endsWith(toolPath, ".pY"))
-        {
-            arguments << toolPath;
-            if(!getToolPath("python3"))
-                getToolPath("python");
-        }
+        needInit = true;
 #endif
+        if (needInit)
+        {
+            if(endsWith(toolPath, ".py") ||
+                    endsWith(toolPath, ".PY") ||
+                    endsWith(toolPath, ".Py") ||
+                    endsWith(toolPath, ".pY"))
+            {
+                arguments << toolPath;
+                if(!getToolPath("python3"))
+                    getToolPath("python");
+            }
+        }
     }
 
     std::atomic<bool> fStarted{false};
@@ -405,7 +460,7 @@ bool RunebaseLedger::signMessage(const std::string &fingerprint, const std::stri
     return endSignMessage(fingerprint, message, path, signature);
 }
 
-bool RunebaseLedger::getKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, bool descriptorwallet, std::string &desc)
+bool RunebaseLedger::getKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, std::string &desc)
 {
     LOCK(cs_ledger);
     // Check if tool exists
@@ -416,12 +471,12 @@ bool RunebaseLedger::getKeyPool(const std::string &fingerprint, int type, const 
     if(isStarted())
         return false;
 
-    if(!beginGetKeyPool(fingerprint, type, path, internal, from, to, descriptorwallet, desc))
+    if(!beginGetKeyPool(fingerprint, type, path, internal, from, to, desc))
         return false;
 
     wait();
 
-    return endGetKeyPool(fingerprint, type, path, internal, from, to, descriptorwallet, desc);
+    return endGetKeyPool(fingerprint, type, path, internal, from, to, desc);
 }
 
 bool RunebaseLedger::displayAddress(const std::string &fingerprint, const std::string &desc, std::string &address)
@@ -628,7 +683,7 @@ bool RunebaseLedger::endSignMessage(const std::string &, const std::string &, co
     return false;
 }
 
-bool RunebaseLedger::beginGetKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, bool, std::string &)
+bool RunebaseLedger::beginGetKeyPool(const std::string &fingerprint, int type, const std::string& path, bool internal, int from, int to, std::string &)
 {
     // Get the output type
     std::string descType = get_address_type(type);
@@ -653,14 +708,14 @@ bool RunebaseLedger::beginGetKeyPool(const std::string &fingerprint, int type, c
     return d->fStarted;
 }
 
-bool RunebaseLedger::endGetKeyPool(const std::string &, int type, const std::string& , bool, int, int, bool descriptorwallet, std::string &desc)
+bool RunebaseLedger::endGetKeyPool(const std::string &, int type, const std::string& , bool, int, int, std::string &desc)
 {
     // Decode command line results
     bool ret = d->strStdout.find("desc")!=std::string::npos;
     desc = d->strStdout;
 
     // Import both PK and PKH descriptors for legacy address in descriptor wallet
-    if(descriptorwallet && (type == (int)OutputType::P2PK || type == (int)OutputType::LEGACY)) {
+    if(type == (int)OutputType::P2PK || type == (int)OutputType::LEGACY) {
         UniValue items;
         if(items.read(desc)) {
             if(items.isArray()) {

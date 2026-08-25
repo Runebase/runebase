@@ -48,7 +48,6 @@ def make_transaction(node, vin, vout):
     tx = CTransaction()
     tx.vin = vin
     tx.vout = vout
-    tx.rehash()
 
     unsigned_raw_tx = bytes_to_hex_str(tx.serialize_without_witness())
     signed_raw_tx = node.signrawtransactionwithwallet(unsigned_raw_tx)['hex']
@@ -413,7 +412,6 @@ def create_unsigned_pos_block(node, staking_prevouts, nTime=None):
     coinbase = create_coinbase(tip['height']+1)
     coinbase.vout[0].nValue = 0
     coinbase.vout[0].scriptPubKey = b""
-    coinbase.rehash()
     block = create_block(int(tip['hash'], 16), coinbase, nTime)
     block.hashStateRoot = int(tip['hashStateRoot'], 16)
     block.hashUTXORoot = int(tip['hashUTXORoot'], 16)
@@ -492,7 +490,6 @@ def activate_mpos(node, use_cache=True):
         node.setmocktime(nTime)
         block, block_sig_key = create_unsigned_pos_block(node, staking_prevouts, nTime=nTime)
         block.sign_block(block_sig_key)
-        block.rehash()
         block_count = node.getblockcount()
         assert_equal(node.submitblock(bytes_to_hex_str(block.serialize())), None)
         assert_equal(node.getblockcount(), block_count+1)
@@ -608,12 +605,9 @@ def create_delegated_pos_block(staker, staker_eckey, staker_prevout, delegator_a
     block.vtx[1].vout[2].nValue = int(block_subsidy*COIN+nFees) - block.vtx[1].vout[1].nValue # subtract the staker's reward to get the delegator's reward (the delegator will ceil)
     block.vtx[1].vout[1].nValue += staker_nas_input_value # add the input value for the staker
     block.vtx[1] = rpc_sign_transaction(staker, block.vtx[1])
-    block.vtx[1].rehash()
     block.hashMerkleRoot = block.calc_merkle_root()
-    block.rehash()
     block.sign_block(staker_eckey, pod=pod)
     block.vchBlockSig = block.vchBlockSig + pod
-    block.rehash()
     return block
 
 

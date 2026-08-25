@@ -23,9 +23,6 @@ def find_unspent(node, amount):
     assert(False)
 
 class RunebaseBlockHeaderTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True
@@ -58,14 +55,12 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
 
         # first make sure that what is a valid block is accepted
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
         self.tip = create_block(int(node.getbestblockhash(), 16), coinbase, int(time.time()+mocktime+100))
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
         self.tip.solve()
         self.sync_all_blocks([self.tip])
 
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
  
         # A block that has an OP_CREATE tx, butwith an incorrect state root
         """
@@ -80,7 +75,6 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
         tx.deserialize(f)
 
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
         self.tip = create_block(int(node.getbestblockhash(), 16), coinbase, int(mocktime+200))
         self.tip.vtx.append(tx)
         self.tip.hashMerkleRoot = self.tip.calc_merkle_root()
@@ -103,7 +97,6 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
 
         # A block with both an invalid hashStateRoot and hashUTXORoot
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
         self.tip = create_block(int(node.getbestblockhash(), 16), coinbase, int(mocktime+300))
         self.tip.hashUTXORoot = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
         self.tip.hashStateRoot = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -119,7 +112,6 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
         tx.deserialize(f)
 
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
         self.tip = create_block(int(node.getbestblockhash(), 16), coinbase, int(mocktime+400))
         self.tip.hashUTXORoot = realHashUTXORoot
         self.tip.hashStateRoot = realHashStateRoot
@@ -130,7 +122,6 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
 
         # A block with an invalid hashUTXORoot
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
         self.tip = create_block(int(node.getbestblockhash(), 16), coinbase, int(mocktime+500))
         self.tip.hashStateRoot = realHashStateRoot
         self.tip.hashUTXORoot = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -140,7 +131,6 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
 
         # A block with an invalid hashStateRoot
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
         self.tip = create_block(int(node.getbestblockhash(), 16), coinbase, int(mocktime+600))
         self.tip.hashUTXORoot = realHashUTXORoot
         self.tip.hashStateRoot = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -150,7 +140,6 @@ class RunebaseBlockHeaderTest(BitcoinTestFramework):
 
         # Verify that blocks with a correct hashStateRoot and hashUTXORoot are accepted.
         coinbase = create_coinbase(node.getblockcount()+1)
-        coinbase.rehash()
         self.tip = create_block(int(node.getbestblockhash(), 16), coinbase, int(mocktime+700))
         self.tip.hashUTXORoot = realHashUTXORoot
         self.tip.hashStateRoot = realHashStateRoot

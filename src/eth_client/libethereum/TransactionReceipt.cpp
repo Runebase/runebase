@@ -30,7 +30,7 @@ TransactionReceipt::TransactionReceipt(bytesConstRef _rlp)
 
 	m_gasUsed = (u256)r[1];
 	m_bloom = (LogBloom)r[2];
-	for (auto const& i : r[3])
+	for (auto const i : r[3])
 		m_log.emplace_back(i);
 
 }

@@ -42,7 +42,7 @@ TransactionError BroadcastTransaction(NodeContext& node, const CTransactionRef t
 
     std::promise<void> promise;
     Txid txid = tx->GetHash();
-    uint256 wtxid = tx->GetWitnessHash();
+    Wtxid wtxid = tx->GetWitnessHash();
     bool callback_set = false;
 
     {
@@ -123,7 +123,7 @@ TransactionError BroadcastTransaction(NodeContext& node, const CTransactionRef t
     return TransactionError::OK;
 }
 
-CTransactionRef GetTransaction(const CBlockIndex* const block_index, const CTxMemPool* const mempool, const uint256& hash, uint256& hashBlock, const BlockManager& blockman, Chainstate* chainstate)
+CTransactionRef GetTransaction(const CBlockIndex* const block_index, const CTxMemPool* const mempool, const Txid& hash, uint256& hashBlock, const BlockManager& blockman, Chainstate* chainstate)
 {
     if (mempool && !block_index) {
         CTransactionRef ptx = mempool->get(hash);
@@ -155,7 +155,7 @@ CTransactionRef GetTransaction(const CBlockIndex* const block_index, const CTxMe
     }
     if (chainstate) { // use coin database to locate block that contains transaction, and scan it
         CBlockIndex* pindexSlow = nullptr;
-        const Coin& coin = AccessByTxid(chainstate->CoinsTip(), Txid::FromUint256(hash));
+        const Coin& coin = AccessByTxid(chainstate->CoinsTip(), hash);
         if (!coin.IsSpent()) pindexSlow = chainstate->m_chain[coin.nHeight];
         if (pindexSlow) {
             CBlock block;

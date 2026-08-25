@@ -5,9 +5,9 @@
 #include <QDateTime>
 
 // Earliest date that can be represented (far in the past)
-const QDateTime TokenFilterProxy::MIN_DATE = QDateTime::fromTime_t(0);
+const QDateTime TokenFilterProxy::MIN_DATE = QDateTime::fromSecsSinceEpoch(0);
 // Last date that can be represented (far in the future)
-const QDateTime TokenFilterProxy::MAX_DATE = QDateTime::fromTime_t(0xFFFFFFFF);
+const QDateTime TokenFilterProxy::MAX_DATE = QDateTime::fromSecsSinceEpoch(0xFFFFFFFF);
 
 dev::s256 abs_int256(const dev::s256& value)
 {

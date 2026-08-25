@@ -31,7 +31,7 @@ const std::string UA_NAME("Satoshi");
 //   - "// No build information available", if proper git information is not available
 
 //! git will put "#define GIT_COMMIT_ID ..." on the next line inside archives. 
-#define GIT_COMMIT_ID "7641affd806103b2dc224c392370a7adcc8c740f"
+#define GIT_COMMIT_ID "87716f693bccfc1d633833b1790202202e0f08ed"
 
 #ifdef BUILD_GIT_TAG
     #define BUILD_DESC BUILD_GIT_TAG
@@ -97,6 +97,6 @@ std::string LicenseInfo()
            "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
-           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/licenses/MIT>").translated +
+           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/license/MIT>").translated +
            "\n";
 }

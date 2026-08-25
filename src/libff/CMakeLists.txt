@@ -87,6 +87,12 @@ option(
   ON
 )
 
+option(
+  INSTALL_LIBFF
+  "Install libff"
+  ON
+)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   # Common compilation flags and warning configuration
   set(

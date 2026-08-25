@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -30,7 +30,7 @@
 #include <common/args.h>
 #include <util/time.h>
 
-#include <stdint.h>
+#include <cstdint>
 #ifdef HAVE_MALLOC_INFO
 #include <malloc.h>
 #endif
@@ -39,8 +39,9 @@ using node::NodeContext;
 
 static RPCHelpMan setmocktime()
 {
-    return RPCHelpMan{"setmocktime",
-        "\nSet the local time to given timestamp (-regtest only)\n",
+    return RPCHelpMan{
+        "setmocktime",
+        "Set the local time to given timestamp (-regtest only)\n",
         {
             {"timestamp", RPCArg::Type::NUM, RPCArg::Optional::NO, UNIX_EPOCH_TIME + "\n"
              "Pass 0 to go back to using the system time."},
@@ -79,8 +80,9 @@ static RPCHelpMan setmocktime()
 
 static RPCHelpMan mockscheduler()
 {
-    return RPCHelpMan{"mockscheduler",
-        "\nBump the scheduler into the future (-regtest only)\n",
+    return RPCHelpMan{
+        "mockscheduler",
+        "Bump the scheduler into the future (-regtest only)\n",
         {
             {"delta_time", RPCArg::Type::NUM, RPCArg::Optional::NO, "Number of seconds to forward the scheduler into the future." },
         },
@@ -275,8 +277,9 @@ static RPCHelpMan logging()
 
 static RPCHelpMan echo(const std::string& name)
 {
-    return RPCHelpMan{name,
-                "\nSimply echo back the input arguments. This command is for testing.\n"
+    return RPCHelpMan{
+        name,
+        "Simply echo back the input arguments. This command is for testing.\n"
                 "\nIt will return an internal bug report when arg9='trigger_internal_bug' is passed.\n"
                 "\nThe difference between echo and echojson is that echojson has argument conversion enabled in the client-side table in "
                 "runebase-cli and the GUI. There is no server-side difference.",
@@ -312,7 +315,7 @@ static RPCHelpMan echoipc()
 {
     return RPCHelpMan{
         "echoipc",
-        "\nEcho back the input argument, passing it through a spawned process in a multiprocess build.\n"
+        "Echo back the input argument, passing it through a spawned process in a multiprocess build.\n"
         "This command is for testing.\n",
         {{"arg", RPCArg::Type::STR, RPCArg::Optional::NO, "The string to echo",}},
         RPCResult{RPCResult::Type::STR, "echo", "The echoed string."},
@@ -360,8 +363,9 @@ static UniValue SummaryToJSON(const IndexSummary&& summary, std::string index_na
 
 static RPCHelpMan getindexinfo()
 {
-    return RPCHelpMan{"getindexinfo",
-                "\nReturns the status of one or all available indices currently running in the node.\n",
+    return RPCHelpMan{
+        "getindexinfo",
+        "Returns the status of one or all available indices currently running in the node.\n",
                 {
                     {"index_name", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "Filter results for an index with a specific name."},
                 },
@@ -407,7 +411,7 @@ static RPCHelpMan getindexinfo()
 static RPCHelpMan getdgpinfo()
 {
     return RPCHelpMan{"getdgpinfo",
-                "\nReturns an object containing DGP state info.\n",
+                "Returns an object containing DGP state info.\n",
                 {},
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
@@ -443,7 +447,7 @@ static RPCHelpMan getdgpinfo()
 static RPCHelpMan getblockhashes()
 {
     return RPCHelpMan{"getblockhashes",
-                "\nReturns array of hashes of blocks within the timestamp range provided.\n",
+                "Returns array of hashes of blocks within the timestamp range provided.\n",
                 {
                     {"high", RPCArg::Type::NUM, RPCArg::Optional::NO, "The newer block timestamp"},
                     {"low", RPCArg::Type::NUM, RPCArg::Optional::NO, "The older block timestamp"},
@@ -597,7 +601,7 @@ bool getAddressFromIndex(const int &type, const uint256 &hash, std::string &addr
 static RPCHelpMan getaddressdeltas()
 {
     return RPCHelpMan{"getaddressdeltas",
-            "\nReturns all changes for an address (requires addressindex to be enabled).\n",
+            "Returns all changes for an address (requires addressindex to be enabled).\n",
             {
                 {"argument", RPCArg::Type::OBJ, RPCArg::Optional::NO, "Json object",
                     {
@@ -764,7 +768,7 @@ static RPCHelpMan getaddressdeltas()
 static RPCHelpMan getaddressbalance()
 {
     return RPCHelpMan{"getaddressbalance",
-                "\nReturns the balance for an address(es) (requires addressindex to be enabled).\n",
+                "Returns the balance for an address(es) (requires addressindex to be enabled).\n",
                 {
                     {"argument", RPCArg::Type::OBJ, RPCArg::Optional::NO, "Json object",
                         {
@@ -835,7 +839,7 @@ static RPCHelpMan getaddressbalance()
 static RPCHelpMan getaddressutxos()
 {
     return RPCHelpMan{"getaddressutxos",
-                "\nReturns all unspent outputs for an address (requires addressindex to be enabled).\n",
+                "Returns all unspent outputs for an address (requires addressindex to be enabled).\n",
                 {
                     {"argument", RPCArg::Type::OBJ, RPCArg::Optional::NO, "Json object",
                         {
@@ -958,7 +962,7 @@ static RPCHelpMan getaddressutxos()
 static RPCHelpMan getaddressmempool()
 {
     return RPCHelpMan{"getaddressmempool",
-                "\nReturns all mempool deltas for an address (requires addressindex to be enabled).\n",
+                "Returns all mempool deltas for an address (requires addressindex to be enabled).\n",
                 {
                     {"argument", RPCArg::Type::OBJ, RPCArg::Optional::NO, "Json object",
                         {
@@ -1038,7 +1042,7 @@ static RPCHelpMan getaddressmempool()
 static RPCHelpMan getspentinfo()
 {
     return RPCHelpMan{"getspentinfo",
-                "\nReturns the txid and index where an output is spent.\n",
+                "Returns the txid and index where an output is spent.\n",
                 {
                     {"argument", RPCArg::Type::OBJ, RPCArg::Optional::NO, "Transaction data",
                         {
@@ -1095,7 +1099,7 @@ static RPCHelpMan getspentinfo()
 static RPCHelpMan getaddresstxids()
 {
     return RPCHelpMan{"getaddresstxids",
-                "\nReturns the txids for an address(es) (requires addressindex to be enabled).\n",
+                "Returns the txids for an address(es) (requires addressindex to be enabled).\n",
                 {
                     {"argument", RPCArg::Type::OBJ, RPCArg::Optional::NO, "Json object",
                         {
@@ -1213,7 +1217,7 @@ std::vector<std::string> getListArgsType()
 static RPCHelpMan listconf()
 {
     return RPCHelpMan{"listconf",
-                "\nReturns the current options that runebased was started with.\n",
+                "Returns the current options that runebased was started with.\n",
                 {},
                 RPCResult{
                     RPCResult::Type::OBJ_DYN, "", "",

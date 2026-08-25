@@ -94,12 +94,7 @@ static void RegisterMetaTypes()
     qRegisterMetaType<std::function<void()>>("std::function<void()>");
     qRegisterMetaType<QMessageBox::Icon>("QMessageBox::Icon");
     qRegisterMetaType<interfaces::BlockAndHeaderTipInfo>("interfaces::BlockAndHeaderTipInfo");
-
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    qRegisterMetaTypeStreamOperators<BitcoinUnit>("BitcoinUnit");
-#else
     qRegisterMetaType<BitcoinUnit>("BitcoinUnit");
-#endif
 }
 
 static QString GetLangTerritory()
@@ -138,11 +133,7 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
     // - First load the translator for the base language, without territory
     // - Then load the more specific locale translator
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    const QString translation_path{QLibraryInfo::location(QLibraryInfo::TranslationsPath)};
-#else
     const QString translation_path{QLibraryInfo::path(QLibraryInfo::TranslationsPath)};
-#endif
     // Load e.g. qt_de.qm
     if (qtTranslatorBase.load("qt_" + lang, translation_path)) {
         QApplication::installTranslator(&qtTranslatorBase);
@@ -203,7 +194,7 @@ void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, cons
     if (type == QtDebugMsg) {
         LogDebug(BCLog::QT, "GUI: %s\n", msg.toStdString());
     } else {
-        LogPrintf("GUI: %s\n", msg.toStdString());
+        LogInfo("GUI: %s", msg.toStdString());
     }
 }
 
@@ -457,7 +448,6 @@ void BitcoinApplication::initializeResult(bool success, interfaces::BlockAndHead
             window->showMinimized();
         }
 
-
 #ifdef ENABLE_WALLET
         // Now that initialization/startup is done, process any command-line
         // bitcoin: URIs or payment requests:
@@ -477,7 +467,6 @@ void BitcoinApplication::initializeResult(bool success, interfaces::BlockAndHead
 
     if(success) {
         Q_EMIT windowShown(window);
-
     } else {
         requestShutdown();
     }
@@ -594,7 +583,6 @@ void BitcoinApplication::restartWallet()
     }
 }
 
-
 static void SetupUIArgs(ArgsManager& argsman)
 {
     argsman.AddArg("-choosedatadir", strprintf("Choose data directory on startup (default: %u)", DEFAULT_CHOOSE_DATADIR), ArgsManager::ALLOW_ANY, OptionsCategory::GUI);
@@ -627,12 +615,6 @@ int GuiMain(int argc, char* argv[])
     /// 1. Basic Qt initialization (not dependent on parameters or configuration)
     Q_INIT_RESOURCE(bitcoin);
     Q_INIT_RESOURCE(bitcoin_locale);
-
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    // Generate high-dpi pixmaps
-    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
 
 #if defined(QT_QPA_PLATFORM_ANDROID)
     QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
@@ -685,8 +667,6 @@ int GuiMain(int argc, char* argv[])
             return EXIT_FAILURE;
         }
     }
-
- 
 
     /// 3. Application identification
     // must be set before OptionsModel is initialized or translations are loaded,

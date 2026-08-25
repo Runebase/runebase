@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -17,23 +17,20 @@
 #include <netbase.h>
 #include <node/caches.h>
 #include <node/chainstatemanager_args.h>
+#include <univalue.h>
 #include <util/string.h>
-#include <validation.h>    // For DEFAULT_SCRIPTCHECK_THREADS
-#include <wallet/wallet.h> // For DEFAULT_SPEND_ZEROCONF_CHANGE
-
-
+#include <validation.h>
+#include <wallet/wallet.h>
 #ifdef ENABLE_WALLET
 #include <wallet/walletdb.h>
 #endif
+#include <util/moneystr.h>
 
 #include <QDebug>
 #include <QLatin1Char>
 #include <QSettings>
 #include <QStringList>
 #include <QVariant>
-
-#include <univalue.h>
-#include <util/moneystr.h>
 
 const char *DEFAULT_GUI_PROXY_HOST = "127.0.0.1";
 
@@ -59,7 +56,6 @@ static const char* SettingName(OptionsModel::OptionID option)
     case OptionsModel::ProxyPortTor: return "onion";
     case OptionsModel::ProxyUseTor: return "onion";
     case OptionsModel::Language: return "lang";
-
     case OptionsModel::HWIToolPath: return "hwitoolpath";
     case OptionsModel::StakeLedgerId: return "stakerledgerid";
     case OptionsModel::SignPSBTWithHWITool: return "signpsbtwithhwitool";
@@ -265,7 +261,6 @@ bool OptionsModel::Init(bilingual_str& error)
     m_sub_fee_from_amount = settings.value("SubFeeFromAmount", false).toBool();
 #endif
 
-
     if (!settings.contains("fCheckForUpdates"))
         settings.setValue("fCheckForUpdates", DEFAULT_CHECK_FOR_UPDATES);
     fCheckForUpdates = settings.value("fCheckForUpdates").toBool();
@@ -283,7 +278,6 @@ bool OptionsModel::Init(bilingual_str& error)
     Q_EMIT fontForMoneyChanged(getFontForMoney());
 
     m_mask_values = settings.value("mask_values", false).toBool();
-
 
     if (!settings.contains("Theme"))
         settings.setValue("Theme", "");
@@ -483,14 +477,12 @@ QVariant OptionsModel::getOption(OptionID option, const std::string& suffix) con
         return QString::fromStdString(SettingToString(setting(), ""));
     case SubFeeFromAmount:
         return m_sub_fee_from_amount;
-
     case ZeroBalanceAddressToken:
         return settings.value("bZeroBalanceAddressToken");
     case ReserveBalance:
         return QString::fromStdString(SettingToString(setting(), FormatMoney(wallet::DEFAULT_RESERVE_BALANCE)));
     case SignPSBTWithHWITool:
         return SettingToBool(setting(), wallet::DEFAULT_SIGN_PSBT_WITH_HWI_TOOL);
-
 #endif
     case DisplayUnit:
         return QVariant::fromValue(m_display_bitcoin_unit);
@@ -550,7 +542,6 @@ QFont OptionsModel::getFontForChoice(const FontChoice& fc)
     QFont f;
     if (std::holds_alternative<FontChoiceAbstract>(fc)) {
         f = GUIUtil::fixedPitchFont(fc != UseBestSystemFont);
-
     } else {
         f = std::get<QFont>(fc);
     }
@@ -672,7 +663,6 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         m_sub_fee_from_amount = value.toBool();
         settings.setValue("SubFeeFromAmount", m_sub_fee_from_amount);
         break;
-
     case ZeroBalanceAddressToken:
         bZeroBalanceAddressToken = value.toBool();
         settings.setValue("bZeroBalanceAddressToken", bZeroBalanceAddressToken);
@@ -684,7 +674,6 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
             setRestartRequired(true);
         }
         break;
-
 #endif
     case DisplayUnit:
         setDisplayUnit(value);
@@ -744,7 +733,6 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
             setRestartRequired(true);
         }
         break;
-
     case LogEvents:
         if (changed()) {
             update(value.toBool());
@@ -765,7 +753,6 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         }
         break;
 #endif
-
     case ThreadsScriptVerif:
         if (changed()) {
             update(static_cast<int64_t>(value.toLongLong()));
@@ -783,7 +770,6 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         m_mask_values = value.toBool();
         settings.setValue("mask_values", m_mask_values);
         break;
-
 #ifdef ENABLE_WALLET
     case UseChangeAddress:
         if (changed()) {
@@ -818,7 +804,6 @@ bool OptionsModel::setOption(OptionID option, const QVariant& value, const std::
         }
         break;
 #endif
-
     default:
         break;
     }
@@ -882,7 +867,6 @@ void OptionsModel::checkAndMigrate()
         settings.setValue("addrSeparateProxyTor", GetDefaultProxyAddress());
     }
 
-
 #ifdef ENABLE_WALLET
     // Overwrite fNotUseChangeAddress for backward compatibility reason
     if (settings.contains("fNotUseChangeAddress"))
@@ -920,11 +904,9 @@ void OptionsModel::checkAndMigrate()
                 ProxySetting parsed = ParseProxyString(value.toString());
                 setOption(ProxyIPTor, parsed.ip);
                 setOption(ProxyPortTor, parsed.port);
-
             } else if (option == ReserveBalance) {
                 std::string balance = FormatMoney(value.toLongLong());
                 setOption(ReserveBalance, QString::fromStdString(balance));
-
             } else {
                 setOption(option, value);
             }
@@ -937,14 +919,12 @@ void OptionsModel::checkAndMigrate()
 #ifdef ENABLE_WALLET
     migrate_setting(SpendZeroConfChange, "bSpendZeroConfChange");
     migrate_setting(ExternalSignerPath, "external_signer_path");
-
     migrate_setting(HWIToolPath, "HWIToolPath");
     migrate_setting(StakeLedgerId, "StakeLedgerId");
     migrate_setting(SignPSBTWithHWITool, "signPSBTWithHWITool");
     migrate_setting(UseChangeAddress, "fUseChangeAddress");
     migrate_setting(ReserveBalance, "nReserveBalance");
     migrate_setting(SuperStaking, "fSuperStaking");
-
 #endif
     migrate_setting(MapPortNatpmp, "fUseNatpmp");
     migrate_setting(Listen, "fListen");
@@ -965,7 +945,6 @@ void OptionsModel::checkAndMigrate()
     // (https://github.com/bitcoin-core/gui/issues/567).
     node().initParameterInteraction();
 }
-
 
 bool OptionsModel::getRestartApp() const
 {

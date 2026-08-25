@@ -68,7 +68,6 @@ private Q_SLOTS:
     void LimitTransactionRows();
     void updateDisplayUnit();
     void updateAlerts(const QString &warnings);
-    void updateWatchOnlyLabels(bool showWatchOnly);
     void setMonospacedFont(const QFont&);
     void on_showMoreButton_clicked();
     void on_buttonSend_clicked();

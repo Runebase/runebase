@@ -6,6 +6,7 @@
 #define BITCOIN_QT_TRANSACTIONRECORD_H
 
 #include <consensus/amount.h>
+#include <primitives/transaction_identifier.h>
 #include <uint256.h>
 
 #include <QList>
@@ -82,13 +83,13 @@ public:
     {
     }
 
-    TransactionRecord(uint256 _hash, qint64 _time):
+    TransactionRecord(Txid _hash, qint64 _time):
             hash(_hash), time(_time), type(Other), debit(0),
             credit(0), idx(0)
     {
     }
 
-    TransactionRecord(uint256 _hash, qint64 _time,
+    TransactionRecord(Txid _hash, qint64 _time,
                 Type _type, const std::string &_address,
                 const CAmount& _debit, const CAmount& _credit):
             hash(_hash), time(_time), type(_type), address(_address), debit(_debit), credit(_credit),
@@ -103,7 +104,7 @@ public:
 
     /** @name Immutable transaction attributes
       @{*/
-    uint256 hash;
+    Txid hash;
     qint64 time;
     Type type;
     std::string address;
@@ -116,9 +117,6 @@ public:
 
     /** Status: can change with block chain update */
     TransactionStatus status;
-
-    /** Whether the transaction was sent/received with a watch-only address */
-    bool involvesWatchAddress;
 
     /** Return the unique identifier for this transaction (part) */
     QString getTxHash() const;

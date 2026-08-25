@@ -1,9 +1,9 @@
 #include "delegationfilterproxy.h"
 
 // Earliest date that can be represented (far in the past)
-const QDateTime DelegationFilterProxy::MIN_DATE = QDateTime::fromTime_t(0);
+const QDateTime DelegationFilterProxy::MIN_DATE = QDateTime::fromSecsSinceEpoch(0);
 // Last date that can be represented (far in the future)
-const QDateTime DelegationFilterProxy::MAX_DATE = QDateTime::fromTime_t(0xFFFFFFFF);
+const QDateTime DelegationFilterProxy::MAX_DATE = QDateTime::fromSecsSinceEpoch(0xFFFFFFFF);
 
 DelegationFilterProxy::DelegationFilterProxy(QObject *parent) :
     QSortFilterProxyModel(parent),

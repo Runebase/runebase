@@ -47,9 +47,6 @@ INPUTS = [
 OUTPUTS = {convert_btc_address_to_runebase('mpLQjfK79b7CCV4VMJWEWAj5Mpx8Up5zxB'): 0.1}
 
 class SignRawTransactionWithKeyTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 1
 

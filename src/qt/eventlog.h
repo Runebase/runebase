@@ -25,7 +25,7 @@ public:
     /**
      * @brief searchTokenTx Search the event log for token transactions
      * @param node Select node to search
-     * @param wallet Select wallet to search
+     * @param wallet_model Select wallet model to search
      * @param fromBlock Begin from block
      * @param toBlock End to block
      * @param minconf Minimum confirmations
@@ -41,7 +41,7 @@ public:
     /**
      * @brief search Search for log events
      * @param node Select node to search
-     * @param wallet Select wallet to search
+     * @param wallet_model Select wallet model to search
      * @param fromBlock Begin from block
      * @param toBlock End to block
      * @param minconf Minimum confirmations

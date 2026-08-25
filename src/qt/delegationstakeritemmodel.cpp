@@ -230,7 +230,7 @@ QVariant DelegationStakerItemModel::data(const QModelIndex &index, int role) con
         switch(index.column())
         {
         case Date:
-            return QDateTime::fromTime_t(static_cast<uint>(rec->time));
+            return QDateTime::fromSecsSinceEpoch(static_cast<uint>(rec->time));
         case Delegate:
             return rec->delegateAddress;
         case Fee:
@@ -246,7 +246,7 @@ QVariant DelegationStakerItemModel::data(const QModelIndex &index, int role) con
         switch(index.column())
         {
         case Date:
-            return QDateTime::fromTime_t(static_cast<uint>(rec->time));
+            return QDateTime::fromSecsSinceEpoch(static_cast<uint>(rec->time));
         case Delegate:
             return rec->delegateAddress;
         case Fee:
@@ -275,7 +275,7 @@ QVariant DelegationStakerItemModel::data(const QModelIndex &index, int role) con
         return rec->fee;
         break;
     case DelegationStakerItemModel::DateRole:
-        return QDateTime::fromTime_t(static_cast<uint>(rec->time));
+        return QDateTime::fromSecsSinceEpoch(static_cast<uint>(rec->time));
         break;
     case DelegationStakerItemModel::BlockNumberRole:
         return rec->blockNumber;
@@ -300,8 +300,7 @@ QVariant DelegationStakerItemModel::data(const QModelIndex &index, int role) con
 void DelegationStakerItemModel::updateDelegationStakerData(const QString &hash, int status, bool showDelegationStaker)
 {
     // Find delegationStaker in wallet
-    uint160 updated;
-    updated.SetHexDeprecated(hash.toStdString());
+    uint160 updated = uint160::FromHex(hash.toStdString()).value_or(uint160());
     interfaces::DelegationStakerInfo delegationStaker =walletModel->wallet().getDelegationStaker(updated);
     showDelegationStaker &= delegationStaker.hash == updated;
 

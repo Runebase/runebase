@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.util import wallet_importprivkey
 from test_framework.runebase import activate_mpos
 from test_framework.runebaseconfig import COINBASE_MATURITY
 from test_framework.address import byte_to_base58
@@ -9,9 +10,6 @@ import time
 import struct
 
 class RunebaseCallContractTimestampTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True
@@ -23,7 +21,7 @@ class RunebaseCallContractTimestampTest(BitcoinTestFramework):
     def run_test(self):
         self.node = self.nodes[0]
         privkey = byte_to_base58(hash256(struct.pack('<I', 0)), 239)
-        self.node.importprivkey(privkey)
+        wallet_importprivkey(self.node, privkey, 0)
 
         self.generatetoaddress(self.node, 100 + COINBASE_MATURITY, "qSrM9K6FMhZ29Vkp8Rdk8Jp66bbfpjFETq")
 

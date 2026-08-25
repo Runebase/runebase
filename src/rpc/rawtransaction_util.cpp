@@ -18,6 +18,7 @@
 #include <tinyformat.h>
 #include <univalue.h>
 #include <util/rbf.h>
+#include <util/string.h>
 #include <util/strencodings.h>
 #include <util/translation.h>
 
@@ -150,7 +151,7 @@ void AddOutputs(CMutableTransaction& rawTx, const UniValue& outputs_in, IRawCont
     }
 }
 
-CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf, IRawContract* rawContract)
+CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf, const uint32_t version, IRawContract* rawContract)
 {
     CMutableTransaction rawTx;
 
@@ -160,6 +161,11 @@ CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniVal
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, locktime out of range");
         rawTx.nLockTime = nLockTime;
     }
+
+    if (version < TX_MIN_STANDARD_VERSION || version > TX_MAX_STANDARD_VERSION) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid parameter, version out of range(%d~%d)", TX_MIN_STANDARD_VERSION, TX_MAX_STANDARD_VERSION));
+    }
+    rawTx.version = version;
 
     AddInputs(rawTx, inputs_in, rbf);
     AddOutputs(rawTx, outputs_in, rawContract);
@@ -314,7 +320,6 @@ void CheckSenderSignatures(CMutableTransaction& mtx)
     // Check the sender signatures are inside the outputs, before signing the inputs
     if(mtx.HasOpSender())
     {
-        int nOut = 0;
         for (const auto& output : mtx.vout)
         {
             if(output.scriptPubKey.HasOpSender())
@@ -324,19 +329,21 @@ void CheckSenderSignatures(CMutableTransaction& mtx)
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "Missing contract sender signature,"
                                                               "use signrawsendertransactionwithwallet or signrawsendertransactionwithkey to sign the outputs");
             }
-            nOut++;
         }
     }
 }
 
 void SignTransaction(CMutableTransaction& mtx, const SigningProvider* keystore, const std::map<COutPoint, Coin>& coins, const UniValue& hashType, UniValue& result)
 {
-    int nHashType = ParseSighashString(hashType);
+    std::optional<int> nHashType = ParseSighashString(hashType);
+    if (!nHashType) {
+        nHashType = SIGHASH_DEFAULT;
+    }
 
     // Script verification errors
     std::map<int, bilingual_str> input_errors;
 
-    bool complete = SignTransaction(mtx, keystore, coins, nHashType, input_errors);
+    bool complete = SignTransaction(mtx, keystore, coins, *nHashType, input_errors);
     SignTransactionResultToJSON(mtx, complete, coins, input_errors, result);
 }
 
@@ -373,12 +380,15 @@ static void TxOutErrorToJSON(const CTxOut& output, UniValue& vErrorsRet, const s
 
 void SignTransactionOutput(CMutableTransaction &mtx, FlatSigningProvider *keystore, const UniValue &hashType, UniValue &result)
 {
-    int nHashType = ParseSighashString(hashType);
+    std::optional<int> nHashType = ParseSighashString(hashType);
+    if (!nHashType) {
+        nHashType = SIGHASH_DEFAULT;
+    }
 
     // Script verification errors
     std::map<int, std::string> output_errors;
 
-    bool complete = SignTransactionOutput(mtx, keystore, nHashType, output_errors);
+    bool complete = SignTransactionOutput(mtx, keystore, *nHashType, output_errors);
     SignTransactionOutputResultToJSON(mtx, complete, output_errors, result);
 }
 

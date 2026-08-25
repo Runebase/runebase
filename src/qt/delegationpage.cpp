@@ -244,8 +244,7 @@ void DelegationPage::editStakerName()
         QString stakerName = indexMenu.data(DelegationItemModel::StakerNameRole).toString();
         QString stakerAddress = indexMenu.data(DelegationItemModel::StakerAddressRole).toString();
         QString sHash = indexMenu.data(DelegationItemModel::HashRole).toString();
-        uint256 hash;
-        hash.SetHexDeprecated(sHash.toStdString());
+        uint256 hash = uint256::FromHex(sHash.toStdString()).value_or(uint256::ZERO);
 
         EditSuperStakerDialog dlg;
         dlg.setData(stakerName, stakerAddress);

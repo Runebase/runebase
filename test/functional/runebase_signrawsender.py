@@ -9,11 +9,9 @@ from test_framework.blocktools import *
 from test_framework.p2p import *
 from test_framework.address import *
 from test_framework.runebase import *
+from test_framework.wallet_util import generate_keypair
 
 class RunebaseSignRawSenderTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = True
@@ -81,12 +79,18 @@ class RunebaseSignRawSenderTest(BitcoinTestFramework):
         # Now send some runebase to both addresses (one contract will increase its balance and the other one will throw),
         # sign using signrawsendertransactionwithkey using a node that does not hold the keys in its keystore
         contract_addresses = list(set(self.nodes[0].listcontracts().keys()) - contract_addresses)
-        senders = [self.nodes[0].getnewaddress() for i in range(2)]
+        sender_wifs = []
+        senders = []
+        for i in range(2):
+            wif, pubkey = generate_keypair(wif=True)
+            sender_wifs.append(wif)
+            senders.append(key_to_p2pkh(pubkey))
+            wallet_importprivkey(self.nodes[0], wif, 0)
         tx = self.nodes[0].createrawtransaction([{"txid": coinbase_txes.pop(), "vout": 0}], [
             {"contract": {"data": "00", "contractAddress": contract_addresses[1], "amount": "1", "senderAddress": senders[0], "data": "00"}}, 
             {self.nodes[0].getnewaddress(): 19997}, 
             {"contract": {"data": "00", "contractAddress": contract_addresses[0], "amount": "1", "senderAddress": senders[1], "data": "00"}}])
-        res = self.nodes[1].signrawsendertransactionwithkey(tx, [self.nodes[0].dumpprivkey(sender) for sender in senders])
+        res = self.nodes[1].signrawsendertransactionwithkey(tx, sender_wifs)
         assert(res['complete'])
         tx = res['hex']
         res = self.nodes[0].signrawtransactionwithwallet(tx)

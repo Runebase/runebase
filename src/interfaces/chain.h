@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022 The Bitcoin Core developers
+// Copyright (c) 2018-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,15 +7,17 @@
 
 #include <blockfilter.h>
 #include <common/settings.h>
-#include <primitives/transaction.h> // For CTransactionRef
+#include <primitives/transaction.h>
 #include <util/result.h>
-#include <netbase.h>                // For ConnectionDirection
+#include <netbase.h>
+#include <span.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
-#include <stddef.h>
-#include <stdint.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -39,6 +41,7 @@ struct FeeCalculation;
 namespace node {
 struct NodeContext;
 } // namespace node
+class CRPCCommand;
 class ChainstateManager;
 class CTxMemPool;
 class CBlockIndex;
@@ -169,13 +172,6 @@ public:
     //! pruned), and contains transactions.
     virtual bool haveBlockOnDisk(int height) = 0;
 
-    //! Get locator for the current chain tip.
-    virtual CBlockLocator getTipLocator() = 0;
-
-    //! Return a locator that refers to a block in the active chain.
-    //! If specified block is not in the active chain, return locator for the latest ancestor that is in the chain.
-    virtual CBlockLocator getActiveChainLocator(const uint256& block_hash) = 0;
-
     //! Return height of the highest block on chain in common with the locator,
     //! which will either be the original block used to create the locator,
     //! or one of its ancestors.
@@ -237,10 +233,10 @@ public:
     virtual RBFTransactionState isRBFOptIn(const CTransaction& tx) = 0;
 
     //! Check if transaction is in mempool.
-    virtual bool isInMempool(const uint256& txid) = 0;
+    virtual bool isInMempool(const Txid& txid) = 0;
 
     //! Check if transaction has descendants in mempool.
-    virtual bool hasDescendantsInMempool(const uint256& txid) = 0;
+    virtual bool hasDescendantsInMempool(const Txid& txid) = 0;
 
     //! Transaction is added to memory pool, if the transaction fee is below the
     //! amount specified by max_tx_fee, and broadcast to all peers if relay is set to true.
@@ -251,7 +247,7 @@ public:
         std::string& err_string) = 0;
 
     //! Calculate mempool ancestor and descendant counts for the given transaction.
-    virtual void getTransactionAncestry(const uint256& txid, size_t& ancestors, size_t& descendants, size_t* ancestorsize = nullptr, CAmount* ancestorfees = nullptr) = 0;
+    virtual void getTransactionAncestry(const Txid& txid, size_t& ancestors, size_t& descendants, size_t* ancestorsize = nullptr, CAmount* ancestorfees = nullptr) = 0;
 
     //! For each outpoint, calculate the fee-bumping cost to spend this outpoint at the specified
     //  feerate, including bumping its ancestors. For example, if the target feerate is 10sat/vbyte
@@ -362,6 +358,17 @@ public:
         virtual void chainStateFlushed(ChainstateRole role, const CBlockLocator& locator) {}
     };
 
+    //! Options specifying which chain notifications are required.
+    struct NotifyOptions
+    {
+        //! Include undo data with block connected notifications.
+        bool connect_undo_data = false;
+        //! Include block data with block disconnected notifications.
+        bool disconnect_data = false;
+        //! Include undo data with block disconnected notifications.
+        bool disconnect_undo_data = false;
+    };
+
     //! Register handler for notifications.
     virtual std::unique_ptr<Handler> handleNotifications(std::shared_ptr<Notifications> notifications) = 0;
 
@@ -375,9 +382,6 @@ public:
 
     //! Check if deprecated RPC is enabled.
     virtual bool rpcEnableDeprecated(const std::string& method) = 0;
-
-    //! Run function after given number of seconds. Cancel any previous calls with same name.
-    virtual void rpcRunLater(const std::string& name, std::function<void()> fn, int64_t seconds) = 0;
 
     //! Get settings value.
     virtual common::SettingsValue getSetting(const std::string& arg) = 0;
@@ -452,10 +456,10 @@ public:
     virtual void refreshDelegates(wallet::CWallet *pwallet, bool myDelegates, bool stakerDelegates) = 0;
 
     //! get contract RPC commands.
-    virtual Span<const CRPCCommand> getContractRPCCommands() = 0;
+    virtual std::span<const CRPCCommand> getContractRPCCommands() = 0;
 
     //! get mining RPC commands.
-    virtual Span<const CRPCCommand> getMiningRPCCommands() = 0;
+    virtual std::span<const CRPCCommand> getMiningRPCCommands() = 0;
 #endif
 
     //! get delegation for an address.
@@ -483,9 +487,6 @@ public:
 
     //! Start client execution and provide a scheduler.
     virtual void start(CScheduler& scheduler) = 0;
-
-    //! Save state to disk.
-    virtual void flush() = 0;
 
     //! Shut down client.
     virtual void stop() = 0;

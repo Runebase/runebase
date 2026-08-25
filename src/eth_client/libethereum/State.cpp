@@ -224,7 +224,7 @@ unordered_map<Address, u256> State::addresses() const
     for (auto& i: m_cache)
         if (i.second.isAlive())
             ret[i.first] = i.second.balance();
-    for (auto const& i: m_state)
+    for (auto const i: m_state)
         if (m_cache.find(i.first) == m_cache.end())
             ret[i.first] = RLP(i.second)[1].toInt<u256>();
     return ret;
@@ -736,7 +736,7 @@ std::ostream& dev::eth::operator<<(std::ostream& _out, State const& _s)
                 if (r)
                 {
                     SecureTrieDB<h256, OverlayDB> memdb(const_cast<OverlayDB*>(&_s.m_db), r[2].toHash<h256>());     // promise we won't alter the overlay! :)
-                    for (auto const& j: memdb) {
+                    for (auto const j: memdb) {
                         // mem[j.first] = RLP(j.second).toInt<u256>(), back.insert(j.first);
                         // The above line fails to compile in C++ 20 due to an invalid static_cast, replacement:
                         if (mem.find(j.first) == mem.end()) {

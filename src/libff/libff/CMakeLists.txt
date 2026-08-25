@@ -63,18 +63,20 @@ target_include_directories(
   PUBLIC ..
 )
 
-install(
-  DIRECTORY "" DESTINATION "include/libff"
-  FILES_MATCHING
-  PATTERN "*.hpp"
-  PATTERN "*.tcc"
-  PATTERN "tests" EXCLUDE
-  PATTERN "examples" EXCLUDE
-)
+if ("${INSTALL_LIBFF}")
+  install(
+    DIRECTORY "" DESTINATION "include/libff"
+    FILES_MATCHING
+    PATTERN "*.hpp"
+    PATTERN "*.tcc"
+    PATTERN "tests" EXCLUDE
+    PATTERN "examples" EXCLUDE
+  )
 
-install(
-  TARGETS ff DESTINATION lib
-)
+  install(
+    TARGETS ff DESTINATION lib
+  )
+endif()
 
 # Tests
 if ("${IS_LIBFF_PARENT}")

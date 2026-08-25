@@ -10,9 +10,6 @@ import time
 
 
 class RunebaseDuplicateStakeTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 2
@@ -37,24 +34,21 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         # Create one "normal" block
         block, block_sig_key = create_unsigned_pos_block(self.node, self.staking_prevouts, nTime=t)
         block.sign_block(block_sig_key)
-        block.rehash()
 
         # Create a slightly different block using the same staking utxo (only difference is the nonce)
         alt_block = CBlock(block)
         alt_block.vtx = block.vtx[:]
         alt_block.nNonce = 1
-        alt_block.rehash()
         alt_block.sign_block(block_sig_key)
-        alt_block.rehash()
 
         # Send <block> to node
-        self.p2p_node.send_message(msg_block(block))
+        self.p2p_node.send_without_ping(msg_block(block))
         # Send <alt_block> to alt_node
-        self.p2p_alt_node.send_message(msg_block(alt_block))
+        self.p2p_alt_node.send_without_ping(msg_block(alt_block))
         time.sleep(2)
 
-        assert_equal(self.node.getbestblockhash(), block.hash)
-        assert_equal(self.alt_node.getbestblockhash(), alt_block.hash)
+        assert_equal(self.node.getbestblockhash(), block.hash_hex)
+        assert_equal(self.alt_node.getbestblockhash(), alt_block.hash_hex)
 
         # Build a longer chain on alt_node
         self.generate(self.alt_node, 1)
@@ -67,7 +61,6 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         # Create one "normal" block
         block, block_sig_key = create_unsigned_pos_block(self.node, self.staking_prevouts, nTime=t)
         block.sign_block(block_sig_key)
-        block.rehash()
 
         # Create a different block that spends the prevoutStake from <block>
         alt_block, alt_block_sig_key = create_unsigned_pos_block(self.alt_node, self.alt_staking_prevouts, nTime=t)
@@ -77,18 +70,16 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         tx = rpc_sign_transaction(self.node, tx)
         alt_block.vtx.append(tx)
         alt_block.hashMerkleRoot = alt_block.calc_merkle_root()
-        alt_block.rehash()
         alt_block.sign_block(alt_block_sig_key)
-        alt_block.rehash()
 
         # Send <alt_block> to alt_node
-        self.p2p_alt_node.send_message(msg_block(alt_block))
+        self.p2p_alt_node.send_without_ping(msg_block(alt_block))
         # Send <block> to node
-        self.p2p_node.send_message(msg_block(block))
+        self.p2p_node.send_without_ping(msg_block(block))
         time.sleep(2)
 
-        assert_equal(self.node.getbestblockhash(), block.hash)
-        assert_equal(self.alt_node.getbestblockhash(), alt_block.hash)
+        assert_equal(self.node.getbestblockhash(), block.hash_hex)
+        assert_equal(self.alt_node.getbestblockhash(), alt_block.hash_hex)
         # Build a longer chain on alt_node
         self.generate(self.alt_node, 1)
         self.sync_all()
@@ -101,7 +92,6 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         # Create one "normal" block
         block, block_sig_key = create_unsigned_pos_block(self.node, self.staking_prevouts, nTime=t)
         block.sign_block(block_sig_key)
-        block.rehash()
 
         # Create a different block that spends the prevoutStake from <block>
         alt_block, alt_block_sig_key = create_unsigned_pos_block(self.alt_node, self.alt_staking_prevouts, nTime=t)
@@ -111,20 +101,18 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
         tx = rpc_sign_transaction(self.node, tx)
         alt_block.vtx.append(tx)
         alt_block.hashMerkleRoot = alt_block.calc_merkle_root()
-        alt_block.rehash()
         alt_block.sign_block(alt_block_sig_key)
-        alt_block.rehash()
 
         # Send <alt_block> to alt_node
-        self.p2p_alt_node.send_message(msg_block(alt_block))
+        self.p2p_alt_node.send_without_ping(msg_block(alt_block))
         time.sleep(5)
         generatesynchronized(self.alt_node, COINBASE_MATURITY, None, self.nodes)
         time.sleep(5)
         
         # Send <block> to node
-        self.p2p_node.send_message(msg_block(block))
+        self.p2p_node.send_without_ping(msg_block(block))
         time.sleep(5)
-        assert_raises_rpc_error(-5, "Block not found", self.node.getblockheader, block.hash)
+        assert_raises_rpc_error(-5, "Block not found", self.node.getblockheader, block.hash_hex)
 
         time.sleep(2)
         self.sync_all()
@@ -134,7 +122,7 @@ class RunebaseDuplicateStakeTest(BitcoinTestFramework):
     def run_test(self):
         privkey = byte_to_base58(hash256(struct.pack('<I', 0)), 239)
         for n in self.nodes:
-            n.importprivkey(privkey)
+            wallet_importprivkey(n, privkey, 0)
 
         self.node = self.nodes[0]
         self.alt_node = self.nodes[1]

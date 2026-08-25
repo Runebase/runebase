@@ -309,7 +309,7 @@ void AddDelegationPage::on_addDelegationClicked()
                         delegation.staker_address = stakerAddress.toStdString();
                         delegation.staker_name = stakerName.trimmed().toStdString();
                         delegation.fee = stakerFee;
-                        delegation.create_tx_hash.SetHexDeprecated(txid);
+                        delegation.create_tx_hash = uint256::FromHex(txid).value_or(uint256::ZERO);
                         m_model->wallet().addDelegationEntry(delegation);
                     }
                 }

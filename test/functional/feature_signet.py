@@ -41,9 +41,6 @@ class SignetParams:
             self.shared_args = ["-prune=550", f"-signetchallenge={challenge}"]
 
 class SignetBasicTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.chain = "signet"
         self.num_nodes = 6
@@ -106,7 +103,6 @@ class SignetBasicTest(BitcoinTestFramework):
         block = create_block(tmpl=self.nodes[0].getblock(self.nodes[0].getbestblockhash()))
         add_witness_commitment(block)
         block.vtx[0].vout[-1].scriptPubKey = b''.join([block.vtx[0].vout[-1].scriptPubKey, CScriptOp.encode_op_pushdata(SIGNET_HEADER)])
-        block.vtx[0].rehash()
         block.hashMerkleRoot = block.calc_merkle_root()
         block.solve()
         print(self.nodes[0].submitblock(block.serialize().hex()))
@@ -115,11 +111,11 @@ class SignetBasicTest(BitcoinTestFramework):
         import pprint
         pp = pprint.PrettyPrinter()
         pp.pprint(self.nodes[0].getblock(hex(block.hashPrevBlock)[2:].zfill(64)))
-        pp.pprint(self.nodes[0].getblock(hex(block.sha256)[2:].zfill(64)))
+        pp.pprint(self.nodes[0].getblock(block.hash_hex))
         pp.pprint(self.nodes[0].getblock(self.nodes[0].getbestblockhash()))
 
         print("PREV", hex(block.hashPrevBlock)[2:].zfill(64))
-        print("PREV", hex(block.sha256)[2:].zfill(64))
+        print("PREV", block.hash_hex)
         print("BEST", self.nodes[0].getbestblockhash(), self.nodes[0].getblockcount())
         pp.pprint(self.nodes[0].gettransaction(self.nodes[0].getblock(self.nodes[0].getbestblockhash())['tx'][0], True))
         return

@@ -275,7 +275,7 @@ bool ExtractDestination(const COutPoint& prevout, const CScript& scriptPubKey, C
         return true;
     }
     else if (whichType == TxoutType::CREATE) {
-        addressRet = PKHash(uint160(RunebaseState::createRunebaseAddress(uintToh256(prevout.hash), prevout.n).asBytes()));
+        addressRet = PKHash(uint160(RunebaseState::createRunebaseAddress(uintToh256(prevout.hash.ToUint256()), prevout.n).asBytes()));
         return true;
     }
     return false;

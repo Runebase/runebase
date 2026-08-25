@@ -24,6 +24,7 @@
 #include <util/translation.h>
 #include <validation.h>
 #include <versionbits.h>
+#include <pow.h>
 
 #include <test/util/setup_common.h>
 
@@ -72,146 +73,146 @@ BOOST_FIXTURE_TEST_SUITE(miner_tests, MinerTestingSetup)
 static CFeeRate blockMinFeeRate = CFeeRate(DEFAULT_BLOCK_MIN_TX_FEE);
 
 constexpr static struct {
-    unsigned char extranonce;
+    unsigned int extranonce;
     unsigned int nonce;
-} BLOCKINFO[]{{4, 0x000135b5}, {2, 0x0001535a}, {1, 0x00029f51}, {1, 0x000447a7},
-              {2, 0x00046a5d}, {2, 0x000452af}, {1, 0x000463ec}, {2, 0x00062f5e},
-              {2, 0x00079e2c}, {1, 0x0008a304}, {1, 0x000ae9a9}, {2, 0x000a6c15},
-              {2, 0x000b38f8}, {1, 0x000c58a1}, {2, 0x000ba426}, {2, 0x000dfb38},
-              {1, 0x000eb164}, {2, 0x000e46d9}, {1, 0x000e38c7}, {1, 0x000e4ff9},
-              {3, 0x00102efa}, {2, 0x0011c056}, {2, 0x001158b9}, {1, 0x00144969},
-              {2, 0x00146f39}, {1, 0x0014d8e8}, {2, 0x001601bc}, {2, 0x0016551d},
-              {2, 0x00177b22}, {2, 0x0018e947}, {2, 0x0019bb2d}, {2, 0x001bdc48},
-              {1, 0x0019fac5}, {2, 0x001b724d}, {2, 0x001b3967}, {1, 0x001dddb0},
-              {2, 0x001fb782}, {1, 0x001fb80f}, {2, 0x00220adb}, {1, 0x0023a504},
-              {1, 0x0024a22d}, {3, 0x00250dd7}, {2, 0x0025ee99}, {5, 0x0027b428},
-              {1, 0x002b2a28}, {5, 0x00299ac8}, {1, 0x0028a6cb}, {1, 0x002adf44},
-              {1, 0x002a8060}, {2, 0x002b99be}, {1, 0x002e9f05}, {1, 0x00306140},
-              {1, 0x002fa812}, {1, 0x0031ba13}, {5, 0x0033d7c8}, {5, 0x0032f635},
-              {1, 0x00361303}, {1, 0x0035ec1e}, {6, 0x003ac161}, {2, 0x003b8c90},
-              {2, 0x003a8544}, {1, 0x003befbf}, {1, 0x003c4593}, {1, 0x003dc673},
-              {2, 0x003c86fe}, {2, 0x003d6942}, {1, 0x003ffb6e}, {1, 0x0040b722},
-              {1, 0x004395ba}, {5, 0x004aa396}, {5, 0x004c338c}, {1, 0x004cb1cb},
-              {1, 0x004f17fd}, {2, 0x004e5b2a}, {2, 0x004f5944}, {1, 0x00503c96},
-              {2, 0x004f265c}, {1, 0x004f4d4d}, {2, 0x005058c9}, {2, 0x0052148c},
-              {1, 0x005489f8}, {1, 0x0054dd61}, {1, 0x005686fb}, {5, 0x00598f70},
-              {1, 0x0059064b}, {1, 0x005b574c}, {1, 0x005bc594}, {1, 0x005e65fe},
-              {1, 0x005e9c05}, {1, 0x0060c7a3}, {1, 0x005ef50f}, {2, 0x00607240},
-              {0, 0x0060f60f}, {1, 0x00626677}, {2, 0x0061feb9}, {2, 0x00644c94},
-              {2, 0x00655ec3}, {1, 0x006632cd}, {1, 0x006a4091}, {1, 0x006a5d59},
-              {1, 0x006b4be0}, {1, 0x006bd08f}, {1, 0x006dd899}, {5, 0x0075b7ce},
-              {2, 0x006dd957}, {1, 0x006ddd91}, {1, 0x00700ff2}, {1, 0x007177dd},
-              {2, 0x0070ef64}, {2, 0x0072fdfe}, {4, 0x0076ecfb}, {2, 0x0076bfe7},
-              {1, 0x0078a1c1}, {1, 0x00795659}, {2, 0x007989e8}, {2, 0x007d378e},
-              {1, 0x007ac186}, {2, 0x007afd06}, {2, 0x007b3640}, {1, 0x007bcbd8},
-              {1, 0x007bebf5}, {2, 0x00811938}, {2, 0x007f1a60}, {1, 0x007f59b6},
-              {2, 0x008020b2}, {2, 0x0082919a}, {1, 0x0082d03d}, {2, 0x008372ff},
-              {1, 0x0083d1bc}, {1, 0x0083a951}, {3, 0x008456c3}, {2, 0x008983bf},
-              {2, 0x0089d194}, {1, 0x008c74a1}, {2, 0x008b9d71}, {1, 0x008daf24},
-              {2, 0x008d97b1}, {2, 0x008e3f8c}, {2, 0x008e18ea}, {2, 0x0091d324},
-              {2, 0x00940a83}, {2, 0x009446ed}, {1, 0x00958602}, {2, 0x00957089},
-              {2, 0x00955338}, {1, 0x009721cc}, {2, 0x0096284d}, {1, 0x0095e5b9},
-              {2, 0x009772cb}, {1, 0x0099d53b}, {1, 0x0099860c}, {3, 0x009a3b3b},
-              {2, 0x009e6597}, {5, 0x009b44be}, {1, 0x009ae757}, {5, 0x009c89bf},
-              {1, 0x009cd503}, {1, 0x009d9a08}, {1, 0x009dbc32}, {2, 0x009fae8a},
-              {1, 0x009fa89d}, {1, 0x00a0f881}, {1, 0x00a08f52}, {1, 0x00a0cfb2},
-              {5, 0x00a0b3d9}, {5, 0x00a189d6}, {1, 0x00a3f1e4}, {1, 0x00a34149},
-              {6, 0x00a54ae6}, {2, 0x00a76413}, {2, 0x00a731ac}, {1, 0x00aa1e61},
-              {1, 0x00aae545}, {1, 0x00ae616e}, {2, 0x00af8b04}, {2, 0x00b15897},
-              {1, 0x00b1d797}, {1, 0x00b2514a}, {1, 0x00b6da2c}, {5, 0x00b5d69d},
-              {5, 0x00b60f8b}, {1, 0x00b7ddf4}, {1, 0x00b7f2d6}, {2, 0x00b9f1b8},
-              {2, 0x00bb1328}, {1, 0x00c3b765}, {2, 0x00c3c4c1}, {1, 0x00c35e83},
-              {2, 0x00c3299f}, {2, 0x00c6d7ca}, {1, 0x00c8cf93}, {1, 0x00c80b8c},
-              {1, 0x00c72875}, {5, 0x00c7a637}, {1, 0x00c8e4b7}, {1, 0x00ca7818},
-              {1, 0x00cbf135}, {1, 0x00cc76e1}, {1, 0x00cda36a}, {1, 0x00cc8307},
-              {1, 0x00ce5bac}, {2, 0x00cf4fd3}, {0, 0x00cf91a4}, {1, 0x00d03423},
-              {2, 0x00d06969}, {2, 0x00d07d66}, {2, 0x00d0302f}, {1, 0x00d13474},
-              {1, 0x00d3155e}, {1, 0x00d1b9bc}, {1, 0x00d25df2}, {1, 0x00d1f159},
-              {1, 0x00d3007c}, {5, 0x00d3bf36}, {2, 0x00d70c84}, {1, 0x00d5e3d4},
-              {1, 0x00db4fbc}, {1, 0x00d9267f}, {2, 0x00d8ac8a}, {2, 0x00d9a8b9},
-              {4, 0x00d94ff2}, {2, 0x00d94334}, {1, 0x00dab723}, {1, 0x00e09787},
-              {2, 0x00dfec52}, {2, 0x00e0a697}, {1, 0x00e0527b}, {2, 0x00e13147},
-              {2, 0x00e3fcbd}, {1, 0x00e457fd}, {1, 0x00e52160}, {2, 0x00e5ee55},
-              {2, 0x00e63f4f}, {1, 0x00e6c82f}, {2, 0x00e85025}, {2, 0x00ed6541},
-              {1, 0x00edb959}, {2, 0x00ef2b7f}, {1, 0x00f3949a}, {1, 0x00f440bf},
-              {3, 0x00f745dc}, {2, 0x00f6fe41}, {2, 0x00fa4ae2}, {1, 0x00faa6a6},
-              {2, 0x00fd1c9a}, {1, 0x00fbe743}, {2, 0x00fcf092}, {2, 0x00fe2a3e},
-              {2, 0x00fd7cc5}, {2, 0x00ff701e}, {2, 0x0100e795}, {2, 0x0100942d},
-              {1, 0x01021e8c}, {2, 0x01037e9a}, {2, 0x0104892d}, {1, 0x0108794c},
-              {2, 0x01096d59}, {1, 0x0109f51d}, {2, 0x010b3152}, {1, 0x010d491b},
-              {1, 0x010eda18}, {3, 0x010eae14}, {2, 0x01124e31}, {5, 0x01104819},
-              {1, 0x0112cbc8}, {5, 0x01123ea2}, {1, 0x0112e2ce}, {1, 0x01129f34},
-              {1, 0x0114ff67}, {2, 0x0116ec09}, {1, 0x011664b4}, {1, 0x011984af},
-              {1, 0x011b8afc}, {1, 0x011cbfc9}, {5, 0x011f52cf}, {5, 0x011d569a},
-              {1, 0x011da9ed}, {1, 0x0121dd81}, {6, 0x01201296}, {2, 0x01207bd7},
-              {2, 0x0124163c}, {1, 0x01275484}, {1, 0x0124e21a}, {1, 0x0125f068},
-              {2, 0x0126614a}, {2, 0x0127a6fe}, {1, 0x012865fb}, {1, 0x012a4f19},
-              {1, 0x012b3841}, {5, 0x012c7c35}, {5, 0x012fbe45}, {1, 0x01306e93},
-              {1, 0x0131cbc4}, {2, 0x01323e3d}, {2, 0x013698a4}, {1, 0x01349f3c},
-              {2, 0x01360791}, {1, 0x01372a89}, {2, 0x01374e37}, {2, 0x0138ce82},
-              {1, 0x01381729}, {1, 0x013a4922}, {1, 0x013b21ea}, {5, 0x013c035d},
-              {1, 0x013c2648}, {1, 0x013cea75}, {1, 0x013f953a}, {1, 0x013d409a},
-              {1, 0x013e2eba}, {1, 0x01406e6d}, {1, 0x013e9b18}, {2, 0x013ea1e7},
-              {0, 0x0146472a}, {1, 0x01453129}, {2, 0x01444e90}, {2, 0x014558c3},
-              {2, 0x0145c66a}, {1, 0x0146a5c5}, {1, 0x01499c5c}, {1, 0x014b3719},
-              {1, 0x014c82d6}, {1, 0x014c61fe}, {1, 0x014d7d29}, {5, 0x014f6021},
-              {2, 0x014f8391}, {1, 0x014faa01}, {1, 0x0150f07f}, {1, 0x01508eec},
-              {2, 0x015339f7}, {2, 0x01522946}, {4, 0x0153d413}, {2, 0x01531132},
-              {1, 0x01539c10}, {1, 0x01538fa3}, {2, 0x01568d50}, {2, 0x01570520},
-              {1, 0x01598663}, {2, 0x0158f956}, {2, 0x0159de4c}, {1, 0x015e2e2a},
-              {1, 0x015e0f39}, {2, 0x015dc1aa}, {2, 0x015e7ef0}, {1, 0x015dd8e4},
-              {2, 0x0160427f}, {2, 0x015fd33e}, {1, 0x015fcd11}, {2, 0x016129e2},
-              {1, 0x01608d9f}, {1, 0x01618bb9}, {3, 0x0161c62c}, {2, 0x0162cb31},
-              {2, 0x0165398b}, {1, 0x0166ad09}, {2, 0x0167610e}, {1, 0x016727cb},
-              {2, 0x01675f3d}, {2, 0x016b1e1b}, {2, 0x016afabc}, {2, 0x016ad30c},
-              {2, 0x016c733b}, {2, 0x016e02ae}, {1, 0x016ccb3b}, {2, 0x016e68ac},
-              {2, 0x016eb853}, {1, 0x016fd28c}, {2, 0x017208c1}, {1, 0x017129d5},
-              {2, 0x0173c8a5}, {1, 0x01742270}, {1, 0x017409d7}, {3, 0x01744606},
-              {2, 0x0178d4de}, {5, 0x017755fd}, {1, 0x0177bae9}, {5, 0x017a98f4},
-              {1, 0x017abf35}, {1, 0x017a273e}, {1, 0x0179dab0}, {2, 0x017c1698},
-              {1, 0x017b6e4c}, {1, 0x017aa311}, {1, 0x017dc7a0}, {1, 0x017e5421},
-              {5, 0x017fc31a}, {5, 0x01814d53}, {1, 0x017eafba}, {1, 0x017f20cc},
-              {6, 0x017fa19c}, {2, 0x0180a3b1}, {2, 0x0180ba39}, {1, 0x0180cbaa},
-              {1, 0x01815cfb}, {1, 0x0185280d}, {2, 0x018583ff}, {2, 0x0184e4fc},
-              {1, 0x018518cf}, {1, 0x0186370b}, {1, 0x0186ef77}, {5, 0x01867169},
-              {5, 0x01891212}, {1, 0x01894126}, {1, 0x018b5f43}, {2, 0x018e5a9f},
-              {2, 0x018df690}, {1, 0x018f6ef1}, {2, 0x018dd6ec}, {1, 0x018e4acc},
-              {2, 0x01910d40}, {2, 0x0191cd46}, {1, 0x0191a3fb}, {1, 0x0193ad3d},
-              {1, 0x01935a45}, {5, 0x01945f12}, {1, 0x0196817e}, {1, 0x0197f5a4},
-              {1, 0x0199189a}, {1, 0x0198f075}, {1, 0x01988ec0}, {1, 0x0199a26e},
-              {1, 0x019b0f64}, {2, 0x019aeb8b}, {0, 0x019d464e}, {1, 0x019cb645},
-              {2, 0x019e7492}, {2, 0x019ec4b2}, {2, 0x01a059c5}, {1, 0x01a15c8d},
-              {1, 0x01a1c1de}, {1, 0x01a35e34}, {1, 0x01a42613}, {1, 0x01a315c1},
-              {1, 0x01a6136d}, {5, 0x01a4ed09}, {2, 0x01a3d3e2}, {1, 0x01a56163},
-              {1, 0x01a4b140}, {1, 0x01a75dff}, {2, 0x01a8445e}, {2, 0x01aa1963},
-              {4, 0x01a8b072}, {2, 0x01aa2810}, {1, 0x01ab5524}, {1, 0x01abc7e6},
-              {2, 0x01ab49ba}, {2, 0x01afc536}, {1, 0x01ae9fa1}, {2, 0x01af41c8},
-              {2, 0x01b0be8f}, {1, 0x01af032f}, {1, 0x01b2ce20}, {2, 0x01b23d60},
-              {2, 0x01b52c9c}, {1, 0x01b41f2d}, {2, 0x01b4bb56}, {2, 0x01b6535f},
-              {1, 0x01b559d1}, {2, 0x01b63797}, {1, 0x01b6a188}, {1, 0x01b6ef01},
-              {3, 0x01b742e4}, {2, 0x01b9d0c9}, {2, 0x01b909fd}, {1, 0x01b97990},
-              {2, 0x01be4857}, {1, 0x01bdb55a}, {2, 0x01bdb46f}, {2, 0x01be3d77},
-              {2, 0x01bf503e}, {2, 0x01beb04e}, {2, 0x01bf00c2}, {2, 0x01c34b6f},
-              {1, 0x01c3f337}, {2, 0x01c568ea}, {2, 0x01c6bafb}, {1, 0x01c7f571},
-              {2, 0x01c7630d}, {1, 0x01c8360c}, {2, 0x01c8f730}, {1, 0x01ca19e8},
-              {1, 0x01cb719c}, {3, 0x01cfc1a7}, {2, 0x01d1f198}, {5, 0x01d106ca},
-              {1, 0x01d3c805}, {5, 0x01d55380}, {1, 0x01d60c07}, {1, 0x01d87f3d},
-              {1, 0x01d977a5}, {2, 0x01db79fd}, {1, 0x01ddc7ec}, {1, 0x01e041e9},
-              {1, 0x01e01084}, {1, 0x01e228ce}, {5, 0x01e5386d}, {5, 0x01e6f35e},
-              {1, 0x01e9dac0}, {1, 0x01e9185d}, {6, 0x01e93c13}, {2, 0x01e90352},
-              {2, 0x01ea4add}, {1, 0x01ea5884}, {1, 0x01eacdc6}, {1, 0x01ec02a3},
-              {2, 0x01ec6ca1}, {2, 0x01edd3b8}, {1, 0x01eee113}, {1, 0x01ede61e},
-              {1, 0x01edd5a9}, {5, 0x01ef71ab}, {5, 0x01f3fe61}, {1, 0x01f43899},
-              {1, 0x01f45068}, {2, 0x01f7965c}, {2, 0x01f56398}, {1, 0x01f71b25},
-              {2, 0x01f6a0da}, {1, 0x01f850ee}, {2, 0x01fcde96}, {2, 0x01fce16e},
-              {1, 0x01ff1acb}, {1, 0x02041cf4}, {1, 0x0204836f}, {5, 0x0205be24},
-              {1, 0x0206413c}, {1, 0x020a65ee}, {1, 0x02081188}, {1, 0x020b6c15},
-              {1, 0x02085954}, {1, 0x0209426a}, {1, 0x020adb63}, {2, 0x020cf735},
-              {0, 0x020ed674}, {1, 0x0211fa9a}, {2, 0x02141c0b}, {2, 0x0213c1b0},
-              {2, 0x021a0e52}, {1, 0x0219e24e}, {1, 0x021a49ad}, {1, 0x021ab401},
-              {1, 0x021b6158}, {1, 0x021c9ad7}, {1, 0x021f9bbf}, {5, 0x0220bdb1},
-              {2, 0x0220c642}, {1, 0x0220f703}, {1, 0x022397a0}, {1, 0x022663a5},
-              {2, 0x022681d6}, {2, 0x0227a53a}};
+} BLOCKINFO[]{{4, 0x000192a0}, {2, 0x0001d2b6}, {1, 0x0002f5d8}, {1, 0x0004f913},
+              {2, 0x0004fa6f}, {2, 0x0004ae04}, {1, 0x00048ec1}, {2, 0x00066185},
+              {2, 0x0007a24b}, {1, 0x0009caef}, {1, 0x000e5bc4}, {2, 0x000ba124},
+              {2, 0x000bac26}, {1, 0x000d2a68}, {2, 0x000bfd73}, {2, 0x000ef319},
+              {1, 0x00119496}, {2, 0x000e758e}, {1, 0x0010182e}, {1, 0x000f08e8},
+              {3, 0x0010654b}, {2, 0x00127fae}, {2, 0x0011ca28}, {1, 0x00147744},
+              {2, 0x0015b085}, {1, 0x0015503f}, {2, 0x00170ad6}, {2, 0x001727c8},
+              {2, 0x0017cb72}, {2, 0x00192067}, {2, 0x001b3fe9}, {2, 0x001c8cb1},
+              {1, 0x001ab854}, {2, 0x001ec350}, {2, 0x001be586}, {1, 0x00202a9b},
+              {2, 0x0020e78e}, {1, 0x002002b1}, {2, 0x0022c2e3}, {1, 0x0025097a},
+              {1, 0x00287536}, {3, 0x002ac9ae}, {2, 0x002899e4}, {5, 0x0028ed8e},
+              {1, 0x002c80bd}, {5, 0x002b5bc8}, {1, 0x0029e46c}, {1, 0x002c01c3},
+              {1, 0x002bfe45}, {2, 0x002dd7bc}, {1, 0x002ee460}, {1, 0x0030cf33},
+              {1, 0x0031a9c2}, {1, 0x00320de8}, {5, 0x00353e3b}, {5, 0x0033055f},
+              {1, 0x00375485}, {1, 0x0037338c}, {6, 0x003be03f}, {2, 0x003c449d},
+              {2, 0x003e1e27}, {1, 0x003c0fac}, {1, 0x003ca16d}, {1, 0x003f011d},
+              {2, 0x003e5502}, {2, 0x003f132b}, {1, 0x00405658}, {1, 0x00411d00},
+              {1, 0x00440de8}, {5, 0x004b3e82}, {5, 0x004c6672}, {1, 0x004d614b},
+              {1, 0x004fa1a0}, {2, 0x004ef387}, {2, 0x004f91d9}, {1, 0x0050acb8},
+              {2, 0x00512da7}, {1, 0x004f841b}, {2, 0x0050ffe0}, {2, 0x0052ae46},
+              {1, 0x0054e0ea}, {1, 0x00554ffd}, {1, 0x0056a556}, {5, 0x0059fbf3},
+              {1, 0x0059eada}, {1, 0x005b7715}, {1, 0x005c16c4}, {1, 0x005ec266},
+              {1, 0x005f5a1e}, {1, 0x006109b5}, {1, 0x005f03e5}, {2, 0x00618000},
+              {0, 0x006145d9}, {1, 0x00646931}, {2, 0x0062b04c}, {2, 0x00652d0a},
+              {2, 0x0065f715}, {1, 0x0066f8ed}, {1, 0x006af32c}, {1, 0x006b7712},
+              {1, 0x006c3e31}, {1, 0x006dc158}, {1, 0x006e71f9}, {5, 0x0075c9f1},
+              {2, 0x006e10d6}, {1, 0x006ef321}, {1, 0x00717d82}, {1, 0x00718844},
+              {2, 0x0071ea80}, {2, 0x00757c69}, {4, 0x0077c818}, {2, 0x0076d089},
+              {1, 0x0078fcfc}, {1, 0x00799d31}, {2, 0x0079f533}, {2, 0x007dc2b3},
+              {1, 0x007b038f}, {2, 0x007b9916}, {2, 0x007b467a}, {1, 0x007daab6},
+              {1, 0x007c8fab}, {2, 0x0081e07b}, {2, 0x007f8d7e}, {1, 0x00818ac1},
+              {2, 0x00805b08}, {2, 0x008361bd}, {1, 0x00833f6a}, {2, 0x0087e1c7},
+              {1, 0x0084914a}, {1, 0x008454ca}, {3, 0x008471e3}, {2, 0x008a08e1},
+              {2, 0x008a4916}, {1, 0x008e745d}, {2, 0x008bd1aa}, {1, 0x00908735},
+              {2, 0x008e9827}, {2, 0x008e807d}, {2, 0x008ecdd9}, {2, 0x0092a382},
+              {2, 0x0095dcd4}, {2, 0x0094a26b}, {1, 0x00960fd5}, {2, 0x0095acd7},
+              {2, 0x00994437}, {1, 0x00994932}, {2, 0x0097bc78}, {1, 0x00990b2d},
+              {2, 0x0097d28f}, {1, 0x009a58d6}, {1, 0x00998b73}, {3, 0x009b6591},
+              {2, 0x009e742f}, {5, 0x009b5c55}, {1, 0x009aeeba}, {5, 0x009cc10a},
+              {1, 0x009df73c}, {1, 0x009f0a8b}, {1, 0x00a02717}, {2, 0x00a36736},
+              {1, 0x00a0cc93}, {1, 0x00a8a047}, {1, 0x00a1010e}, {1, 0x00a0e5ad},
+              {5, 0x00a16d92}, {5, 0x00a1a77e}, {1, 0x00a7853c}, {1, 0x00a4ed9c},
+              {6, 0x00a5d69a}, {2, 0x00a814c7}, {2, 0x00a745ba}, {1, 0x00ab6f3b},
+              {1, 0x00ac6263}, {1, 0x00b082e4}, {2, 0x00b0635c}, {2, 0x00b263ff},
+              {1, 0x00b27bd8}, {1, 0x00b2abed}, {1, 0x00b89e4f}, {5, 0x00b74fec},
+              {5, 0x00b756ae}, {1, 0x00b7e68e}, {1, 0x00b7fd5c}, {2, 0x00bac23f},
+              {2, 0x00bbfb82}, {1, 0x00c56007}, {2, 0x00c76ae4}, {1, 0x00c50dd8},
+              {2, 0x00c4d443}, {2, 0x00c85e58}, {1, 0x00c8d53b}, {1, 0x00c82b08},
+              {1, 0x00c74b7e}, {5, 0x00c85e50}, {1, 0x00ca49c5}, {1, 0x00ccb498},
+              {1, 0x00cd86a3}, {1, 0x00ccea5d}, {1, 0x00d0875a}, {1, 0x00cd547f},
+              {1, 0x00ce6ecf}, {2, 0x00cf83df}, {0, 0x00d0062f}, {1, 0x00d040c0},
+              {2, 0x00d301da}, {2, 0x00d112f7}, {2, 0x00d03254}, {1, 0x00d2444d},
+              {1, 0x00d3ad46}, {1, 0x00d57f40}, {1, 0x00d3f0f9}, {1, 0x00d55ae0},
+              {1, 0x00d3df94}, {5, 0x00d4a6fb}, {2, 0x00d8f4e9}, {1, 0x00d87d1d},
+              {1, 0x00dbbec9}, {1, 0x00d934bd}, {2, 0x00d8c3fc}, {2, 0x00dab1c9},
+              {4, 0x00db2896}, {2, 0x00dbd401}, {1, 0x00db4495}, {1, 0x00e09dd6},
+              {2, 0x00e06512}, {2, 0x00e1425f}, {1, 0x00e170fa}, {2, 0x00e3d5d7},
+              {2, 0x00e40e77}, {1, 0x00e51f15}, {1, 0x00e5e594}, {2, 0x00e613ab},
+              {2, 0x00e72e8b}, {1, 0x00e94959}, {2, 0x00e984d5}, {2, 0x00edabed},
+              {1, 0x00edeacc}, {2, 0x00ef643d}, {1, 0x00f3c73a}, {1, 0x00f4a270},
+              {3, 0x00f7a870}, {2, 0x00f7445f}, {2, 0x00fa971e}, {1, 0x00faf983},
+              {2, 0x00ff21f7}, {1, 0x00fd32c3}, {2, 0x00fd4c9a}, {2, 0x00fe62e5},
+              {2, 0x00ff9e4a}, {2, 0x01007cf7}, {2, 0x01013e61}, {2, 0x0100bda5},
+              {1, 0x0103261d}, {2, 0x0103c540}, {2, 0x0104fdc9}, {1, 0x010995e0},
+              {2, 0x0109d9e3}, {1, 0x010af516}, {2, 0x010b5d33}, {1, 0x010ded6b},
+              {1, 0x0110c773}, {3, 0x010efe64}, {2, 0x011431b2}, {5, 0x01104d05},
+              {1, 0x011315c8}, {5, 0x0113bb91}, {1, 0x0113198f}, {1, 0x01137c76},
+              {1, 0x0116aa9d}, {2, 0x01175001}, {1, 0x0117f810}, {1, 0x011a1779},
+              {1, 0x011e14d1}, {1, 0x011d4f8f}, {5, 0x011f9bc1}, {5, 0x011e8290},
+              {1, 0x011e90a9}, {1, 0x01223dae}, {6, 0x012036d5}, {2, 0x0120a877},
+              {2, 0x01241cad}, {1, 0x01278141}, {1, 0x01251df6}, {1, 0x01262723},
+              {2, 0x01268f18}, {2, 0x01284da7}, {1, 0x0128d7f3}, {1, 0x012adf33},
+              {1, 0x012b9c22}, {5, 0x012e0b7f}, {5, 0x012fd494}, {1, 0x0132de85},
+              {1, 0x0132b6d4}, {2, 0x01342dbe}, {2, 0x01373e92}, {1, 0x0134c5e3},
+              {2, 0x0136892c}, {1, 0x0137c63e}, {2, 0x01375ee3}, {2, 0x0138f36e},
+              {1, 0x01382ca5}, {1, 0x013a4c1e}, {1, 0x013b70a7}, {5, 0x013d4996},
+              {1, 0x013c782e}, {1, 0x013d68a4}, {1, 0x0140e7f0}, {1, 0x013f9932},
+              {1, 0x014103fb}, {1, 0x0140f854}, {1, 0x014316b1}, {2, 0x01402ca5},
+              {0, 0x01469369}, {1, 0x01454ac4}, {2, 0x01448a10}, {2, 0x0147c1ad},
+              {2, 0x014627d3}, {1, 0x0146d4d4}, {1, 0x014aefad}, {1, 0x014c3d89},
+              {1, 0x014f4301}, {1, 0x014c9c70}, {1, 0x014dde03}, {5, 0x01509431},
+              {2, 0x014fefe7}, {1, 0x01504013}, {1, 0x0151438d}, {1, 0x0150bc00},
+              {2, 0x0153a5e8}, {2, 0x0152dfad}, {4, 0x0153f3b5}, {2, 0x01542e7a},
+              {1, 0x0153bc11}, {1, 0x01550bbc}, {2, 0x015701d6}, {2, 0x01579563},
+              {1, 0x0159f464}, {2, 0x0158fc62}, {2, 0x015a4802}, {1, 0x015e8244},
+              {1, 0x015e2879}, {2, 0x015e6325}, {2, 0x01610bd3}, {1, 0x015f0c9f},
+              {2, 0x01606fc7}, {2, 0x0160f496}, {1, 0x015ff278}, {2, 0x01613a74},
+              {1, 0x0160a518}, {1, 0x016199a4}, {3, 0x0162871a}, {2, 0x0162f885},
+              {2, 0x01660682}, {1, 0x01678351}, {2, 0x016a0e0d}, {1, 0x0168b17e},
+              {2, 0x01676f8e}, {2, 0x016b33ce}, {2, 0x016e2eaa}, {2, 0x016b746a},
+              {2, 0x016c8e68}, {2, 0x01715a2e}, {1, 0x016e252f}, {2, 0x016eaa18},
+              {2, 0x01728ea2}, {1, 0x01700da6}, {2, 0x017385dd}, {1, 0x01719d85},
+              {2, 0x01740acb}, {1, 0x017481a8}, {1, 0x01748109}, {3, 0x01746b21},
+              {2, 0x0178f8e8}, {5, 0x01779d9d}, {1, 0x017b20ec}, {5, 0x017aec24},
+              {1, 0x017b4b5b}, {1, 0x017a50b4}, {1, 0x017a2936}, {2, 0x017c5287},
+              {1, 0x017ba847}, {1, 0x017cd3d5}, {1, 0x017ff0ba}, {1, 0x0180ddef},
+              {5, 0x01802207}, {5, 0x01825bf9}, {1, 0x017ebfbe}, {1, 0x017f3ebf},
+              {6, 0x0180b152}, {2, 0x0180b413}, {2, 0x01821943}, {1, 0x01825a66},
+              {1, 0x01817892}, {1, 0x01861a68}, {2, 0x0186518c}, {2, 0x01877ad5},
+              {1, 0x01859932}, {1, 0x0186bc6d}, {1, 0x0188cf11}, {5, 0x0188a3d0},
+              {5, 0x018aec05}, {1, 0x0189a5c3}, {1, 0x018bd1d3}, {2, 0x018ee02e},
+              {2, 0x018f0dae}, {1, 0x0190235b}, {2, 0x018e996d}, {1, 0x018ec441},
+              {2, 0x0193c677}, {2, 0x01922dae}, {1, 0x019247cc}, {1, 0x0193b2ec},
+              {1, 0x0195b268}, {5, 0x019488ab}, {1, 0x0196b031}, {1, 0x0198de72},
+              {1, 0x0199217b}, {1, 0x019c80e9}, {1, 0x01995d5d}, {1, 0x0199fce9},
+              {1, 0x019b54e9}, {2, 0x019b94c6}, {0, 0x019e67bd}, {1, 0x019cc367},
+              {2, 0x01a00b0b}, {2, 0x01a1d594}, {2, 0x01a0ca35}, {1, 0x01a2625e},
+              {1, 0x01a2fdd6}, {1, 0x01a41f99}, {1, 0x01a444b1}, {1, 0x01a36856},
+              {1, 0x01a71811}, {5, 0x01a547c9}, {2, 0x01a4a272}, {1, 0x01a65fd5},
+              {1, 0x01a8889f}, {1, 0x01a82a76}, {2, 0x01a8bbda}, {2, 0x01aabc2e},
+              {4, 0x01a8b88b}, {2, 0x01aaf146}, {1, 0x01ab570f}, {1, 0x01ac3501},
+              {2, 0x01af258d}, {2, 0x01afd5ed}, {1, 0x01af043a}, {2, 0x01afa9c6},
+              {2, 0x01b28d7c}, {1, 0x01b26b23}, {1, 0x01b2fe10}, {2, 0x01b250f5},
+              {2, 0x01b68203}, {1, 0x01b48e23}, {2, 0x01b5da66}, {2, 0x01b6e2e0},
+              {1, 0x01b5ff6f}, {2, 0x01b844b8}, {1, 0x01b6bc35}, {1, 0x01b8cc17},
+              {3, 0x01b7f17e}, {2, 0x01ba6d0c}, {2, 0x01b97523}, {1, 0x01bb55d6},
+              {2, 0x01bf0d53}, {1, 0x01bf38e0}, {2, 0x01bedd54}, {2, 0x01beeca7},
+              {2, 0x01bf80f7}, {2, 0x01c08d05}, {2, 0x01c0b079}, {2, 0x01c385c5},
+              {1, 0x01c43c80}, {2, 0x01c99c9d}, {2, 0x01c76aea}, {1, 0x01c8bafd},
+              {2, 0x01c8c4dd}, {1, 0x01c90411}, {2, 0x01c96625}, {1, 0x01cb1f7f},
+              {1, 0x01cb9ed2}, {3, 0x01d0ccba}, {2, 0x01d2c8f5}, {5, 0x01d14b5d},
+              {1, 0x01d5711f}, {5, 0x01d5583d}, {1, 0x01d69aa1}, {1, 0x01d95c50},
+              {1, 0x01dad422}, {2, 0x01dba4b1}, {1, 0x01dfbab5}, {1, 0x01e072d4},
+              {1, 0x01e2d3da}, {1, 0x01e24219}, {5, 0x01e55cd8}, {5, 0x01e6f4bf},
+              {1, 0x01eb82c5}, {1, 0x01e996af}, {6, 0x01e962ed}, {2, 0x01e93952},
+              {2, 0x01eac2c9}, {1, 0x01ebd83a}, {1, 0x01ec1157}, {1, 0x01ec69b9},
+              {2, 0x01ec9223}, {2, 0x01ee56da}, {1, 0x01ef3ee8}, {1, 0x01ef6196},
+              {1, 0x01ef57a0}, {5, 0x01efe7e1}, {5, 0x01f44682}, {1, 0x01f4c9f2},
+              {1, 0x01f525f4}, {2, 0x01f869eb}, {2, 0x01f71e9c}, {1, 0x01f78e49},
+              {2, 0x01f73a2f}, {1, 0x01f9f058}, {2, 0x01ff69ca}, {2, 0x01fe3151},
+              {1, 0x02004981}, {1, 0x02042a38}, {1, 0x0205a325}, {5, 0x0205e007},
+              {1, 0x020680ec}, {1, 0x020b5d90}, {1, 0x0208c36d}, {1, 0x020b8e3f},
+              {1, 0x0209ce05}, {1, 0x0209ef22}, {1, 0x020c30a7}, {2, 0x020e9bd9},
+              {0, 0x020ff9e1}, {1, 0x021309b0}, {2, 0x02143276}, {2, 0x0214db7a},
+              {2, 0x021a4811}, {1, 0x021bdc6d}, {1, 0x021b0a68}, {1, 0x021ae270},
+              {1, 0x021c61ac}, {1, 0x021cef7f}, {1, 0x02203dbf}, {5, 0x022264e3},
+              {2, 0x0221597c}, {1, 0x02228469}, {1, 0x02261db3}, {1, 0x02268128},
+              {2, 0x0226a042}, {2, 0x022841c4}};
 
 static std::unique_ptr<CBlockIndex> CreateBlockIndex(int nHeight, CBlockIndex* active_chain_tip) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
@@ -232,6 +233,22 @@ void MinerTestingSetup::TestPackageSelection(const CScript& scriptPubKey, const 
     options.coinbase_output_script = scriptPubKey;
 
     LOCK(tx_mempool.cs);
+    BOOST_CHECK(tx_mempool.size() == 0);
+
+    // Block template should only have a coinbase when there's nothing in the mempool
+    std::unique_ptr<BlockTemplate> block_template = mining->createNewBlock(options);
+    BOOST_REQUIRE(block_template);
+    CBlock block{block_template->getBlock()};
+    BOOST_REQUIRE_EQUAL(block.vtx.size(), 1U);
+
+    // waitNext() on an empty mempool should return nullptr because there is no better template
+    auto should_be_nullptr = block_template->waitNext({.timeout = MillisecondsDouble{0}, .fee_threshold = 1});
+    BOOST_REQUIRE(should_be_nullptr == nullptr);
+
+    // Unless fee_threshold is 0
+    block_template = block_template->waitNext({.timeout = MillisecondsDouble{0}, .fee_threshold = 0});
+    BOOST_REQUIRE(block_template);
+
     // Test the ancestor feerate transaction selection.
     TestMemPoolEntryHelper entry;
 
@@ -263,9 +280,9 @@ void MinerTestingSetup::TestPackageSelection(const CScript& scriptPubKey, const 
     const auto high_fee_tx{entry.Fee(400000 * 50).Time(Now<NodeSeconds>()).SpendsCoinbase(false).FromTx(tx)};
     AddToMempool(tx_mempool, high_fee_tx);
 
-    std::unique_ptr<BlockTemplate> block_template = mining->createNewBlock(options);
+    block_template = mining->createNewBlock(options);
     BOOST_REQUIRE(block_template);
-    CBlock block{block_template->getBlock()};
+    block = block_template->getBlock();
     BOOST_REQUIRE_EQUAL(block.vtx.size(), 4U);
     BOOST_CHECK(block.vtx[1]->GetHash() == hashParentTx);
     BOOST_CHECK(block.vtx[2]->GetHash() == hashHighFeeTx);
@@ -301,8 +318,11 @@ void MinerTestingSetup::TestPackageSelection(const CScript& scriptPubKey, const 
     tx.vout[0].nValue = 5000000000LL - 10000 - 20000000 - feeToUse;
     Txid hashLowFeeTx = tx.GetHash();
     AddToMempool(tx_mempool, entry.Fee(feeToUse).FromTx(tx));
-    block_template = mining->createNewBlock(options);
-    BOOST_REQUIRE(block_template);
+
+    // waitNext() should return nullptr because there is no better template
+    should_be_nullptr = block_template->waitNext({.timeout = MillisecondsDouble{0}, .fee_threshold = 1});
+    BOOST_REQUIRE(should_be_nullptr == nullptr);
+
     block = block_template->getBlock();
     // Verify that the free tx and the low fee tx didn't get selected
     for (size_t i=0; i<block.vtx.size(); ++i) {
@@ -317,7 +337,9 @@ void MinerTestingSetup::TestPackageSelection(const CScript& scriptPubKey, const 
     tx.vout[0].nValue -= 2; // Now we should be just over the min relay fee
     hashLowFeeTx = tx.GetHash();
     AddToMempool(tx_mempool, entry.Fee(feeToUse + 2).FromTx(tx));
-    block_template = mining->createNewBlock(options);
+
+    // waitNext() should return if fees for the new template are at least 1 sat up
+    block_template = block_template->waitNext({.fee_threshold = 1});
     BOOST_REQUIRE(block_template);
     block = block_template->getBlock();
     BOOST_REQUIRE_EQUAL(block.vtx.size(), 6U);
@@ -545,7 +567,8 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
             m_node.chainman->ActiveChain().SetTip(*next);
         }
         int blocktimeDownscaleFactor = consensusParams.BlocktimeDownscaleFactor(m_node.chainman->ActiveChain().Tip()->nHeight + 1);
-        auto pblocktemplate = mining->createNewBlock(options, true);
+        options.is_coinstake = true;
+        auto pblocktemplate = mining->createNewBlock(options);
         BOOST_REQUIRE(pblocktemplate);
         BOOST_CHECK(calculateReward(pblocktemplate->getBlock(), *m_node.chainman) == 400000000/blocktimeDownscaleFactor);
         // Extend to a 1427004-long block chain.
@@ -560,7 +583,8 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
             m_node.chainman->ActiveChain().SetTip(*next);
         }
         blocktimeDownscaleFactor = consensusParams.BlocktimeDownscaleFactor(m_node.chainman->ActiveChain().Tip()->nHeight + 1);
-        pblocktemplate = mining->createNewBlock(options, true);
+        pblocktemplate = mining->createNewBlock(options);
+        options.is_coinstake = false;
         BOOST_REQUIRE(pblocktemplate);
         BOOST_CHECK(calculateReward(pblocktemplate->getBlock(), *m_node.chainman) == 200000000/blocktimeDownscaleFactor);
 
@@ -655,6 +679,10 @@ void MinerTestingSetup::TestBasicMining(const CScript& scriptPubKey, const std::
     BOOST_CHECK(TestSequenceLocks(CTransaction{tx}, tx_mempool)); // Sequence locks pass
     BOOST_CHECK(IsFinalTx(CTransaction(tx), m_node.chainman->ActiveChain().Tip()->nHeight + 2, m_node.chainman->ActiveChain().Tip()->GetMedianTimePast())); // Locktime passes on 2nd block
 
+    // ensure tx is final for a specific case where there is no locktime and block height is zero
+    tx.nLockTime = 0;
+    BOOST_CHECK(IsFinalTx(CTransaction(tx), /*nBlockHeight=*/0, m_node.chainman->ActiveChain().Tip()->GetMedianTimePast()));
+
     // absolute time locked
     tx.vin[0].prevout.hash = txFirst[3]->GetHash();
     tx.nLockTime = m_node.chainman->ActiveChain().Tip()->GetMedianTimePast();
@@ -724,7 +752,7 @@ void MinerTestingSetup::TestPrioritisedMining(const CScript& scriptPubKey, const
     tx.vin[0].scriptSig = CScript() << OP_1;
     tx.vout.resize(1);
     tx.vout[0].nValue = 5000000000LL; // 0 fee
-    uint256 hashFreePrioritisedTx = tx.GetHash();
+    Txid hashFreePrioritisedTx = tx.GetHash();
     AddToMempool(tx_mempool, entry.Fee(0).Time(Now<NodeSeconds>()).SpendsCoinbase(true).FromTx(tx));
     tx_mempool.PrioritiseTransaction(hashFreePrioritisedTx, 5 * COIN);
 
@@ -799,7 +827,44 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     CScript scriptPubKey = CScript() << "040d61d8653448c98731ee5fffd303c15e71ec2057b77f11ab3601979728cdaff2d68afbba14e4fa0bc44f2072b0b23ef63717f8cdfbe58dcd33f32b6afe98741a"_hex << OP_CHECKSIG;
     BlockAssembler::Options options;
     options.coinbase_output_script = scriptPubKey;
-    std::unique_ptr<BlockTemplate> block_template;
+
+    // Create and check a simple template
+    std::unique_ptr<BlockTemplate> block_template = mining->createNewBlock(options);
+    BOOST_REQUIRE(block_template);
+    {
+        CBlock block{block_template->getBlock()};
+        {
+            std::string reason;
+            std::string debug;
+            BOOST_REQUIRE(!mining->checkBlock(block, {.check_pow = false}, reason, debug));
+            BOOST_REQUIRE_EQUAL(reason, "bad-txnmrklroot");
+            BOOST_REQUIRE_EQUAL(debug, "hashMerkleRoot mismatch");
+        }
+
+        block.hashMerkleRoot = BlockMerkleRoot(block);
+
+        {
+            std::string reason;
+            std::string debug;
+            BOOST_REQUIRE(mining->checkBlock(block, {.check_pow = false}, reason, debug));
+            BOOST_REQUIRE_EQUAL(reason, "");
+            BOOST_REQUIRE_EQUAL(debug, "");
+        }
+
+        {
+            // A block template does not have proof-of-work, but it might pass
+            // verification by coincidence. Grind the nonce if needed:
+            while (CheckProofOfWork(block.GetHash(), block.nBits, Assert(m_node.chainman)->GetParams().GetConsensus())) {
+                block.nNonce++;
+            }
+
+            std::string reason;
+            std::string debug;
+            BOOST_REQUIRE(!mining->checkBlock(block, {.check_pow = true}, reason, debug));
+            BOOST_REQUIRE_EQUAL(reason, "high-hash");
+            BOOST_REQUIRE_EQUAL(debug, "proof of work failed");
+        }
+    }
 
     // We can't make transactions until we have inputs
     // Therefore, load 110 blocks :)
@@ -810,9 +875,15 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     for (const auto& bi : BLOCKINFO) {
         const int current_height{mining->getTip()->height};
 
-        // Simple block creation, nothing special yet:
-        block_template = mining->createNewBlock(options);
-        BOOST_REQUIRE(block_template);
+        /**
+         * Simple block creation, nothing special yet.
+         * If current_height is odd, block_template will have already been
+         * set at the end of the previous loop.
+         */
+        if (current_height % 2 == 0) {
+            block_template = mining->createNewBlock(options);
+            BOOST_REQUIRE(block_template);
+        }
 
         CBlock block{block_template->getBlock()};
         CMutableTransaction txCoinbase(*block.vtx[0]);
@@ -848,8 +919,13 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             auto maybe_new_tip{Assert(m_node.chainman)->ActiveChain().Tip()};
             BOOST_REQUIRE_EQUAL(maybe_new_tip->GetBlockHash(), block.GetHash());
         }
-        // This just adds coverage
-        mining->waitTipChanged(block.hashPrevBlock);
+        if (current_height % 2 == 0) {
+            block_template = block_template->waitNext();
+            BOOST_REQUIRE(block_template);
+        } else {
+            // This just adds coverage
+            mining->waitTipChanged(block.hashPrevBlock);
+        }
     }
 
     LOCK(cs_main);

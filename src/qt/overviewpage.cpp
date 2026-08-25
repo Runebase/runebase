@@ -54,8 +54,8 @@ class TxViewDelegate : public QAbstractItemDelegate
 {
     Q_OBJECT
 public:
-    explicit TxViewDelegate(const PlatformStyle* _platformStyle, QObject* parent = nullptr)
-        : QAbstractItemDelegate(parent), platformStyle(_platformStyle)
+    explicit TxViewDelegate(QObject* parent = nullptr)
+        : QAbstractItemDelegate(parent)
     {
         connect(this, &TxViewDelegate::width_changed, this, &TxViewDelegate::sizeHintChanged);
 
@@ -115,24 +115,10 @@ public:
         QRect typeRect(decorationRect.right() + MARGIN, mainRect.top(), TYPE_WIDTH, TX_SIZE);
         painter->drawText(typeRect, Qt::AlignLeft|Qt::AlignVCenter, typeString);
 
-        bool watchOnly = index.data(TransactionTableModel::WatchonlyRole).toBool();
 
         int address_rect_min_width = 0;
-        if (watchOnly)
-        {
-            QIcon iconWatchonly = qvariant_cast<QIcon>(index.data(TransactionTableModel::WatchonlyDecorationRole));
-            if(selected)
-            {
-                iconWatchonly = PlatformStyle::SingleColorIcon(iconWatchonly, foreground_color_selected);
-            }
-            QRect watchonlyRect(typeRect.right() + MARGIN, mainRect.top() + topMargin, DECORATION_SIZE, DECORATION_SIZE);
-            iconWatchonly.paint(painter, watchonlyRect);
-            address_rect_min_width += 5 + watchonlyRect.width();
-        }
-
-        int addressMargin = watchOnly ? MARGIN + 20 : MARGIN;
+        int addressMargin = MARGIN;
         int addressWidth = mainRect.width() - DATE_WIDTH - DECORATION_SIZE - TYPE_WIDTH - AMOUNT_WIDTH - 5*MARGIN;
-        addressWidth = watchOnly ? addressWidth - 20 : addressWidth;
 
         QFont addressFont = option.font;
         addressFont.setPointSizeF(addressFont.pointSizeF() * 0.95);
@@ -200,7 +186,6 @@ Q_SIGNALS:
     void width_changed(const QModelIndex& index) const;
 
 private:
-    const PlatformStyle* platformStyle;
     mutable std::map<int, int> m_minimum_width;
     QColor background_color_selected;
     QColor background_color;
@@ -218,7 +203,7 @@ OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) 
     QWidget(parent),
     ui(new Ui::OverviewPage),
     m_platform_style{platformStyle},
-    txdelegate(new TxViewDelegate(platformStyle, this))
+    txdelegate(new TxViewDelegate(this))
 {
     ui->setupUi(this);
 
@@ -256,6 +241,9 @@ OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) 
 
 void OverviewPage::setPrivacy(bool privacy)
 {
+    if (!clientModel || !clientModel->getOptionsModel())
+        return;
+
     m_privacy = privacy;
     clientModel->getOptionsModel()->setOption(OptionsModel::OptionID::MaskValues, privacy);
     const auto& balances = walletModel->getCachedBalance();
@@ -279,44 +267,17 @@ OverviewPage::~OverviewPage()
 void OverviewPage::setBalance(const interfaces::WalletBalances& balances)
 {
     BitcoinUnit unit = walletModel->getOptionsModel()->getDisplayUnit();
-    if (walletModel->wallet().isLegacy()) {
-        if (walletModel->wallet().privateKeysDisabled()) {
-            ui->labelBalance->setText(BitcoinUnits::formatPrivacy(unit, balances.watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelUnconfirmed->setText(BitcoinUnits::formatPrivacy(unit, balances.unconfirmed_watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelImmature->setText(BitcoinUnits::formatPrivacy(unit, balances.immature_watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelStake->setText(BitcoinUnits::formatPrivacy(unit, balances.watch_only_stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.watch_only_balance + balances.unconfirmed_watch_only_balance + balances.immature_watch_only_balance + balances.watch_only_stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-        } else {
-            ui->labelBalance->setText(BitcoinUnits::formatPrivacy(unit, balances.balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelUnconfirmed->setText(BitcoinUnits::formatPrivacy(unit, balances.unconfirmed_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelImmature->setText(BitcoinUnits::formatPrivacy(unit, balances.immature_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelStake->setText(BitcoinUnits::formatPrivacy(unit, balances.stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.balance + balances.unconfirmed_balance + balances.immature_balance + balances.stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelWatchAvailable->setText(BitcoinUnits::formatPrivacy(unit, balances.watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelWatchPending->setText(BitcoinUnits::formatPrivacy(unit, balances.unconfirmed_watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelWatchImmature->setText(BitcoinUnits::formatPrivacy(unit, balances.immature_watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelWatchStake->setText(BitcoinUnits::formatPrivacy(unit, balances.watch_only_stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-            ui->labelWatchTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.watch_only_balance + balances.unconfirmed_watch_only_balance + balances.immature_watch_only_balance + balances.watch_only_stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-        }
-    } else {
-        ui->labelBalance->setText(BitcoinUnits::formatPrivacy(unit, balances.balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-        ui->labelUnconfirmed->setText(BitcoinUnits::formatPrivacy(unit, balances.unconfirmed_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-        ui->labelImmature->setText(BitcoinUnits::formatPrivacy(unit, balances.immature_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-        ui->labelStake->setText(BitcoinUnits::formatPrivacy(unit, balances.stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-        ui->labelTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.balance + balances.unconfirmed_balance + balances.immature_balance + balances.stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-    }
+    ui->labelBalance->setText(BitcoinUnits::formatPrivacy(unit, balances.balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+    ui->labelUnconfirmed->setText(BitcoinUnits::formatPrivacy(unit, balances.unconfirmed_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+    ui->labelImmature->setText(BitcoinUnits::formatPrivacy(unit, balances.immature_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+    ui->labelStake->setText(BitcoinUnits::formatPrivacy(unit, balances.stake, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+    ui->labelTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.balance + balances.unconfirmed_balance + balances.immature_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
     // only show immature (newly mined) balance if it's non-zero, so as not to complicate things
     // for the non-mining users
     bool showImmature = balances.immature_balance != 0;
     bool showStake = balances.stake != 0;
-    bool showWatchOnlyImmature = balances.immature_watch_only_balance != 0;
-    bool showWatchOnlyStake = balances.watch_only_stake != 0;
-
-    // for symmetry reasons also show immature label when the watch-only one is shown
-    ui->widgetImmature->setVisible(showImmature || showWatchOnlyImmature);
-    ui->widgetWatchImmature->setVisible(!walletModel->wallet().privateKeysDisabled() && showWatchOnlyImmature); // show watch-only immature balance
-    ui->widgetStake->setVisible(showStake || showWatchOnlyStake);
-    ui->widgetWatchStake->setVisible(!walletModel->wallet().privateKeysDisabled() && showWatchOnlyStake); // show watch-only stake balance
+    ui->widgetImmature->setVisible(showImmature);
+    ui->widgetStake->setVisible(showStake);
 }
 
 void OverviewPage::checkForInvalidTokens()
@@ -336,25 +297,6 @@ void OverviewPage::checkForInvalidTokens()
             QMessageBox::warning(this, tr("Invalid token address"), message);
         }
     }
-}
-
-// show/hide watch-only labels
-void OverviewPage::updateWatchOnlyLabels(bool showWatchOnly)
-{
-    ui->labelSpendable->setVisible(showWatchOnly);      // show spendable label (only when watch-only is active)
-    ui->labelWatchonly->setVisible(showWatchOnly);      // show watch-only label
-
-    ui->widgetWatchAvailable->setVisible(showWatchOnly); // show watch-only available balance
-    ui->widgetWatchPending->setVisible(showWatchOnly);   // show watch-only pending balance
-    ui->widgetWatchTotal->setVisible(showWatchOnly);     // show watch-only total balance
-
-    if (!showWatchOnly)
-    {
-        ui->widgetWatchImmature->hide();
-        ui->widgetWatchStake->hide();
-    }
-
-    ui->widgetWatch->setVisible(showWatchOnly);
 }
 
 void OverviewPage::setClientModel(ClientModel *model)
@@ -395,12 +337,6 @@ void OverviewPage::setWalletModel(WalletModel *model)
         connect(model, &WalletModel::balanceChanged, this, &OverviewPage::setBalance);
 
         connect(model->getOptionsModel(), &OptionsModel::displayUnitChanged, this, &OverviewPage::updateDisplayUnit);
-
-        interfaces::Wallet& wallet = model->wallet();
-        updateWatchOnlyLabels(wallet.haveWatchOnly() && !wallet.privateKeysDisabled());
-        connect(model, &WalletModel::notifyWatchonlyChanged, [this](bool showWatchOnly) {
-            updateWatchOnlyLabels(showWatchOnly && !walletModel->wallet().privateKeysDisabled());
-        });
     }
 
     if(model && model->getTokenItemModel())
@@ -474,11 +410,6 @@ void OverviewPage::setMonospacedFont(const QFont& f)
     ui->labelImmature->setFont(f);
     ui->labelStake->setFont(f);
     ui->labelTotal->setFont(f);
-    ui->labelWatchAvailable->setFont(f);
-    ui->labelWatchPending->setFont(f);
-    ui->labelWatchImmature->setFont(f);
-    ui->labelWatchStake->setFont(f);
-    ui->labelWatchTotal->setFont(f);
 }
 
 void OverviewPage::on_showMoreButton_clicked()

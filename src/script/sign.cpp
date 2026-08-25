@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -338,7 +338,7 @@ struct TapSatisfier: Satisfier<XOnlyPubKey> {
     }
 };
 
-static bool SignTaprootScript(const SigningProvider& provider, const BaseSignatureCreator& creator, SignatureData& sigdata, int leaf_version, Span<const unsigned char> script_bytes, std::vector<valtype>& result)
+static bool SignTaprootScript(const SigningProvider& provider, const BaseSignatureCreator& creator, SignatureData& sigdata, int leaf_version, std::span<const unsigned char> script_bytes, std::vector<valtype>& result)
 {
     // Only BIP342 tapscript signing is supported for now.
     if (leaf_version != TAPROOT_LEAF_TAPSCRIPT) return false;
@@ -719,7 +719,7 @@ void SignatureData::MergeSignatureData(SignatureData sigdata)
     signatures.insert(std::make_move_iterator(sigdata.signatures.begin()), std::make_move_iterator(sigdata.signatures.end()));
 }
 
-bool VerifySignature(const Coin& coin, const uint256 txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags)
+bool VerifySignature(const Coin& coin, const Txid txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags)
 {
     TransactionSignatureChecker checker(&txTo, nIn, 0, MissingDataBehavior::FAIL);
 	
@@ -732,7 +732,7 @@ bool VerifySignature(const Coin& coin, const uint256 txFromHash, const CTransact
     return VerifyScript(txin.scriptSig, txout.scriptPubKey, NULL, flags, checker);
 }
 
-bool VerifySignature(const CScript& fromPubKey, const uint256 txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags)
+bool VerifySignature(const CScript& fromPubKey, const Txid txFromHash, const CTransaction& txTo, unsigned int nIn, unsigned int flags)
 {
     TransactionSignatureChecker checker(&txTo, nIn, 0, MissingDataBehavior::FAIL);
 	
@@ -751,7 +751,7 @@ class DummySignatureChecker final : public BaseSignatureChecker
 public:
     DummySignatureChecker() = default;
     bool CheckECDSASignature(const std::vector<unsigned char>& sig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, SigVersion sigversion) const override { return sig.size() != 0; }
-    bool CheckSchnorrSignature(Span<const unsigned char> sig, Span<const unsigned char> pubkey, SigVersion sigversion, ScriptExecutionData& execdata, ScriptError* serror) const override { return sig.size() != 0; }
+    bool CheckSchnorrSignature(std::span<const unsigned char> sig, std::span<const unsigned char> pubkey, SigVersion sigversion, ScriptExecutionData& execdata, ScriptError* serror) const override { return sig.size() != 0; }
     bool CheckLockTime(const CScriptNum& nLockTime) const override { return true; }
     bool CheckSequence(const CScriptNum& nSequence) const override { return true; }
 };

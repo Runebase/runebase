@@ -14,9 +14,6 @@ import time
 
 
 class RunebaseDGPTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self, split=False):
         self.setup_clean_chain = True
         self.num_nodes = 1

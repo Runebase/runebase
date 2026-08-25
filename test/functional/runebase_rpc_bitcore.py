@@ -16,9 +16,6 @@ from test_framework.runebase import *
 
 
 class RunebaseBitcoreTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 2
         self.extra_args = [['-addrindex=1'], ['-addrindex=0']]
@@ -37,11 +34,9 @@ class RunebaseBitcoreTest(BitcoinTestFramework):
         tx = rpc_sign_transaction(self.nodes[0], tx)
         self.nodes[0].sendrawtransaction(bytes_to_hex_str(tx.serialize()))
 
-        tx.rehash()
         tx2 = CTransaction()
-        tx2.vin = [CTxIn(COutPoint(tx.sha256, 0), b"")]
+        tx2.vin = [CTxIn(COutPoint(tx.txid_int, 0), b"")]
         tx2.vout = [CTxOut(int(unspent['amount']*100000000 - 20000000), script_pubkey)]
-        tx.rehash()
         tip = self.nodes[0].getblock(self.nodes[0].getbestblockhash())
         block = create_block(int(self.nodes[0].getbestblockhash(), 16), create_coinbase(self.nodes[0].getblockcount()+1), tip['time'])
         block.vtx.append(tx)

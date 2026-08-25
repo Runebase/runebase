@@ -6,7 +6,7 @@
 class CRPCCommand;
 
 namespace wallet {
-Span<const CRPCCommand> GetMiningRPCCommands();
+std::span<const CRPCCommand> GetMiningRPCCommands();
 } // namespace wallet
 
 #endif // RUNEBASE_WALLET_RPC_MINING_H
