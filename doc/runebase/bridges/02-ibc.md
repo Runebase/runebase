@@ -66,6 +66,29 @@ relayer (permissionless) submits {packet, proof}
   no ed25519 precompile, so the zk route is not just cheaper but the only
   practical one. This is fine — the zk route is the production-proven one.
 
+**Verified against this codebase (regtest, 2026-08-25):**
+
+- The Eureka contracts are built with solc 0.8.25+ targeting the `cancun`
+  EVM. All the opcodes that target emits beyond older EVMs — PUSH0,
+  TSTORE/TLOAD (transient storage), MCOPY — were exercised in deployed
+  bytecode on a live node of this tree and behave correctly. Mainnet is
+  past both gating forks (Shanghai 1340000, Cancun 1363636).
+- The Groth16 substrate was proven by computation, not presence: a full
+  bilinearity check `e(P,Q)·e(-P,Q) = 1` through the `alt_bn128` pairing
+  precompile returned 1 on-chain. This is the same precompile family
+  Eureka's `sp1-ics07` verifier calls on Ethereum.
+- **Mandatory port-audit item:** Runebase consensus **bans `CREATE`/
+  `CREATE2` with a value endowment** inside the EVM
+  (`EVMC_CREATE_WITH_VALUE`, `src/evmone/lib/evmone/instructions_calls.cpp:345`
+  — a deliberate Runebase patch). The Eureka stack's proxy/factory
+  deployments are zero-value and unaffected, but every contract in the
+  suite (and any escrow pattern layered on top) must be checked for
+  value-bearing `new C{value: v}()` before deployment — on Runebase it
+  reverts.
+- Economics under RIP-1: a ~400-550k-gas `recvPacket` costs ~16-22 RUNES
+  at the 4000 sat/gas minimum. Fine for transfers; worth batching for
+  high-frequency flows.
+
 Codebase requirements for this direction: **none consensus, none node.**
 Contracts + an SP1 proving pipeline + any party running a relayer.
 
@@ -140,7 +163,7 @@ age and unspentness live in the UTXO set, not in headers. Consequences:
 
 | addition | purpose | size |
 |---|---|---|
-| `getstateproof` RPC (eth_getProof equivalent: account + storage MPT proof at a height) | proving packet commitments | small-medium; the aleth `GenericTrieDB` already stores the trie, needs a proof-extraction walk |
+| `getstateproof` RPC (eth_getProof equivalent: account + storage MPT proof at a height) | proving packet commitments | medium; verified 2026-08-25 that `GenericTrieDB` has **no existing proof-extraction code** — the Merkle-branch walk is written from scratch against the stored trie |
 | `getheaderchain` RPC (batch headers + optional prevout-inclusion proofs) | feeding the Wasm client | small |
 | archival state retention flag | serving proofs for non-tip heights | config only; state DB already persists tries |
 

@@ -53,6 +53,41 @@ slot. The node is missing an `eth_getProof`-equivalent RPC to *serve* such
 proofs — a small, non-consensus addition listed in every option's
 requirements.
 
+## Verified against the codebase (regtest, v29.1.0, 2026-08-25)
+
+The claims above are not read off a feature list — they were exercised on a
+live regtest node of this tree. Test vectors for the curves were extracted
+from the in-tree `src/blst` sources, and precompiles were reached through
+deployed forwarder contracts (the `callcontract` RPC refuses direct calls
+to accounts with no state, which precompiles are).
+
+| check | method | result |
+|---|---|---|
+| modern Solidity output runs (PUSH0, TSTORE/TLOAD, MCOPY — solc 0.8.25+ `cancun` target, what current bridge stacks ship) | hand-assembled bytecode using all four opcodes, deployed and executed | **PASS** — returned expected value through transient storage + mcopy |
+| BN254 `alt_bn128` computes (Groth16 substrate) | G1 mul/add identities, then full bilinearity `e(P,Q)·e(-P,Q) = 1` through the pairing precompile | **PASS** — pairing returned 1 |
+| BLS12-381 computes (sync-committee / CometBLS substrate) | G1 `gen + inf = gen` with the real generator, then bilinearity `e(G,H)·e(-G,H) = 1` | **PASS** — pairing returned 1 |
+| script-layer HTLC prerequisites | `BIP65Height = 0`, `CSVHeight = 6048` in chainparams — CLTV/CSV long active on mainnet | confirmed in source |
+| in-EVM reorg lookback for fraud proofs | EIP-2935 serves the last **8191 block hashes** (~3 days at 32s) | confirmed in `runebaseutils.cpp` |
+
+Codebase constraints found during verification — these bind every option:
+
+- **`CREATE`/`CREATE2` with value is consensus-banned in the EVM**
+  (`EVMC_CREATE_WITH_VALUE`, a Runebase-specific patch in
+  `src/evmone/lib/evmone/instructions_calls.cpp:345`). Any third-party
+  bridge contract that instantiates a child contract while sending value
+  (`new Escrow{value: v}()`) **reverts on Runebase**. Zero-value factory
+  and proxy deployments (the normal pattern, used by the IBC Eureka stack)
+  are unaffected — but this is a mandatory audit item when porting any
+  foreign contract suite.
+- **The state trie has no proof-extraction code** (`GenericTrieDB` in
+  `src/eth_client/libdevcore/TrieDB.h` stores and walks, but cannot emit
+  Merkle branches). The `getstateproof` RPC every outbound design needs is
+  a from-scratch addition, not an exposure of existing code.
+- The `callcontract` RPC cannot address precompiles directly ("Address
+  does not exist") and rejects empty calldata — irrelevant on-chain
+  (contract-to-precompile calls work, as the tests prove), but relayer
+  tooling that probes via RPC must know it.
+
 ## The options
 
 | # | option | trust model | consensus changes | works today? | doc |

@@ -15,6 +15,14 @@ committed in advance. Verifying Ethereum on another chain reduces to
 verifying one aggregate BLS12-381 signature per update plus a Merkle branch
 for committee rotation.
 
+Both curve substrates below were verified by live computation on a regtest
+node of this tree (2026-08-25): BLS12-381 G1 arithmetic reproduced the
+generator (test vectors extracted from the in-tree `src/blst` sources) and
+a full pairing bilinearity check `e(G,H)·e(-G,H) = 1` returned 1 through
+the EIP-2537 precompile; the BN254 route's pairing bilinearity likewise
+returned 1 through `alt_bn128`. The gas figures below remain estimates;
+the *correctness* of the machinery they price is no longer an assumption.
+
 Two implementation routes, both viable on v29.1.0:
 
 ### Route A — native verification (post-Pectra, no prover at all)

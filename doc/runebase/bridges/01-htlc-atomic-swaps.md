@@ -30,7 +30,8 @@ against an RRC-20 (EVM HTLC) works because both sides just need the same
 preimage-of-sha256 condition.
 
 Relevant codebase facts:
-- CLTV/CSV active since genesis (inherited from the Bitcoin Core base).
+- CLTV active from genesis (`BIP65Height = 0`) and CSV from height 6048
+  (`src/kernel/chainparams.cpp:104-106`) — both live on mainnet for years.
 - EVM `block.timestamp`/`block.number` usable for the contract-side
   timeout; 32s blocks give fine-grained timeout control.
 - The v29.1 fee corrections matter here: before them, the wallet's usable

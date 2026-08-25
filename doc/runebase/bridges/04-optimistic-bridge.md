@@ -21,7 +21,11 @@ consider acceptable.
    funds.
 
 Because Runebase headers commit to the EVM state root, fraud proofs about
-Runebase state are compact: header chain + MPT proof. The economically
+Runebase state are compact: header chain + MPT proof. For disputes *hosted
+on* Runebase, contracts can check re-orgs against the last **8191 block
+hashes (~3 days at 32s)** via the EIP-2935 history precompile (verified
+live during the v29.1 work) — an in-EVM upper bound on challenge windows
+that reference Runebase block identity. The economically
 rational-relayer assumption does the day-to-day work; the watcher ecosystem
 is the safety net.
 
