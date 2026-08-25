@@ -107,11 +107,11 @@ class MempoolAcceptanceTest(BitcoinTestFramework):
         txid_in_block = self.wallet.sendrawtransaction(from_node=node, tx_hex=raw_tx_in_block)
         self.generate(node, 1)
         self.mempool_size = 0
-        # Also check feerate. 1BTC/kvB fails
-        assert_raises_rpc_error(-8, "Fee rates larger than or equal to 10RUNEBASE/kvB are not accepted", lambda: self.check_mempool_result(
+        # Also check feerate. Runebase's cap is 1000 RUNES/kvB (100x Qtum's 10).
+        assert_raises_rpc_error(-8, "Fee rates larger than or equal to 1000RUNES/kvB are not accepted", lambda: self.check_mempool_result(
             result_expected=None,
             rawtxs=[raw_tx_in_block],
-            maxfeerate=10,
+            maxfeerate=1000,
         ))
         # Check negative feerate
         assert_raises_rpc_error(-3, "Amount out of range", lambda: self.check_mempool_result(
