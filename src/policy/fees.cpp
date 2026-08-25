@@ -1020,6 +1020,27 @@ bool CBlockPolicyEstimator::Read(AutoFile& filein)
                 throw std::runtime_error("Corrupt estimates file. Must have between 2 and 1000 feerate buckets");
             }
 
+            // Runebase: the bucket range is derived from MIN_BUCKET_FEERATE /
+            // MAX_BUCKET_FEERATE, which changed when the fee scale was corrected to
+            // Runebase's 100x policy. The file format version did NOT change, so a
+            // pre-upgrade fee_estimates.dat would otherwise be adopted verbatim
+            // (buckets = fileBuckets below) and permanently pin the estimator to
+            // buckets that no longer span the relay minimum - silently disabling fee
+            // estimation until the user deleted the file by hand. Detect that here and
+            // start fresh instead; the only cost is relearning recent history.
+            // buckets.back() is always INF_FEERATE, so compare the last FINITE bucket.
+            const double file_lowest{fileBuckets.front()};
+            const double file_highest{fileBuckets[numBuckets - 2]};
+            if (file_lowest < MIN_BUCKET_FEERATE / MIN_BUCKET_FEERATE_TOLERANCE ||
+                file_lowest > MIN_BUCKET_FEERATE * MIN_BUCKET_FEERATE_TOLERANCE ||
+                file_highest > MAX_BUCKET_FEERATE * MIN_BUCKET_FEERATE_TOLERANCE) {
+                LogWarning("Fee estimation data uses an incompatible feerate bucket range "
+                           "[%g, %g], expected [%g, %g]; discarding it and starting fresh "
+                           "(non-fatal).",
+                           file_lowest, file_highest, MIN_BUCKET_FEERATE, MAX_BUCKET_FEERATE);
+                return true;
+            }
+
             std::unique_ptr<TxConfirmStats> fileFeeStats(new TxConfirmStats(buckets, bucketMap, MED_BLOCK_PERIODS, MED_DECAY, MED_SCALE));
             std::unique_ptr<TxConfirmStats> fileShortStats(new TxConfirmStats(buckets, bucketMap, SHORT_BLOCK_PERIODS, SHORT_DECAY, SHORT_SCALE));
             std::unique_ptr<TxConfirmStats> fileLongStats(new TxConfirmStats(buckets, bucketMap, LONG_BLOCK_PERIODS, LONG_DECAY, LONG_SCALE));

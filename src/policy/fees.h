@@ -187,6 +187,8 @@ private:
      * necessary to lower it, and then lower it substantially.
      */
     static constexpr double MIN_BUCKET_FEERATE = 100000;
+    /** Slack when checking a loaded fee_estimates.dat against the current bucket range. */
+    static constexpr double MIN_BUCKET_FEERATE_TOLERANCE = 1.01;
     static constexpr double MAX_BUCKET_FEERATE = 1e9;
 
     /** Spacing of FeeRate buckets
