@@ -116,7 +116,7 @@ public:
         consensus.nLondonHeight = 1324512;
         consensus.nShanghaiHeight = 1340000;
         consensus.nCancunHeight = 1363636;
-        consensus.nPectraHeight = 3000000;
+        consensus.nPectraHeight = 2810000; // ~2026-09-02, see doc/runebase/rip1-testnet-verification.md
         consensus.nRIP1Height = consensus.nPectraHeight; // RIP-1: 100x min gas price, same fork event as Pectra
         consensus.powLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.posLimit = uint256{"00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
@@ -269,7 +269,7 @@ public:
         consensus.nLondonHeight = 20160;
         consensus.nShanghaiHeight = 35000;
         consensus.nCancunHeight = 55000;
-        consensus.nPectraHeight = 190000;
+        consensus.nPectraHeight = 188000; // ~2026-08-26
         consensus.nRIP1Height = consensus.nPectraHeight; // RIP-1: 100x min gas price, same fork event as Pectra
         consensus.powLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.posLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};

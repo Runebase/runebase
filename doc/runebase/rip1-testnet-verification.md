@@ -1,10 +1,32 @@
 # RIP-1 testnet verification — smart contract + delegation, before and after the fork
 
 RIP-1 raises the minimum EVM gas price 100x (40 -> 4000 satoshi/gas) at
-`nRIP1Height` = **190000** on testnet (bundled with Pectra). This is the manual
+`nRIP1Height` = **188000** on testnet (bundled with Pectra). This is the manual
 run-through to prove the fork on the live testnet. Run every "BEFORE" step at a
-height comfortably below 190000, and every "AFTER" step once the chain is past
+height comfortably below 188000, and every "AFTER" step once the chain is past
 it. Keep the txids; they are the evidence.
+
+## Schedule (measured 2026-08-25 05:56)
+
+| chain | fork height | tip then | blocks to go | ETA |
+|---|---|---|---|---|
+| testnet3 | **188000** | 184017 | 3983 | ~Wed 2026-08-26 17:20 |
+| mainnet | **2810000** | 2788207 | 21793 | ~Wed 2026-09-02 08:30 |
+
+Both chains run ~32 s/block, so ~2700 blocks/day. ETAs are computed at the
+FASTEST rate observed, i.e. the earliest the fork can possibly fire; if block
+production is slower it lands later, never sooner.
+
+**Testnet caveat:** testnet3 stalled completely from 2025-04-25 to 2026-08-24
+(16 months, height 181613-ish). It only resumed on 2026-08-24 and is healthy
+now, but its block production depends entirely on our own stakers. If they stop,
+height 188000 is never reached and the fork simply does not activate. Confirm
+`getblockcount` is still advancing before relying on the ETA.
+
+**ALL testnet stakers must run the new binary before the fork height.** A
+staker left on the old build keeps accepting 40-priced contract calls after
+200000; upgraded nodes reject those blocks and the chain splits. Since we
+control the testnet stakers this is a rollout checklist item, not a risk.
 
 Conventions: `CLI` = `runebase-cli -testnet`. Amounts in RUNES.
 
@@ -21,7 +43,7 @@ A minimal counter contract (inc() = 371303c0, counter() = 61bc221a):
 
 Save the returned `address` as `$C`. Wait for a confirmation.
 
-## 2. BEFORE the fork (height < 190000)
+## 2. BEFORE the fork (height < 188000)
 
     # a) call at the old minimum gas price -> must confirm
     CLI sendtocontract $C 371303c0 0 100000 0.00000040
@@ -37,7 +59,7 @@ Save the returned `address` as `$C`. Wait for a confirmation.
     # after 1 confirmation:
     CLI getdelegationinfoforaddress $DELEGATOR    # "verified": true
 
-## 3. AFTER the fork (height >= 190000)
+## 3. AFTER the fork (height >= 188000)
 
     CLI getdgpinfo                                # "mingasprice": 4000
 
@@ -72,17 +94,17 @@ fork height has passed:
 
     runebased -testnet -datadir=/tmp/rip1sync -printtoconsole
 
-It must cross 190000 without `bad-tx-low-gas-price` errors and reach the
+It must cross 188000 without `bad-tx-low-gas-price` errors and reach the
 network tip. Optionally also `-reindex` an existing node. Either reproduces
 what every future IBD will do: validate pre-fork blocks at 40 and post-fork
 blocks at 4000.
 
 ## 5. What a failure looks like
 
-- Chain stalls at 190000 with `bad-tx-low-gas-price` -> the height gate is
+- Chain stalls at 188000 with `bad-tx-low-gas-price` -> the height gate is
   broken (validating old blocks with the new minimum).
 - `sendtocontract` fails with "Maximum allowed in RPC calls" after the fork ->
   `MAX_RPC_GAS_PRICE` was not scaled (must be 0.0001).
-- Old nodes (pre-RIP-1 binaries) continuing past 190000 accept 40-priced
+- Old nodes (pre-RIP-1 binaries) continuing past 188000 accept 40-priced
   transactions and will fork off — that is expected hardfork behaviour, not a
   bug.
