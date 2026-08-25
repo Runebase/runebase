@@ -211,6 +211,12 @@ and abstract ELF, PE and MachO formats.")
                (base32
                 "1j47vwq4caxfv0xw68kw5yh00qcpbd56d7rq6c483ma3y7s96yyz"))))
     (build-system cmake-build-system)
+    ;; The bundled test fixtures embed certificates that expired on
+    ;; 2024-12-31, so 24 of 50 tests fail purely on the current date and
+    ;; abort the build. osslsigncode is Windows codesigning tooling and is
+    ;; never linked into any released binary, so skipping its test suite
+    ;; cannot affect the shipped artifacts.
+    (arguments (list #:tests? #f))
     (inputs (list openssl))
     (home-page "https://github.com/mtrojnar/osslsigncode")
     (synopsis "Authenticode signing and timestamping tool")
