@@ -117,6 +117,7 @@ public:
         consensus.nShanghaiHeight = 1340000;
         consensus.nCancunHeight = 1363636;
         consensus.nPectraHeight = 3000000;
+        consensus.nRIP1Height = consensus.nPectraHeight; // RIP-1: 100x min gas price, same fork event as Pectra
         consensus.powLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.posLimit = uint256{"00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.QIP9PosLimit = uint256{"0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"}; // The new POS-limit activated after QIP9
@@ -269,6 +270,7 @@ public:
         consensus.nShanghaiHeight = 35000;
         consensus.nCancunHeight = 55000;
         consensus.nPectraHeight = 190000;
+        consensus.nRIP1Height = consensus.nPectraHeight; // RIP-1: 100x min gas price, same fork event as Pectra
         consensus.powLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.posLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.QIP9PosLimit = uint256{"0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"}; // The new POS-limit activated after QIP9
@@ -404,6 +406,7 @@ public:
         consensus.nShanghaiHeight = 0;
         consensus.nCancunHeight = 0;
         consensus.nPectraHeight = 0;
+        consensus.nRIP1Height = consensus.nPectraHeight; // RIP-1: 100x min gas price, same fork event as Pectra
         consensus.powLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.posLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.QIP9PosLimit = uint256{"0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"}; // The new POS-limit activated after QIP9
@@ -577,6 +580,7 @@ public:
         consensus.nShanghaiHeight = 0;
         consensus.nCancunHeight = 0;
         consensus.nPectraHeight = 0;
+        consensus.nRIP1Height = consensus.nPectraHeight; // RIP-1: 100x min gas price, same fork event as Pectra
         consensus.powLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.posLimit = uint256{"0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.QIP9PosLimit = uint256{"0000000000001fffffffffffffffffffffffffffffffffffffffffffffffffff"}; // The new POS-limit activated after QIP9
@@ -687,6 +691,7 @@ public:
         consensus.nShanghaiHeight = 0;
         consensus.nCancunHeight = 0;
         consensus.nPectraHeight = 0;
+        consensus.nRIP1Height = 0x7fffffff; // RIP-1 never activates on regtest by default; override with -rip1height
         consensus.powLimit = uint256{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.posLimit = uint256{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.QIP9PosLimit = uint256{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}; // The new POS-limit activated after QIP9
@@ -1070,4 +1075,9 @@ void CChainParams::UpdateCancunHeight(int nHeight)
 void CChainParams::UpdatePectraHeight(int nHeight)
 {
     consensus.nPectraHeight = nHeight;
+}
+
+void CChainParams::UpdateRIP1Height(int nHeight)
+{
+    consensus.nRIP1Height = nHeight;
 }

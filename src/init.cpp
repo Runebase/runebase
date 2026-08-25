@@ -677,6 +677,7 @@ void SetupServerArgs(ArgsManager& argsman, bool can_listen_ipc)
     argsman.AddArg("-shanghaiheight=<n>", "Use given block height to check contracts with EVM Shanghai (regtest-only)", ArgsManager::ALLOW_ANY, OptionsCategory::DEBUG_TEST);
     argsman.AddArg("-cancunheight=<n>", "Use given block height to check contracts with EVM Cancun (regtest-only)", ArgsManager::ALLOW_ANY, OptionsCategory::DEBUG_TEST);
     argsman.AddArg("-pectraheight=<n>", "Use given block height to check contracts with EVM Pectra (regtest-only)", ArgsManager::ALLOW_ANY, OptionsCategory::DEBUG_TEST);
+    argsman.AddArg("-rip1height=<n>", "Use given block height to activate the 100x minimum gas price (regtest-only)", ArgsManager::ALLOW_ANY, OptionsCategory::DEBUG_TEST);
 
     SetupChainParamsBaseOptions(argsman);
 
@@ -1435,6 +1436,20 @@ bool AppInitParameterInteraction(const ArgsManager& args)
         {
             UpdatePectraHeight(pectraheight);
             LogPrintf("Activate EVM Pectra at block height %d\n.", pectraheight);
+        }
+    }
+
+    if (args.IsArgSet("-rip1height")) {
+        // Allow overriding the 100x minimum gas price activation height for testing
+        if (!chainparams.MineBlocksOnDemand()) {
+            return InitError(Untranslated("The RIP-1 fork height may only be overridden on regtest."));
+        }
+
+        int rip1height = args.GetIntArg("-rip1height", 0);
+        if(rip1height >= 0)
+        {
+            UpdateRIP1Height(rip1height);
+            LogPrintf("Activate the 100x minimum gas price at block height %d\n.", rip1height);
         }
     }
 

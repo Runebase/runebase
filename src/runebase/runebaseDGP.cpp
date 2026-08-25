@@ -79,10 +79,22 @@ uint32_t RunebaseDGP::getBlockSize(unsigned int blockHeight){
 
 uint64_t RunebaseDGP::getMinGasPrice(unsigned int blockHeight){
     clear();
-    uint64_t result = DEFAULT_MIN_GAS_PRICE_DGP;
+    // RIP-1 gas-price hardfork (rides nPectraHeight on mainnet/testnet):
+    // from nRIP1Height the default minimum gas price is 100x the
+    // original (40 -> 4000 satoshi/gas), matching the 100x transaction-fee
+    // policy. The gate MUST stay per-height: historical blocks contain
+    // contract calls priced at the old minimum, so validating them against
+    // the new one during (re)sync would stall the chain.
+    bool gasPriceFork = blockHeight >= (unsigned int)Params().GetConsensus().nRIP1Height;
+    uint64_t result = gasPriceFork ? DEFAULT_MIN_GAS_PRICE_DGP_RIP1 : DEFAULT_MIN_GAS_PRICE_DGP;
     uint64_t minGasPrice = getUint64FromDGP(blockHeight, GasPriceDGP, ParseHex("3fb58819"));
     if(minGasPrice <= MAX_MIN_GAS_PRICE_DGP && minGasPrice >= MIN_MIN_GAS_PRICE_DGP){
         result = minGasPrice;
+    }
+    // After the fork the 100x minimum is a hard floor: a DGP governance value
+    // can raise it further (up to MAX_MIN_GAS_PRICE_DGP) but not lower it.
+    if(gasPriceFork && result < DEFAULT_MIN_GAS_PRICE_DGP_RIP1){
+        result = DEFAULT_MIN_GAS_PRICE_DGP_RIP1;
     }
     return result;
 }

@@ -117,7 +117,7 @@ static constexpr int MAX_SCRIPTCHECK_THREADS{15};
 static const uint64_t DEFAULT_GAS_LIMIT_OP_CREATE=2500000;
 static const uint64_t DEFAULT_GAS_LIMIT_OP_SEND=250000;
 static const CAmount DEFAULT_GAS_PRICE=0.00000040*COIN;
-static const CAmount MAX_RPC_GAS_PRICE=0.00000100*COIN;
+static const CAmount MAX_RPC_GAS_PRICE=0.00010000*COIN; // 100x, else the RPC gas-price cap would sit below the post-fork minimum and block all contract calls
 
 static const size_t MAX_CONTRACT_VOUTS = 1000; // runebase
 

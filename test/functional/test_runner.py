@@ -430,6 +430,8 @@ BASE_SCRIPTS = [
     'runebase_evm_cancun_gas_usage.py --descriptors',
     'runebase_dgp.py --legacy-wallet',
     'runebase_dgp.py --descriptors',
+    'runebase_rip1_gas_price.py --legacy-wallet',
+    'runebase_rip1_gas_price.py --descriptors',
     'runebase_pos.py --legacy-wallet',
     'runebase_pos.py --descriptors',
     'runebase_opcall.py --legacy-wallet',

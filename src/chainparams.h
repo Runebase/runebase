@@ -113,4 +113,5 @@ void UpdateCancunHeight(int nHeight);
  * Allows modifying the pectra block height regtest parameter.
  */
 void UpdatePectraHeight(int nHeight);
+void UpdateRIP1Height(int nHeight);
 #endif // BITCOIN_CHAINPARAMS_H

@@ -120,6 +120,12 @@ struct Params {
     int nCancunHeight;
     /** Block height at which EVM Pectra fork becomes active */
     int nPectraHeight;
+    /** Block height at which RIP-1 activates (Runebase Improvement Proposal 1:
+     *  "Gas Fee Adjustment to Prevent Spam and Limit Blockchain Growth").
+     *  From this height the minimum EVM gas price is 100x the original
+     *  (40 -> 4000 satoshi/gas), matching Runebase's 100x transaction-fee
+     *  policy. Bundled with the Pectra hardfork on mainnet/testnet. */
+    int nRIP1Height;
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.

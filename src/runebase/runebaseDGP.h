@@ -19,6 +19,7 @@ static const uint32_t DEFAULT_BLOCK_SIZE_DGP = 2000000;
 static const uint64_t MIN_MIN_GAS_PRICE_DGP = 1; // Cannot be highered if transactions already exist on blockchain with lower gas price
 static const uint64_t MAX_MIN_GAS_PRICE_DGP = 10000; // Cannot be lowered if transactions already exist on blockchain with higher gas price
 static const uint64_t DEFAULT_MIN_GAS_PRICE_DGP = 40; // Cannot be highered if transactions already exist on blockchain with lower gas price
+static const uint64_t DEFAULT_MIN_GAS_PRICE_DGP_RIP1 = 4000; // RIP-1: 100x minimum gas price, active from nRIP1Height (bundled with the Pectra hardfork); also the floor for DGP governance values after the fork
 
 static const uint64_t MIN_BLOCK_GAS_LIMIT_DGP = 1000000;
 static const uint64_t MAX_BLOCK_GAS_LIMIT_DGP = 1000000000;
