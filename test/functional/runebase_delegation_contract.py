@@ -216,13 +216,19 @@ class RunebaseSimpleDelegationContractTest(BitcoinTestFramework):
     """
     def nas_staker_must_be_100_runebase_test(self):
         use_pos_reward = True if self.staker.getblockcount() > 5000 else False
+        # Runebase: regtest coinbases are 100 RUNES (Qtum's are 20000), so the
+        # 20000 prevout this subtest splits must be created explicitly and
+        # matured past the staking confirmation depth.
+        self.staker.sendtoaddress(self.staker_address, 20000)
+        generatesynchronized(self.staker, COINBASE_MATURITY + 1, self.staker_address, self.nodes)
+        self.sync_all()
         staker_prevouts = collect_prevouts(self.staker, min_confirmations=COINBASE_MATURITY, amount=20000)
         prevout = staker_prevouts[0]
         tx = CTransaction()
         tx.vin.append(CTxIn(prevout[0]))
         tx.vout = [CTxOut(9900000000, scriptPubKey=CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(self.staker_address_hex), OP_EQUALVERIFY, OP_CHECKSIG])) for i in range(0, 100)]
         tx.vout += [CTxOut(10000000000, scriptPubKey=CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(self.staker_address_hex), OP_EQUALVERIFY, OP_CHECKSIG])) for i in range(0, 10)]
-        tx.vout.append(CTxOut(int((20000-9900-1000-0.15)*COIN), scriptPubKey=CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(self.staker_address_hex), OP_EQUALVERIFY, OP_CHECKSIG])))
+        tx.vout.append(CTxOut(int((20000-9900-1000-2)*COIN), scriptPubKey=CScript([OP_DUP, OP_HASH160, hex_str_to_bytes(self.staker_address_hex), OP_EQUALVERIFY, OP_CHECKSIG])))  # fee 2 RUNES: ~3.9kvB at Runebase's 100x relay fee
         tx = rpc_sign_transaction(self.staker, tx)
         self.staker.sendrawtransaction(bytes_to_hex_str(tx.serialize()))
         generatesynchronized(self.staker, COINBASE_MATURITY, self.staker_address, self.nodes)

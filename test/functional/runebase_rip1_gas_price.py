@@ -46,9 +46,6 @@ COUNTER_BYTECODE = "6060604052341561000c57fe5b5b61011e8061001c6000396000f3006060
 
 
 class RunebaseGasPriceForkTest(BitcoinTestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
