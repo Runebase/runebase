@@ -45,6 +45,15 @@ in increasing order of trustlessness, are analysed in each document:
 2. extended proofs (header + Merkle proof of the staking prevout),
 3. a zk proof of full Runebase validation (research-grade).
 
+**Read [../long-range-attacks.md](../long-range-attacks.md) before
+designing any outbound client.** It quantifies this surface against the
+live chain and establishes the one fact every outbound design depends
+on: Runebase nodes enforce a **hard 2000-block (~17.8 h) max-reorg rule**
+(`CheckSync`, `src/node/blockstorage.cpp:1067`), so a remote client that
+mirrors it reaches full-node-equivalent security — provided its view
+never goes stale. It also sets the HTLC timelock floor for option 1 and
+the sizing bound for value locked outbound.
+
 One codebase fact makes all outbound designs *possible at all*: **every
 Runebase header commits to the EVM state root** (`hashStateRoot`,
 `src/primitives/block.h:31`). Once a counterparty accepts a header, a

@@ -136,7 +136,11 @@ age and unspentness live in the UTXO set, not in headers. Consequences:
 
 1. **Weak subjectivity (pragmatic, deployable):** the Wasm client embeds a
    recent checkpoint at creation and refuses reorgs deeper than a bounded
-   window W (e.g. 2000 blocks ≈ 18h, matching coinbase maturity). Within
+   window W (2000 blocks ≈ 17.8h — **confirmed from source**: this is
+   exactly the window Runebase nodes themselves enforce via `CheckSync`,
+   and `nRBTCheckpointSpan` is literally defined as
+   `nRBTCoinbaseMaturity`; see
+   [../long-range-attacks.md](../long-range-attacks.md) §2.1). Within
    W, fabricating a competing chain requires currently-staked coins and
    sacrifices real staking rewards — an economic, quantifiable defense.
    Checkpoint refresh happens implicitly as the client follows the chain;
